@@ -62,7 +62,8 @@ input,select,textarea{width:100%;padding:13px 14px;border:1px solid #d1d5db;bord
 <div id="nav" class="nav hide"></div>
 </div>
 <script>
-const KEY='rebu_mvp_state_v4';
+const KEY='rebu_mvp_state';
+const LEGACY_KEYS=['rebu_mvp_state_v4','rebu_mvp_state_v3','rebu_mvp_state_v1'];
 const defaultState={
  user:null, pendingUser:null, role:null, lang:null, welcomeDone:false, loggedIn:false, admin:false, helperAvailable:true,
  jobs:[], currentJobId:null,
@@ -70,7 +71,28 @@ const defaultState={
  demoPayment:true
 };
 let S=load();
-function load(){try{return {...defaultState,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){return {...defaultState}}}
+function load(){
+ try{
+  const current=JSON.parse(localStorage.getItem(KEY)||'{}');
+  const legacy=LEGACY_KEYS.map(k=>{try{return {key:k,data:JSON.parse(localStorage.getItem(k)||'{}')}}catch(e){return {key:k,data:{}}}});
+  let best=current;
+  if(!best.user){
+   const withUser=legacy.find(x=>x.data&&x.data.user);
+   if(withUser){
+    best={...withUser.data,...current};
+    if(!current.user)best.user=withUser.data.user;
+    if(!current.jobs?.length&&withUser.data.jobs)best.jobs=withUser.data.jobs;
+    if(!current.messages?.length&&withUser.data.messages)best.messages=withUser.data.messages;
+    if(!current.notifications?.length&&withUser.data.notifications)best.notifications=withUser.data.notifications;
+    if(!current.profile&&withUser.data.profile)best.profile=withUser.data.profile;
+   }
+  }
+  const merged={...defaultState,...best};
+  localStorage.setItem(KEY,JSON.stringify(merged));
+  LEGACY_KEYS.forEach(k=>localStorage.removeItem(k));
+  return merged;
+ }catch(e){return {...defaultState}}
+}
 function save(){localStorage.setItem(KEY,JSON.stringify(S))}
 const I18N={
  pl:{
@@ -151,7 +173,7 @@ function togglePassword(id,btn){
  el.type=el.type==='password'?'text':'password';
  if(btn)btn.textContent=el.type==='password'?'👁':'🙈';
 }
-function reset(){localStorage.removeItem(KEY);S={...defaultState};render()}
+function reset(){localStorage.removeItem(KEY);LEGACY_KEYS.forEach(k=>localStorage.removeItem(k));S={...defaultState};render()}
 function brandHome(){
  if(S.admin){S.admin=false;save();render();return}
  if(S.user&&S.loggedIn){S.user.fullVerified?(S.role?home():chooseRole()):verificationHub();return}
@@ -161,7 +183,7 @@ function logout(){S.loggedIn=false;S.role=null;save();authLanding()}
 function deleteAccount(){
  if(!confirm(t('deleteConfirm')))return;
  const lang=S.lang;
- localStorage.removeItem(KEY);
+ localStorage.removeItem(KEY);LEGACY_KEYS.forEach(k=>localStorage.removeItem(k));
  S={...defaultState,lang};
  save();
  authLanding();

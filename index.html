@@ -71,6 +71,44 @@ const defaultState={
  demoPayment:true
 };
 let S=load();
+let APP_NAV_LOCK=false;
+function pushScreen(name){
+ if(APP_NAV_LOCK)return;
+ try{
+  const current=history.state||{};
+  if(current.rebuScreen===name)return;
+  history.pushState({rebuScreen:name},'',location.href);
+ }catch(e){}
+}
+function replaceScreen(name){
+ try{history.replaceState({rebuScreen:name},'',location.href)}catch(e){}
+}
+function goScreen(name,fromPop=false){
+ APP_NAV_LOCK=fromPop;
+ try{
+  if(name==='welcome')welcome();
+  else if(name==='auth')authLanding();
+  else if(name==='register')onboarding();
+  else if(name==='login')loginScreen();
+  else if(name==='verify')verificationHub();
+  else if(name==='limited')limitedOffers();
+  else if(name==='role')chooseRole();
+  else if(name==='home')home();
+  else if(name==='profile')profile();
+  else if(name==='admin')adminPanel();
+  else render();
+ }finally{APP_NAV_LOCK=false}
+}
+window.addEventListener('popstate',(ev)=>{
+ const name=ev.state&&ev.state.rebuScreen;
+ if(name){goScreen(name,true);return}
+ if(S&&S.user&&S.loggedIn){
+   if(!S.user.fullVerified)verificationHub();
+   else if(!S.role)chooseRole();
+   else home();
+ }else if(S&&S.welcomeDone){authLanding()}else{welcome()}
+});
+
 function load(){
  try{
   const current=JSON.parse(localStorage.getItem(KEY)||'{}');
@@ -111,7 +149,7 @@ const I18N={
   payment:'Płatność – tryb testowy', status:'Status', amount:'Kwota', paymentHint:'Realny operator płatności nie jest jeszcze podłączony. Ten ekran służy do testowania logiki.',
   changePrice:'Zmień cenę', cancelJob:'Anuluj zlecenie', confirmDone:'POTWIERDZAM WYKONANIE', reportProblem:'ZGŁOŚ PROBLEM', rateHelper:'Oceń wykonawcę', confirm:'POTWIERDZAM', cannot:'NIE MOGĘ', going:'JADĘ', here:'JESTEM NA MIEJSCU', startJob:'ROZPOCZNIJ ZLECENIE', extraWork:'Zaproponuj dodatkową pracę', finished:'ZAKOŃCZYŁEM', extraPay:'Dodatkowa praca / dopłata',
   chatLocal:'Czat testowy jest lokalny na tym urządzeniu. Synchronizację między telefonami podłączymy przez backend w następnym kroku technicznym.', message:'Wiadomość', send:'Wyślij', noActive:'Brak aktywnego zlecenia.', estimated:'Szacunkowo w MVP', noFinished:'Brak zakończonych zleceń.', switchRole:'Przełącz rolę', export:'Eksportuj dane testowe', clear:'Wyczyść cały test', language:'Język aplikacji', changeLanguage:'Zmień język',
-  logout:'Wyloguj się', deleteAccount:'Usuń moje konto', deleteConfirm:'Na pewno usunąć konto testowe?', login:'Mam już konto', loginTitle:'Zaloguj się', password:'Hasło', forgot:'Nie pamiętam hasła', resetPassword:'Ustaw nowe hasło', newPassword:'Nowe hasło', back:'Wróć', verifyEmail:'Potwierdź e-mail', verifySms:'Potwierdź numer telefonu', code:'Kod', verify:'Potwierdź', emailSentTest:'TEST: prawdziwy e-mail nie jest jeszcze wysyłany. Użyj kodu poniżej.', smsSentTest:'TEST: prawdziwy SMS nie jest jeszcze wysyłany. Użyj kodu poniżej.', wrongCode:'Nieprawidłowy kod testowy', wrongLogin:'Nieprawidłowy e-mail lub hasło', accountReady:'Konto testowe aktywne', adminPanel:'Panel administratora', adminLogin:'Wejście administratora', adminPin:'PIN administratora', adminTestNote:'To jest tylko testowy panel lokalny. Prawdziwe zabezpieczenie administratora powstanie z backendem.', usersCount:'Użytkownicy testowi', jobsCount:'Zlecenia testowe', closeAdmin:'Wyjdź z panelu', resetDone:'Hasło testowe zostało zmienione.', noAccount:'Nie masz jeszcze konta?', createNew:'Załóż nowe konto',
+  logout:'Wyloguj się', deleteAccount:'Usuń moje konto', deleteConfirm:'Na pewno usunąć konto testowe?', login:'Mam już konto', loginTitle:'Zaloguj się', password:'Hasło', forgot:'Nie pamiętam hasła', resetPassword:'Ustaw nowe hasło', newPassword:'Nowe hasło', back:'Wróć', browserBack:'← Wróć', verifyEmail:'Potwierdź e-mail', verifySms:'Potwierdź numer telefonu', code:'Kod', verify:'Potwierdź', emailSentTest:'TEST: prawdziwy e-mail nie jest jeszcze wysyłany. Użyj kodu poniżej.', smsSentTest:'TEST: prawdziwy SMS nie jest jeszcze wysyłany. Użyj kodu poniżej.', wrongCode:'Nieprawidłowy kod testowy', wrongLogin:'Nieprawidłowy e-mail lub hasło', accountReady:'Konto testowe aktywne', adminPanel:'Panel administratora', adminLogin:'Wejście administratora', adminPin:'PIN administratora', adminTestNote:'To jest tylko testowy panel lokalny. Prawdziwe zabezpieczenie administratora powstanie z backendem.', usersCount:'Użytkownicy testowi', jobsCount:'Zlecenia testowe', closeAdmin:'Wyjdź z panelu', resetDone:'Hasło testowe zostało zmienione.', noAccount:'Nie masz jeszcze konta?', createNew:'Załóż nowe konto',
   countryAuto:'Język startowy dobrany automatycznie. Możesz go zmienić poniżej.', verificationTitle:'Weryfikacja konta', verificationIntro:'Dokończ weryfikację, aby korzystać ze wszystkich funkcji REBU.', basicData:'Dane podstawowe', identity:'Tożsamość / KYC', verified:'Zweryfikowano', notVerified:'Do weryfikacji', continueVerification:'Kontynuuj weryfikację', testFullVerify:'TEST: zakończ pełną weryfikację', limitedOffers:'Zobacz ograniczone oferty do 5 km', limitedInfo:'Bez pełnej weryfikacji widzisz tylko kategorię, przybliżoną odległość, termin i orientacyjną cenę. Bez zdjęć, pełnego opisu, danych klienta i możliwości zgłoszenia.', finishToSee:'Dokończ weryfikację, aby zobaczyć szczegóły i zgłosić zainteresowanie.', birthDate:'Data urodzenia', fullAddress:'Adres zamieszkania', needBirth:'Podaj datę urodzenia', needAddress:'Podaj adres', showPassword:'Pokaż/ukryj hasło', goToAccount:'Przejdź dalej',
   registeredOnly:'Oferty i zlecenia REBU są dostępne wyłącznie po rejestracji lub zalogowaniu.'
  },
@@ -131,7 +169,7 @@ const I18N={
   payment:'Zahlung – Testmodus', status:'Status', amount:'Betrag', paymentHint:'Ein echter Zahlungsanbieter ist noch nicht verbunden. Dieser Bildschirm testet nur die Logik.',
   changePrice:'Preis ändern', cancelJob:'Auftrag stornieren', confirmDone:'AUSFÜHRUNG BESTÄTIGEN', reportProblem:'PROBLEM MELDEN', rateHelper:'Helfer bewerten', confirm:'BESTÄTIGEN', cannot:'ICH KANN NICHT', going:'ICH FAHRE LOS', here:'ICH BIN VOR ORT', startJob:'AUFTRAG STARTEN', extraWork:'Zusatzarbeit vorschlagen', finished:'FERTIG', extraPay:'Zusatzarbeit / Aufpreis',
   chatLocal:'Der Testchat ist lokal auf diesem Gerät. Die Synchronisierung zwischen Geräten folgt mit dem Backend.', message:'Nachricht', send:'Senden', noActive:'Kein aktiver Auftrag.', estimated:'Geschätzt im MVP', noFinished:'Keine abgeschlossenen Aufträge.', switchRole:'Rolle wechseln', export:'Testdaten exportieren', clear:'Test vollständig löschen', language:'App-Sprache', changeLanguage:'Sprache ändern',
-  logout:'Abmelden', deleteAccount:'Mein Konto löschen', deleteConfirm:'Testkonto wirklich löschen?', login:'Ich habe bereits ein Konto', loginTitle:'Anmelden', password:'Passwort', forgot:'Passwort vergessen', resetPassword:'Neues Passwort festlegen', newPassword:'Neues Passwort', back:'Zurück', verifyEmail:'E-Mail bestätigen', verifySms:'Telefonnummer bestätigen', code:'Code', verify:'Bestätigen', emailSentTest:'TEST: Eine echte E-Mail wird noch nicht gesendet. Verwende den Code unten.', smsSentTest:'TEST: Eine echte SMS wird noch nicht gesendet. Verwende den Code unten.', wrongCode:'Falscher Testcode', wrongLogin:'Falsche E-Mail oder falsches Passwort', accountReady:'Testkonto ist aktiv', adminPanel:'Admin-Bereich', adminLogin:'Administrator-Zugang', adminPin:'Administrator-PIN', adminTestNote:'Dies ist nur ein lokaler Testbereich. Echte Admin-Sicherheit kommt mit dem Backend.', usersCount:'Testnutzer', jobsCount:'Testaufträge', closeAdmin:'Admin-Bereich verlassen', resetDone:'Testpasswort wurde geändert.', noAccount:'Noch kein Konto?', createNew:'Neues Konto erstellen',
+  logout:'Abmelden', deleteAccount:'Mein Konto löschen', deleteConfirm:'Testkonto wirklich löschen?', login:'Ich habe bereits ein Konto', loginTitle:'Anmelden', password:'Passwort', forgot:'Passwort vergessen', resetPassword:'Neues Passwort festlegen', newPassword:'Neues Passwort', back:'Zurück', browserBack:'← Zurück', verifyEmail:'E-Mail bestätigen', verifySms:'Telefonnummer bestätigen', code:'Code', verify:'Bestätigen', emailSentTest:'TEST: Eine echte E-Mail wird noch nicht gesendet. Verwende den Code unten.', smsSentTest:'TEST: Eine echte SMS wird noch nicht gesendet. Verwende den Code unten.', wrongCode:'Falscher Testcode', wrongLogin:'Falsche E-Mail oder falsches Passwort', accountReady:'Testkonto ist aktiv', adminPanel:'Admin-Bereich', adminLogin:'Administrator-Zugang', adminPin:'Administrator-PIN', adminTestNote:'Dies ist nur ein lokaler Testbereich. Echte Admin-Sicherheit kommt mit dem Backend.', usersCount:'Testnutzer', jobsCount:'Testaufträge', closeAdmin:'Admin-Bereich verlassen', resetDone:'Testpasswort wurde geändert.', noAccount:'Noch kein Konto?', createNew:'Neues Konto erstellen',
   countryAuto:'Die Startsprache wurde automatisch gewählt. Du kannst sie unten ändern.', verificationTitle:'Kontoverifizierung', verificationIntro:'Schließe die Verifizierung ab, um alle REBU-Funktionen zu nutzen.', basicData:'Grunddaten', identity:'Identität / KYC', verified:'Verifiziert', notVerified:'Zu verifizieren', continueVerification:'Verifizierung fortsetzen', testFullVerify:'TEST: vollständige Verifizierung abschließen', limitedOffers:'Eingeschränkte Aufträge bis 5 km ansehen', limitedInfo:'Ohne vollständige Verifizierung siehst du nur Kategorie, ungefähre Entfernung, Termin und Richtpreis. Keine Fotos, keine vollständige Beschreibung, keine Kundendaten und kein Interesse-Button.', finishToSee:'Schließe die Verifizierung ab, um Details zu sehen und Interesse zu melden.', birthDate:'Geburtsdatum', fullAddress:'Wohnadresse', needBirth:'Geburtsdatum eingeben', needAddress:'Adresse eingeben', showPassword:'Passwort anzeigen/ausblenden', goToAccount:'Weiter',
   registeredOnly:'REBU-Angebote und Aufträge sind nur nach Registrierung oder Anmeldung verfügbar.'
  },
@@ -151,7 +189,7 @@ const I18N={
   payment:'Payment – test mode', status:'Status', amount:'Amount', paymentHint:'A real payment provider is not connected yet. This screen is for testing logic.',
   changePrice:'Change price', cancelJob:'Cancel job', confirmDone:'CONFIRM COMPLETION', reportProblem:'REPORT PROBLEM', rateHelper:'Rate helper', confirm:'CONFIRM', cannot:'I CANNOT', going:'ON MY WAY', here:'I AM HERE', startJob:'START JOB', extraWork:'Propose extra work', finished:'FINISHED', extraPay:'Extra work / additional payment',
   chatLocal:'The test chat is local to this device. Cross-device synchronization will be added with the backend.', message:'Message', send:'Send', noActive:'No active job.', estimated:'Estimated in MVP', noFinished:'No completed jobs.', switchRole:'Switch role', export:'Export test data', clear:'Clear all test data', language:'App language', changeLanguage:'Change language',
-  logout:'Log out', deleteAccount:'Delete my account', deleteConfirm:'Delete the test account?', login:'I already have an account', loginTitle:'Log in', password:'Password', forgot:'Forgot password', resetPassword:'Set new password', newPassword:'New password', back:'Back', verifyEmail:'Confirm e-mail', verifySms:'Confirm phone number', code:'Code', verify:'Confirm', emailSentTest:'TEST: A real e-mail is not sent yet. Use the code below.', smsSentTest:'TEST: A real SMS is not sent yet. Use the code below.', wrongCode:'Incorrect test code', wrongLogin:'Incorrect e-mail or password', accountReady:'Test account is active', adminPanel:'Admin panel', adminLogin:'Administrator access', adminPin:'Administrator PIN', adminTestNote:'This is only a local test admin panel. Real admin security will be added with the backend.', usersCount:'Test users', jobsCount:'Test jobs', closeAdmin:'Leave admin panel', resetDone:'Test password changed.', noAccount:'No account yet?', createNew:'Create a new account',
+  logout:'Log out', deleteAccount:'Delete my account', deleteConfirm:'Delete the test account?', login:'I already have an account', loginTitle:'Log in', password:'Password', forgot:'Forgot password', resetPassword:'Set new password', newPassword:'New password', back:'Back', browserBack:'← Back', verifyEmail:'Confirm e-mail', verifySms:'Confirm phone number', code:'Code', verify:'Confirm', emailSentTest:'TEST: A real e-mail is not sent yet. Use the code below.', smsSentTest:'TEST: A real SMS is not sent yet. Use the code below.', wrongCode:'Incorrect test code', wrongLogin:'Incorrect e-mail or password', accountReady:'Test account is active', adminPanel:'Admin panel', adminLogin:'Administrator access', adminPin:'Administrator PIN', adminTestNote:'This is only a local test admin panel. Real admin security will be added with the backend.', usersCount:'Test users', jobsCount:'Test jobs', closeAdmin:'Leave admin panel', resetDone:'Test password changed.', noAccount:'No account yet?', createNew:'Create a new account',
   countryAuto:'The starting language was selected automatically. You can change it below.', verificationTitle:'Account verification', verificationIntro:'Complete verification to use all REBU features.', basicData:'Basic details', identity:'Identity / KYC', verified:'Verified', notVerified:'Verification needed', continueVerification:'Continue verification', testFullVerify:'TEST: complete full verification', limitedOffers:'View limited jobs within 5 km', limitedInfo:'Without full verification you only see category, approximate distance, timing and an indicative price. No photos, full description, client details or interest button.', finishToSee:'Complete verification to view details and express interest.', birthDate:'Date of birth', fullAddress:'Home address', needBirth:'Enter date of birth', needAddress:'Enter address', showPassword:'Show/hide password', goToAccount:'Continue',
   registeredOnly:'REBU offers and jobs are available only after registration or login.'
  }
@@ -211,6 +249,7 @@ function render(){
  home();
 }
 function welcome(){
+ if(!APP_NAV_LOCK)pushScreen('welcome');
  nav.classList.add('hide');
  document.body.classList.add('welcome-mode');
  rolePill.textContent='TEST / MVP';
@@ -232,6 +271,7 @@ function welcome(){
  </section>`;
 }
 function authLanding(){
+ if(!APP_NAV_LOCK)pushScreen('auth');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
  if(!S.lang)return welcome();
  main.innerHTML=`<section class="screen"><div class="center"><div class="emoji">🤝</div><h1>${t('slogan')}</h1><p class="muted">${t('registeredOnly')}</p></div>
@@ -241,6 +281,7 @@ function authLanding(){
  </div></section>`;
 }
 function onboarding(){
+ if(!APP_NAV_LOCK)pushScreen('register');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
  main.innerHTML=`<section class="screen"><div class="center"><div class="emoji">🤝</div><h1>${t('slogan')}</h1></div>
  <div class="card stack"><h2>${t('createTest')}</h2>
@@ -292,6 +333,7 @@ function verifySmsCode(){
  alert(t('accountReady'));verificationHub();
 }
 function loginScreen(){
+ if(!APP_NAV_LOCK)pushScreen('login');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
  main.innerHTML=`<section class="screen"><div class="card stack"><h1>${t('loginTitle')}</h1>
  <label>${t('email')}<input id="loginEmail" type="email" placeholder="alex@example.com"></label>
@@ -317,10 +359,11 @@ function doResetPassword(){
  S.user.password=p;save();alert(t('resetDone'));loginScreen();
 }
 function verificationHub(){
+ if(!APP_NAV_LOCK)pushScreen('verify');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');rolePill.textContent='TEST / MVP';
  const u=S.user||{};
  main.innerHTML=`<section class="screen">
- <h1>${t('verificationTitle')}</h1><p class="muted">${t('verificationIntro')}</p>
+ <button class="ghost" onclick="history.back()">${t('browserBack')}</button><h1>${t('verificationTitle')}</h1><p class="muted">${t('verificationIntro')}</p>
  <div class="card verify-list">
   <div class="verify-item"><span>E-mail</span><span class="verify-ok">✓ ${t('verified')}</span></div>
   <div class="verify-item"><span>${t('phone')}</span><span class="verify-ok">✓ ${t('verified')}</span></div>
@@ -338,18 +381,20 @@ function completeFullVerificationTest(){
  S.user.fullVerified=true;save();chooseRole();
 }
 function limitedOffers(){
+ if(!APP_NAV_LOCK)pushScreen('limited');
  nav.classList.add('hide');rolePill.textContent='TEST / MVP';
  const samples=[
   {cat:S.lang==='de'?'Möbelhilfe':S.lang==='en'?'Furniture help':'Pomoc przy meblach',dist:'2,1 km',when:S.lang==='de'?'Heute':S.lang==='en'?'Today':'Dzisiaj',price:'ca. 29 €'},
   {cat:S.lang==='de'?'Garten':S.lang==='en'?'Garden':'Ogród',dist:'4,3 km',when:S.lang==='de'?'Morgen':S.lang==='en'?'Tomorrow':'Jutro',price:'ca. 35 €'}
  ];
- main.innerHTML=`<section class="screen"><h1>${t('limitedOffers')}</h1><div class="notice">${t('limitedInfo')}</div>
+ main.innerHTML=`<section class="screen"><button class="ghost" onclick="history.back()">${t('browserBack')}</button><h1>${t('limitedOffers')}</h1><div class="notice">${t('limitedInfo')}</div>
  ${samples.map(x=>`<div class="preview-job"><div class="row between"><strong>${x.cat}</strong><span class="tag">${x.dist}</span></div><div class="muted top-space">${x.when} • ${x.price}</div><div class="locked">🔒 ${t('finishToSee')}</div></div>`).join('')}
  <div class="card stack"><button onclick="verificationHub()">${t('continueVerification')}</button></div></section>`;
 }
 function chooseRole(){
+ if(!APP_NAV_LOCK)pushScreen('role');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
- main.innerHTML=`<section class="screen"><h1>${t('hello')}, ${esc(S.user.firstName||S.user.name)}</h1><p class="muted">${t('chooseAction')}</p><div class="card stack"><button onclick="setRole('client')">${t('needHelp')}</button><button class="secondary" onclick="setRole('helper')">${t('earnHelp')}</button></div><div class="card"><h3>${t('oneAccount')}</h3><p class="muted small">${t('roleHint')}</p></div></section>`;
+ main.innerHTML=`<section class="screen"><button class="ghost" onclick="history.back()">${t('browserBack')}</button><h1>${t('hello')}, ${esc(S.user.firstName||S.user.name)}</h1><p class="muted">${t('chooseAction')}</p><div class="card stack"><button onclick="setRole('client')">${t('needHelp')}</button><button class="secondary" onclick="setRole('helper')">${t('earnHelp')}</button></div><div class="card"><h3>${t('oneAccount')}</h3><p class="muted small">${t('roleHint')}</p></div></section>`;
 }
 function adminLogin(){
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');rolePill.textContent='ADMIN TEST';
@@ -360,12 +405,14 @@ function doAdminLogin(){
  S.admin=true;save();adminPanel();
 }
 function adminPanel(){
+ if(!APP_NAV_LOCK)pushScreen('admin');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');rolePill.textContent='ADMIN TEST';
  main.innerHTML=`<section class="screen"><div class="admin-shell"><h1>${t('adminPanel')}</h1><p class="muted">${t('adminTestNote')}</p></div>
  <div class="grid2 top-space"><div class="card center"><div class="money">${S.user?1:0}</div><div>${t('usersCount')}</div></div><div class="card center"><div class="money">${S.jobs.length}</div><div>${t('jobsCount')}</div></div></div>
  <div class="card stack"><button class="secondary" onclick="S.admin=false;save();history.replaceState(null,'',location.pathname);render()">${t('closeAdmin')}</button><button class="danger" onclick="reset()">${t('clear')}</button></div></section>`;
 }
-function home(){bottom('start');if(S.role==='client')clientHome();else helperHome()}
+function home(){
+ if(!APP_NAV_LOCK)pushScreen('home');bottom('start');if(S.role==='client')clientHome();else helperHome()}
 function clientHome(){const active=S.jobs.find(j=>!['completed','cancelled'].includes(j.status));main.innerHTML=`<section class="screen"><h1>${t('needQuestion')}</h1><button onclick="createJob()">+ ${t('needHelp').toUpperCase()}</button>${active?`<div class="card top-space"><h2>${t('activeJob')}</h2>${jobCard(active,true)}</div>`:''}<div class="card"><h3>${t('howWorks')}</h3><div class="timeline small"><div class="tl"><span class="dot"></span><div>${t('step1')}</div></div><div class="tl"><span class="dot"></span><div>${t('step2')}</div></div><div class="tl"><span class="dot"></span><div>${t('step3')}</div></div></div></div></section>`}
 function helperHome(){const available=S.jobs.filter(j=>['published','searching'].includes(j.status));const mine=S.jobs.find(j=>j.helper===S.user.name&&!['completed','cancelled'].includes(j.status));main.innerHTML=`<section class="screen"><div class="card row between"><div><h2 style="margin:0">${t('available')}</h2><div class="muted small">${t('visibility')}</div></div><button class="mini ${S.helperAvailable?'ok':'ghost'}" onclick="toggleAvail()">${S.helperAvailable?'ON':'OFF'}</button></div>${mine?`<div class="card"><h2>${t('yourActive')}</h2>${jobCard(mine,true)}</div>`:''}<h2>${t('availableJobs')}</h2>${available.length?available.map(j=>`<div class="card job">${jobCard(j,false)}<button onclick="interest('${j.id}')" ${!S.helperAvailable?'disabled':''}>${t('interested')}</button></div>`).join(''):`<div class="card center muted">${t('noJobs')}</div>`}</section>`}
 function toggleAvail(){S.helperAvailable=!S.helperAvailable;save();helperHome()}
@@ -391,9 +438,11 @@ function rate(id,n){S.ratings.push({job:id,role:S.role,value:n,at:Date.now()});s
 function messages(){bottom('msg');const j=job();main.innerHTML=`<section class="screen"><h1>Wiadomości</h1>${j?`<div class="card"><h3>${esc(j.category)}</h3><div id="chat" class="stack"><div class="notice">Czat testowy jest lokalny na tym urządzeniu. Synchronizację między telefonami podłączymy przez backend w następnym kroku technicznym.</div></div><label class="top-space">Wiadomość<input id="chatMsg" placeholder="Napisz wiadomość"></label><button class="top-space" onclick="sendChat()">Wyślij</button></div>`:`<div class="card muted">Brak aktywnego zlecenia.</div>`}</section>`}
 function sendChat(){if(!chatMsg.value.trim())return;alert('Wiadomość zapisana lokalnie w prototypie.');chatMsg.value=''}
 function earnings(){bottom('earn');const done=S.jobs.filter(j=>j.helper===S.user.name&&j.status==='completed');const total=done.reduce((a,j)=>a+j.price*.9,0);main.innerHTML=`<section class="screen"><h1>Zarobki</h1><div class="card"><div class="muted small">Szacunkowo w MVP</div><div class="money">${money(total)}</div></div>${done.map(j=>`<div class="card">${jobCard(j,false)}</div>`).join('')||'<div class="card muted">Brak zakończonych zleceń.</div>'}</section>`}
-function profile(){bottom('profile');main.innerHTML=`<section class="screen"><h1>${t('profile')}</h1><div class="card"><h2>${esc(S.user.name)}</h2><div class="muted">${esc(S.user.email||'')}<br>${esc(S.user.phone||'')}<br>${esc(S.user.city||'')}</div><div class="sep"></div><span class="tag">e-mail ✓ TEST</span><span class="tag">telefon ✓ TEST</span><span class="tag">KYC – test</span><div class="sep"></div><div class="row between"><span>${t('language')}</span><strong>${S.lang==='de'?'Deutsch':S.lang==='en'?'English':'Polski'}</strong></div></div><div class="card stack"><button class="secondary" onclick="S.role=null;save();chooseRole()">${t('switchRole')}</button><button class="secondary" onclick="S.lang=null;save();welcome()">${t('changeLanguage')}</button><button class="secondary" onclick="exportState()">${t('export')}</button><button class="secondary" onclick="logout()">${t('logout')}</button><button class="danger" onclick="deleteAccount()">${t('deleteAccount')}</button></div></section>`}
+function profile(){
+ if(!APP_NAV_LOCK)pushScreen('profile');bottom('profile');main.innerHTML=`<section class="screen"><h1>${t('profile')}</h1><div class="card"><h2>${esc(S.user.name)}</h2><div class="muted">${esc(S.user.email||'')}<br>${esc(S.user.phone||'')}<br>${esc(S.user.city||'')}</div><div class="sep"></div><span class="tag">e-mail ✓ TEST</span><span class="tag">telefon ✓ TEST</span><span class="tag">KYC – test</span><div class="sep"></div><div class="row between"><span>${t('language')}</span><strong>${S.lang==='de'?'Deutsch':S.lang==='en'?'English':'Polski'}</strong></div></div><div class="card stack"><button class="secondary" onclick="S.role=null;save();chooseRole()">${t('switchRole')}</button><button class="secondary" onclick="S.lang=null;save();welcome()">${t('changeLanguage')}</button><button class="secondary" onclick="exportState()">${t('export')}</button><button class="secondary" onclick="logout()">${t('logout')}</button><button class="danger" onclick="deleteAccount()">${t('deleteAccount')}</button></div></section>`}
 function exportState(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='rebu-mvp-test.json';a.click();URL.revokeObjectURL(u)}
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});if(window.caches)caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{})}
+if(!(history.state&&history.state.rebuScreen))replaceScreen('boot');
 render();
 </script>
 </body>

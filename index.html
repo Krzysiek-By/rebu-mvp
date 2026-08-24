@@ -105,6 +105,7 @@ function goScreen(name,fromPop=false){
  APP_NAV_LOCK=fromPop;
  try{
   if(name==='welcome')welcome();
+  else if(name==='loggedout')loggedOutScreen();
   else if(name==='auth')authLanding();
   else if(name==='register')onboarding();
   else if(name==='login')loginScreen();
@@ -121,8 +122,10 @@ window.addEventListener('popstate',(ev)=>{
  const name=ev.state&&ev.state.rebuScreen;
  const protectedScreens=['verify','limited','role','home','profile','admin'];
  if(!(S&&S.user&&S.loggedIn)){
-   if(name && protectedScreens.includes(name)){welcome();return}
+   if(name && protectedScreens.includes(name)){loggedOutScreen();return}
+   if(name==='loggedout'){loggedOutScreen();return}
    if(name==='login' || name==='register' || name==='auth'){goScreen(name,true);return}
+   if(S&&S.user){loggedOutScreen();return}
    welcome();return
  }
  if(name){goScreen(name,true);return}
@@ -171,7 +174,7 @@ const I18N={
   payment:'Płatność – tryb testowy', status:'Status', amount:'Kwota', paymentHint:'Realny operator płatności nie jest jeszcze podłączony. Ten ekran służy do testowania logiki.',
   changePrice:'Zmień cenę', cancelJob:'Anuluj zlecenie', confirmDone:'POTWIERDZAM WYKONANIE', reportProblem:'ZGŁOŚ PROBLEM', rateHelper:'Oceń wykonawcę', confirm:'POTWIERDZAM', cannot:'NIE MOGĘ', going:'JADĘ', here:'JESTEM NA MIEJSCU', startJob:'ROZPOCZNIJ ZLECENIE', extraWork:'Zaproponuj dodatkową pracę', finished:'ZAKOŃCZYŁEM', extraPay:'Dodatkowa praca / dopłata',
   chatLocal:'Czat testowy jest lokalny na tym urządzeniu. Synchronizację między telefonami podłączymy przez backend w następnym kroku technicznym.', message:'Wiadomość', send:'Wyślij', noActive:'Brak aktywnego zlecenia.', estimated:'Szacunkowo w MVP', noFinished:'Brak zakończonych zleceń.', switchRole:'Przełącz rolę', export:'Eksportuj dane testowe', clear:'Wyczyść cały test', language:'Język aplikacji', changeLanguage:'Zmień język',
-  logout:'Wyloguj się', deleteAccount:'Usuń moje konto', deleteConfirm:'Na pewno usunąć konto testowe?', login:'Mam już konto', loginTitle:'Zaloguj się', password:'Hasło', forgot:'Nie pamiętam hasła', resetPassword:'Ustaw nowe hasło', newPassword:'Nowe hasło', back:'Wróć', browserBack:'← Wróć', verifyEmail:'Potwierdź e-mail', verifySms:'Potwierdź numer telefonu', code:'Kod', verify:'Potwierdź', emailSentTest:'TEST: prawdziwy e-mail nie jest jeszcze wysyłany. Użyj kodu poniżej.', smsSentTest:'TEST: prawdziwy SMS nie jest jeszcze wysyłany. Użyj kodu poniżej.', wrongCode:'Nieprawidłowy kod testowy', wrongLogin:'Nieprawidłowy e-mail lub hasło', accountReady:'Konto testowe aktywne', adminPanel:'Panel administratora', adminLogin:'Wejście administratora', adminPin:'PIN administratora', adminTestNote:'To jest tylko testowy panel lokalny. Prawdziwe zabezpieczenie administratora powstanie z backendem.', usersCount:'Użytkownicy testowi', jobsCount:'Zlecenia testowe', closeAdmin:'Wyjdź z panelu', resetDone:'Hasło testowe zostało zmienione.', myAccount:'Moje konto', signInAction:'Zaloguj się', availability:'Dostępność', noAccount:'Nie masz jeszcze konta?', createNew:'Załóż nowe konto',
+  logout:'Wyloguj się', deleteAccount:'Usuń moje konto', deleteConfirm:'Na pewno usunąć konto testowe?', login:'Mam już konto', loginTitle:'Zaloguj się', password:'Hasło', forgot:'Nie pamiętam hasła', resetPassword:'Ustaw nowe hasło', newPassword:'Nowe hasło', back:'Wróć', browserBack:'← Wróć', verifyEmail:'Potwierdź e-mail', verifySms:'Potwierdź numer telefonu', code:'Kod', verify:'Potwierdź', emailSentTest:'TEST: prawdziwy e-mail nie jest jeszcze wysyłany. Użyj kodu poniżej.', smsSentTest:'TEST: prawdziwy SMS nie jest jeszcze wysyłany. Użyj kodu poniżej.', wrongCode:'Nieprawidłowy kod testowy', wrongLogin:'Nieprawidłowy e-mail lub hasło', accountReady:'Konto testowe aktywne', adminPanel:'Panel administratora', adminLogin:'Wejście administratora', adminPin:'PIN administratora', adminTestNote:'To jest tylko testowy panel lokalny. Prawdziwe zabezpieczenie administratora powstanie z backendem.', usersCount:'Użytkownicy testowi', jobsCount:'Zlecenia testowe', closeAdmin:'Wyjdź z panelu', resetDone:'Hasło testowe zostało zmienione.', logoutSuccess:'Wylogowałeś się poprawnie', loginAgain:'Zaloguj się ponownie', myAccount:'Moje konto', signInAction:'Zaloguj się', availability:'Dostępność', noAccount:'Nie masz jeszcze konta?', createNew:'Załóż nowe konto',
   countryAuto:'Język startowy dobrany automatycznie. Możesz go zmienić poniżej.', verificationTitle:'Weryfikacja konta', verificationIntro:'Dokończ weryfikację, aby korzystać ze wszystkich funkcji REBU.', basicData:'Dane podstawowe', identity:'Tożsamość / KYC', verified:'Zweryfikowano', notVerified:'Do weryfikacji', continueVerification:'Kontynuuj weryfikację', testFullVerify:'TEST: zakończ pełną weryfikację', limitedOffers:'Zobacz ograniczone oferty do 5 km', limitedInfo:'Bez pełnej weryfikacji widzisz tylko kategorię, przybliżoną odległość, termin i orientacyjną cenę. Bez zdjęć, pełnego opisu, danych klienta i możliwości zgłoszenia.', finishToSee:'Dokończ weryfikację, aby zobaczyć szczegóły i zgłosić zainteresowanie.', birthDate:'Data urodzenia', fullAddress:'Adres zamieszkania', needBirth:'Podaj datę urodzenia', needAddress:'Podaj adres', showPassword:'Pokaż/ukryj hasło', goToAccount:'Przejdź dalej',
   registeredOnly:'Oferty i zlecenia REBU są dostępne wyłącznie po rejestracji lub zalogowaniu.'
  },
@@ -191,7 +194,7 @@ const I18N={
   payment:'Zahlung – Testmodus', status:'Status', amount:'Betrag', paymentHint:'Ein echter Zahlungsanbieter ist noch nicht verbunden. Dieser Bildschirm testet nur die Logik.',
   changePrice:'Preis ändern', cancelJob:'Auftrag stornieren', confirmDone:'AUSFÜHRUNG BESTÄTIGEN', reportProblem:'PROBLEM MELDEN', rateHelper:'Helfer bewerten', confirm:'BESTÄTIGEN', cannot:'ICH KANN NICHT', going:'ICH FAHRE LOS', here:'ICH BIN VOR ORT', startJob:'AUFTRAG STARTEN', extraWork:'Zusatzarbeit vorschlagen', finished:'FERTIG', extraPay:'Zusatzarbeit / Aufpreis',
   chatLocal:'Der Testchat ist lokal auf diesem Gerät. Die Synchronisierung zwischen Geräten folgt mit dem Backend.', message:'Nachricht', send:'Senden', noActive:'Kein aktiver Auftrag.', estimated:'Geschätzt im MVP', noFinished:'Keine abgeschlossenen Aufträge.', switchRole:'Rolle wechseln', export:'Testdaten exportieren', clear:'Test vollständig löschen', language:'App-Sprache', changeLanguage:'Sprache ändern',
-  logout:'Abmelden', deleteAccount:'Mein Konto löschen', deleteConfirm:'Testkonto wirklich löschen?', login:'Ich habe bereits ein Konto', loginTitle:'Anmelden', password:'Passwort', forgot:'Passwort vergessen', resetPassword:'Neues Passwort festlegen', newPassword:'Neues Passwort', back:'Zurück', browserBack:'← Zurück', verifyEmail:'E-Mail bestätigen', verifySms:'Telefonnummer bestätigen', code:'Code', verify:'Bestätigen', emailSentTest:'TEST: Eine echte E-Mail wird noch nicht gesendet. Verwende den Code unten.', smsSentTest:'TEST: Eine echte SMS wird noch nicht gesendet. Verwende den Code unten.', wrongCode:'Falscher Testcode', wrongLogin:'Falsche E-Mail oder falsches Passwort', accountReady:'Testkonto ist aktiv', adminPanel:'Admin-Bereich', adminLogin:'Administrator-Zugang', adminPin:'Administrator-PIN', adminTestNote:'Dies ist nur ein lokaler Testbereich. Echte Admin-Sicherheit kommt mit dem Backend.', usersCount:'Testnutzer', jobsCount:'Testaufträge', closeAdmin:'Admin-Bereich verlassen', resetDone:'Testpasswort wurde geändert.', myAccount:'Mein Konto', signInAction:'Anmelden', availability:'Verfügbarkeit', noAccount:'Noch kein Konto?', createNew:'Neues Konto erstellen',
+  logout:'Abmelden', deleteAccount:'Mein Konto löschen', deleteConfirm:'Testkonto wirklich löschen?', login:'Ich habe bereits ein Konto', loginTitle:'Anmelden', password:'Passwort', forgot:'Passwort vergessen', resetPassword:'Neues Passwort festlegen', newPassword:'Neues Passwort', back:'Zurück', browserBack:'← Zurück', verifyEmail:'E-Mail bestätigen', verifySms:'Telefonnummer bestätigen', code:'Code', verify:'Bestätigen', emailSentTest:'TEST: Eine echte E-Mail wird noch nicht gesendet. Verwende den Code unten.', smsSentTest:'TEST: Eine echte SMS wird noch nicht gesendet. Verwende den Code unten.', wrongCode:'Falscher Testcode', wrongLogin:'Falsche E-Mail oder falsches Passwort', accountReady:'Testkonto ist aktiv', adminPanel:'Admin-Bereich', adminLogin:'Administrator-Zugang', adminPin:'Administrator-PIN', adminTestNote:'Dies ist nur ein lokaler Testbereich. Echte Admin-Sicherheit kommt mit dem Backend.', usersCount:'Testnutzer', jobsCount:'Testaufträge', closeAdmin:'Admin-Bereich verlassen', resetDone:'Testpasswort wurde geändert.', logoutSuccess:'Du wurdest erfolgreich abgemeldet', loginAgain:'Erneut anmelden', myAccount:'Mein Konto', signInAction:'Anmelden', availability:'Verfügbarkeit', noAccount:'Noch kein Konto?', createNew:'Neues Konto erstellen',
   countryAuto:'Die Startsprache wurde automatisch gewählt. Du kannst sie unten ändern.', verificationTitle:'Kontoverifizierung', verificationIntro:'Schließe die Verifizierung ab, um alle REBU-Funktionen zu nutzen.', basicData:'Grunddaten', identity:'Identität / KYC', verified:'Verifiziert', notVerified:'Zu verifizieren', continueVerification:'Verifizierung fortsetzen', testFullVerify:'TEST: vollständige Verifizierung abschließen', limitedOffers:'Eingeschränkte Aufträge bis 5 km ansehen', limitedInfo:'Ohne vollständige Verifizierung siehst du nur Kategorie, ungefähre Entfernung, Termin und Richtpreis. Keine Fotos, keine vollständige Beschreibung, keine Kundendaten und kein Interesse-Button.', finishToSee:'Schließe die Verifizierung ab, um Details zu sehen und Interesse zu melden.', birthDate:'Geburtsdatum', fullAddress:'Wohnadresse', needBirth:'Geburtsdatum eingeben', needAddress:'Adresse eingeben', showPassword:'Passwort anzeigen/ausblenden', goToAccount:'Weiter',
   registeredOnly:'REBU-Angebote und Aufträge sind nur nach Registrierung oder Anmeldung verfügbar.'
  },
@@ -211,7 +214,7 @@ const I18N={
   payment:'Payment – test mode', status:'Status', amount:'Amount', paymentHint:'A real payment provider is not connected yet. This screen is for testing logic.',
   changePrice:'Change price', cancelJob:'Cancel job', confirmDone:'CONFIRM COMPLETION', reportProblem:'REPORT PROBLEM', rateHelper:'Rate helper', confirm:'CONFIRM', cannot:'I CANNOT', going:'ON MY WAY', here:'I AM HERE', startJob:'START JOB', extraWork:'Propose extra work', finished:'FINISHED', extraPay:'Extra work / additional payment',
   chatLocal:'The test chat is local to this device. Cross-device synchronization will be added with the backend.', message:'Message', send:'Send', noActive:'No active job.', estimated:'Estimated in MVP', noFinished:'No completed jobs.', switchRole:'Switch role', export:'Export test data', clear:'Clear all test data', language:'App language', changeLanguage:'Change language',
-  logout:'Log out', deleteAccount:'Delete my account', deleteConfirm:'Delete the test account?', login:'I already have an account', loginTitle:'Log in', password:'Password', forgot:'Forgot password', resetPassword:'Set new password', newPassword:'New password', back:'Back', browserBack:'← Back', verifyEmail:'Confirm e-mail', verifySms:'Confirm phone number', code:'Code', verify:'Confirm', emailSentTest:'TEST: A real e-mail is not sent yet. Use the code below.', smsSentTest:'TEST: A real SMS is not sent yet. Use the code below.', wrongCode:'Incorrect test code', wrongLogin:'Incorrect e-mail or password', accountReady:'Test account is active', adminPanel:'Admin panel', adminLogin:'Administrator access', adminPin:'Administrator PIN', adminTestNote:'This is only a local test admin panel. Real admin security will be added with the backend.', usersCount:'Test users', jobsCount:'Test jobs', closeAdmin:'Leave admin panel', resetDone:'Test password changed.', myAccount:'My account', signInAction:'Log in', availability:'Availability', noAccount:'No account yet?', createNew:'Create a new account',
+  logout:'Log out', deleteAccount:'Delete my account', deleteConfirm:'Delete the test account?', login:'I already have an account', loginTitle:'Log in', password:'Password', forgot:'Forgot password', resetPassword:'Set new password', newPassword:'New password', back:'Back', browserBack:'← Back', verifyEmail:'Confirm e-mail', verifySms:'Confirm phone number', code:'Code', verify:'Confirm', emailSentTest:'TEST: A real e-mail is not sent yet. Use the code below.', smsSentTest:'TEST: A real SMS is not sent yet. Use the code below.', wrongCode:'Incorrect test code', wrongLogin:'Incorrect e-mail or password', accountReady:'Test account is active', adminPanel:'Admin panel', adminLogin:'Administrator access', adminPin:'Administrator PIN', adminTestNote:'This is only a local test admin panel. Real admin security will be added with the backend.', usersCount:'Test users', jobsCount:'Test jobs', closeAdmin:'Leave admin panel', resetDone:'Test password changed.', logoutSuccess:'You have been logged out successfully', loginAgain:'Log in again', myAccount:'My account', signInAction:'Log in', availability:'Availability', noAccount:'No account yet?', createNew:'Create a new account',
   countryAuto:'The starting language was selected automatically. You can change it below.', verificationTitle:'Account verification', verificationIntro:'Complete verification to use all REBU features.', basicData:'Basic details', identity:'Identity / KYC', verified:'Verified', notVerified:'Verification needed', continueVerification:'Continue verification', testFullVerify:'TEST: complete full verification', limitedOffers:'View limited jobs within 5 km', limitedInfo:'Without full verification you only see category, approximate distance, timing and an indicative price. No photos, full description, client details or interest button.', finishToSee:'Complete verification to view details and express interest.', birthDate:'Date of birth', fullAddress:'Home address', needBirth:'Enter date of birth', needAddress:'Enter address', showPassword:'Show/hide password', goToAccount:'Continue',
   registeredOnly:'REBU offers and jobs are available only after registration or login.'
  }
@@ -248,12 +251,17 @@ function logout(){
  S.loggedIn=false;
  S.role=null;
  S.admin=false;
- S.welcomeDone=false;
+ S.welcomeDone=true;
  save();
+
  const btn=document.getElementById('profileQuick');
  if(btn)btn.classList.add('hide');
- try{history.replaceState({rebuScreen:'welcome',loggedOut:true},'',location.pathname+location.search)}catch(e){}
- welcome();
+
+ try{
+   history.replaceState({rebuScreen:'loggedout',loggedOut:true},'',location.pathname+location.search);
+ }catch(e){}
+
+ loggedOutScreen();
 }
 function deleteAccount(){
  if(!confirm(t('deleteConfirm')))return;
@@ -320,6 +328,27 @@ function welcome(){
      <button class="${S.lang==='en'?'':'secondary'}" onclick="setLang('en')">English</button>
      <button class="${S.lang==='pl'?'':'secondary'}" onclick="setLang('pl')">Polski</button>
      <button onclick="finishWelcome()">${t('goToAccount')}</button>
+   </div>
+ </section>`;
+}
+function loggedOutScreen(){
+ setTimeout(()=>setScreenId('S01A'),0);
+ nav.classList.add('hide');
+ document.body.classList.remove('welcome-mode');
+
+ // Po wylogowaniu avatar i kropka nie mogą być widoczne.
+ const btn=document.getElementById('profileQuick');
+ if(btn)btn.classList.add('hide');
+
+ rolePill.textContent='TEST / MVP';
+
+ main.innerHTML=`<section class="screen">
+   <div class="center" style="padding-top:42px">
+     <div class="emoji">✓</div>
+     <h1>${t('logoutSuccess')}</h1>
+   </div>
+   <div class="card stack">
+     <button onclick="loginScreen()">${t('loginAgain')}</button>
    </div>
  </section>`;
 }

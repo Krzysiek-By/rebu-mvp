@@ -468,7 +468,12 @@ function deleteAccount(){
 function esc(s=''){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
 function money(n){return Number(n||0).toLocaleString('pl-PL',{style:'currency',currency:'EUR'})}
 function job(){return S.jobs.find(j=>j.id===S.currentJobId)||S.jobs[0]}
-function setRole(r){S.role=r;save();render()}
+function setRole(r){
+ S.role=r;
+ S.currentScreen='S08';
+ save();
+ render();
+}
 function bottom(active){
  const items=S.role==='client'?[['start',t('start')],['jobs',t('jobs')],['msg',t('messages')],['profile',t('profile')]]:[['start',t('start')],['jobs',t('jobs')],['earn',t('earnings')],['profile',t('profile')]];
  nav.classList.remove('hide');nav.innerHTML=items.map(([id,label])=>`<button class="${active===id?'active':''}" onclick="route('${id}')">${label}</button>`).join('')
@@ -505,7 +510,7 @@ function restoreCurrentScreen(){
 
  if(id==='S06' && !S.user.fullVerified){verificationHub();return true}
  if(id==='S06.1' && !S.user.fullVerified){limitedOffers();return true}
- if(id==='S07' && S.user.fullVerified){chooseRole();return true}
+ if(id==='S07' && S.user.fullVerified && !S.role){chooseRole();return true}
  if(id==='S09'){profile();return true}
  return false;
 }

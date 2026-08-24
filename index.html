@@ -532,7 +532,7 @@ function restoreCurrentScreen(){
  if(id==='S09'){profile();return true}
  if(id==='S08.2' && S.role==='client'){jobReviewScreen();return true}
  if(id==='S08.1' && S.role==='client'){createJob();return true}
- if(id==='S08' && S.role==='client'){clientHome();return true}
+ if(id==='S08' && S.role==='client'){home();return true}
  return false;
 }
 
@@ -861,14 +861,19 @@ function home(){
  setTimeout(()=>setScreenId('S08'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('home');bottom('start');if(S.role==='client')clientHome();else helperHome()}
-function clientHome(){const active=S.jobs.find(j=>!['completed','cancelled'].includes(j.status));main.innerHTML=`<section class="screen"><h1>${t('needQuestion')}</h1><button onclick="createJob()">+ ${t('needHelp').toUpperCase()}</button>${active?`<div class="card top-space"><h2>${t('activeJob')}</h2>${jobCard(active,true)}</div>`:''}<div class="card"><h3>${t('howWorks')}</h3><div class="timeline small"><div class="tl"><span class="dot"></span><div>${t('step1')}</div></div><div class="tl"><span class="dot"></span><div>${t('step2')}</div></div><div class="tl"><span class="dot"></span><div>${t('step3')}</div></div></div></div></section>`}
+function clientHome(){
+ const jobs=Array.isArray(S.jobs)?S.jobs:[];
+ if(!Array.isArray(S.jobs)){S.jobs=[];save();}
+ const active=jobs.find(j=>!['completed','cancelled'].includes(j.status));
+ main.innerHTML=`<section class="screen"><h1>${t('needQuestion')}</h1><button onclick="createJob()">+ ${t('needHelp').toUpperCase()}</button>${active?`<div class="card top-space"><h2>${t('activeJob')}</h2>${jobCard(active,true)}</div>`:''}<div class="card"><h3>${t('howWorks')}</h3><div class="timeline small"><div class="tl"><span class="dot"></span><div>${t('step1')}</div></div><div class="tl"><span class="dot"></span><div>${t('step2')}</div></div><div class="tl"><span class="dot"></span><div>${t('step3')}</div></div></div></div></section>`;
+}
 function helperHome(){const available=S.jobs.filter(j=>['published','searching'].includes(j.status));const mine=S.jobs.find(j=>j.helper===S.user.name&&!['completed','cancelled'].includes(j.status));main.innerHTML=`<section class="screen"><div class="card row between"><div><h2 style="margin:0">${t('available')}</h2><div class="muted small">${t('visibility')}</div></div><button class="mini ${S.helperAvailable?'ok':'ghost'}" onclick="toggleAvail()">${S.helperAvailable?'ON':'OFF'}</button></div>${mine?`<div class="card"><h2>${t('yourActive')}</h2>${jobCard(mine,true)}</div>`:''}<h2>${t('availableJobs')}</h2>${available.length?available.map(j=>`<div class="card job">${jobCard(j,false)}<button onclick="interest('${j.id}')" ${!S.helperAvailable?'disabled':''}>${t('interested')}</button></div>`).join(''):`<div class="card center muted">${t('noJobs')}</div>`}</section>`}
 function toggleAvail(){S.helperAvailable=!S.helperAvailable;save();helperHome()}
 function createJob(){
  setTimeout(()=>setScreenId('S08.1'),0);
  S.currentScreen='S08.1'; save();
  document.body.classList.remove('welcome-mode');
- nav.classList.remove('hide');
+ bottom('jobs');
 
  const p=S.jobDraft||{};
  const lang=S.lang||'de';
@@ -988,6 +993,8 @@ function saveJobDraftAndReview(){
 function jobReviewScreen(){
  setTimeout(()=>setScreenId('S08.2'),0);
  S.currentScreen='S08.2';save();
+ document.body.classList.remove('welcome-mode');
+ bottom('jobs');
  const p=S.jobDraft||{};
  const lang=S.lang||'de';
 

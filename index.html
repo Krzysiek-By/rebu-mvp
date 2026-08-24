@@ -232,6 +232,24 @@ input,select,textarea,button{max-width:100%}
   line-height:1.4!important;
   padding:12px 14px!important;
 }
+
+.job-form-grid{display:grid;gap:14px}
+.date-time-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.date-time-row{grid-template-columns:1fr}}
+.price-hint{
+  font-size:13px;color:#6b7280;margin-top:-4px;
+}
+.summary-row{
+  display:flex;justify-content:space-between;gap:16px;
+  padding:11px 0;border-bottom:1px solid #e5e7eb;
+}
+.summary-row:last-child{border-bottom:0}
+.summary-label{font-weight:700;color:#374151}
+.summary-value{text-align:right;color:#111827}
+.tech-note-small{
+  font-size:12px!important;line-height:1.35!important;
+  color:#6b7280!important;padding:10px 12px!important;
+}
 </style>
 </head>
 <body>
@@ -337,7 +355,7 @@ const I18N={
   chatLocal:'Czat testowy jest lokalny na tym urządzeniu. Synchronizację między telefonami podłączymy przez backend w następnym kroku technicznym.', message:'Wiadomość', send:'Wyślij', noActive:'Brak aktywnego zlecenia.', estimated:'Szacunkowo w MVP', noFinished:'Brak zakończonych zleceń.', switchRole:'Przełącz rolę', export:'Eksportuj dane testowe', clear:'Wyczyść cały test', language:'Język aplikacji', changeLanguage:'Zmień język',
   logout:'Wyloguj się', deleteAccount:'Usuń moje konto', deleteConfirm:'Na pewno usunąć konto testowe?', login:'Mam już konto', loginTitle:'Zaloguj się', password:'Hasło', forgot:'Nie pamiętam hasła', resetPassword:'Ustaw nowe hasło', newPassword:'Nowe hasło', back:'Wróć', browserBack:'← Wróć', verifyEmail:'Potwierdź e-mail', verifySms:'Potwierdź numer telefonu', code:'Kod', verify:'Potwierdź', emailSentTest:'TEST: prawdziwy e-mail nie jest jeszcze wysyłany. Użyj kodu poniżej.', smsSentTest:'TEST: prawdziwy SMS nie jest jeszcze wysyłany. Użyj kodu poniżej.', wrongCode:'Nieprawidłowy kod testowy', wrongLogin:'Nieprawidłowy e-mail lub hasło', accountReady:'Konto testowe aktywne', adminPanel:'Panel administratora', adminLogin:'Wejście administratora', adminPin:'PIN administratora', adminTestNote:'To jest tylko testowy panel lokalny. Prawdziwe zabezpieczenie administratora powstanie z backendem.', usersCount:'Użytkownicy testowi', jobsCount:'Zlecenia testowe', closeAdmin:'Wyjdź z panelu', resetDone:'Hasło testowe zostało zmienione.', logoutSuccess:'Wylogowałeś się poprawnie', loginAgain:'Zaloguj się ponownie', myAccount:'Moje konto', signInAction:'Zaloguj się', availability:'Dostępność', noAccount:'Nie masz jeszcze konta?', createNew:'Załóż nowe konto',
   countryAuto:'Język startowy dobrany automatycznie. Możesz go zmienić poniżej.', verificationTitle:'Weryfikacja konta', verificationIntro:'Dokończ weryfikację, aby korzystać ze wszystkich funkcji REBU.', basicData:'Dane podstawowe', identity:'Tożsamość / KYC', verified:'Zweryfikowano', notVerified:'Do weryfikacji', continueVerification:'Kontynuuj weryfikację', testFullVerify:'KYC – zakończ testowo', limitedOffers:'Zlecenia do 5 km', limitedInfo:'Bez pełnej weryfikacji widzisz tylko kategorię, przybliżoną odległość, termin i orientacyjną cenę.', finishToSee:'Dokończ weryfikację, aby zobaczyć szczegóły.', birthDate:'Data urodzenia', fullAddress:'Adres zamieszkania', needBirth:'Podaj datę urodzenia', needAddress:'Podaj adres', showPassword:'Pokaż/ukryj hasło', goToAccount:'Przejdź dalej',
-  streetHouse:'Ulica i numer domu', postalCode:'Kod pocztowy', addressHelp:'Zacznij pisać — system podpowiada poprawne nazwy. W razie potrzeby możesz wpisać ręcznie.', continueVerify:'Dalej do weryfikacji', phonePrefix:'Kierunkowy', manualAddress:'Możesz też wpisać adres ręcznie.', resendEmail:'Wyślij e-mail ponownie', resendSms:'Wyślij SMS ponownie', resendTest:'Kod testowy został wysłany ponownie.', registeredOnly:'Oferty i zlecenia REBU są dostępne wyłącznie po rejestracji lub zalogowaniu.'
+  streetHouse:'Ulica i numer domu', postalCode:'Kod pocztowy', addressHelp:'Zacznij pisać — system podpowiada poprawne nazwy. W razie potrzeby możesz wpisać ręcznie.', continueVerify:'Dalej do weryfikacji', phonePrefix:'Kierunkowy', manualAddress:'Możesz też wpisać adres ręcznie.', resendEmail:'Wyślij e-mail ponownie', resendSms:'Wyślij SMS ponownie', resendTest:'Kod testowy został wysłany ponownie.', newJobTitle:'Nowe zlecenie', otherDate:'Inny termin', todayTime:'Godzina dzisiaj', tomorrowTime:'Godzina jutro', chooseDate:'Wybierz datę', chooseTime:'Wybierz godzinę', streetAddress:'Dokładny adres', priceRange:'Typowy zakres', reviewJob:'Przejdź do podsumowania', jobSummary:'Podsumowanie zlecenia', publishConfirm:'Opublikuj zlecenie', editJob:'Wróć i popraw', urgentWindow:'Teraz = wykonanie w ciągu 1 godziny od publikacji', date:'Data', time:'Godzina', category:'Kategoria', description:'Opis', duration:'Przewidywany czas', address:'Adres', price:'Cena', registeredOnly:'Oferty i zlecenia REBU są dostępne wyłącznie po rejestracji lub zalogowaniu.'
  },
  de:{
   test:'Testmodus', client:'Auftraggeber', helper:'Helfer',
@@ -357,7 +375,7 @@ const I18N={
   chatLocal:'Der Testchat ist lokal auf diesem Gerät. Die Synchronisierung zwischen Geräten folgt mit dem Backend.', message:'Nachricht', send:'Senden', noActive:'Kein aktiver Auftrag.', estimated:'Geschätzt im MVP', noFinished:'Keine abgeschlossenen Aufträge.', switchRole:'Rolle wechseln', export:'Testdaten exportieren', clear:'Test vollständig löschen', language:'App-Sprache', changeLanguage:'Sprache ändern',
   logout:'Abmelden', deleteAccount:'Mein Konto löschen', deleteConfirm:'Testkonto wirklich löschen?', login:'Ich habe bereits ein Konto', loginTitle:'Anmelden', password:'Passwort', forgot:'Passwort vergessen', resetPassword:'Neues Passwort festlegen', newPassword:'Neues Passwort', back:'Zurück', browserBack:'← Zurück', verifyEmail:'E-Mail bestätigen', verifySms:'Telefonnummer bestätigen', code:'Code', verify:'Bestätigen', emailSentTest:'TEST: Eine echte E-Mail wird noch nicht gesendet. Verwende den Code unten.', smsSentTest:'TEST: Eine echte SMS wird noch nicht gesendet. Verwende den Code unten.', wrongCode:'Falscher Testcode', wrongLogin:'Falsche E-Mail oder falsches Passwort', accountReady:'Testkonto ist aktiv', adminPanel:'Admin-Bereich', adminLogin:'Administrator-Zugang', adminPin:'Administrator-PIN', adminTestNote:'Dies ist nur ein lokaler Testbereich. Echte Admin-Sicherheit kommt mit dem Backend.', usersCount:'Testnutzer', jobsCount:'Testaufträge', closeAdmin:'Admin-Bereich verlassen', resetDone:'Testpasswort wurde geändert.', logoutSuccess:'Du wurdest erfolgreich abgemeldet', loginAgain:'Erneut anmelden', myAccount:'Mein Konto', signInAction:'Anmelden', availability:'Verfügbarkeit', noAccount:'Noch kein Konto?', createNew:'Neues Konto erstellen',
   countryAuto:'Die Startsprache wurde automatisch gewählt. Du kannst sie unten ändern.', verificationTitle:'Kontoverifizierung', verificationIntro:'Schließe die Verifizierung ab, um alle REBU-Funktionen zu nutzen.', basicData:'Grunddaten', identity:'Identität / KYC', verified:'Verifiziert', notVerified:'Zu verifizieren', continueVerification:'Verifizierung fortsetzen', testFullVerify:'KYC im Test abschließen', limitedOffers:'Aufträge bis 5 km', limitedInfo:'Ohne vollständige Verifizierung siehst du nur Kategorie, ungefähre Entfernung, Termin und Richtpreis.', finishToSee:'Verifizierung abschließen, um Details zu sehen.', birthDate:'Geburtsdatum', fullAddress:'Wohnadresse', needBirth:'Geburtsdatum eingeben', needAddress:'Adresse eingeben', showPassword:'Passwort anzeigen/ausblenden', goToAccount:'Weiter',
-  streetHouse:'Straße und Hausnummer', postalCode:'PLZ', addressHelp:'Beginne zu tippen – das System schlägt korrekte Namen vor. Falls nötig, kannst du die Adresse manuell eingeben.', continueVerify:'Weiter zur Verifizierung', phonePrefix:'Vorwahl', manualAddress:'Die Adresse kann auch manuell eingegeben werden.', resendEmail:'E-Mail erneut senden', resendSms:'SMS erneut senden', resendTest:'Der Testcode wurde erneut gesendet.', registeredOnly:'REBU-Angebote und Aufträge sind nur nach Registrierung oder Anmeldung verfügbar.'
+  streetHouse:'Straße und Hausnummer', postalCode:'PLZ', addressHelp:'Beginne zu tippen – das System schlägt korrekte Namen vor. Falls nötig, kannst du die Adresse manuell eingeben.', continueVerify:'Weiter zur Verifizierung', phonePrefix:'Vorwahl', manualAddress:'Die Adresse kann auch manuell eingegeben werden.', resendEmail:'E-Mail erneut senden', resendSms:'SMS erneut senden', resendTest:'Der Testcode wurde erneut gesendet.', newJobTitle:'Neuer Auftrag', otherDate:'Anderer Termin', todayTime:'Uhrzeit heute', tomorrowTime:'Uhrzeit morgen', chooseDate:'Datum wählen', chooseTime:'Uhrzeit wählen', streetAddress:'Genaue Adresse', priceRange:'Typischer Bereich', reviewJob:'Zur Zusammenfassung', jobSummary:'Auftrag zusammenfassen', publishConfirm:'Auftrag veröffentlichen', editJob:'Zurück und ändern', urgentWindow:'Jetzt = Ausführung innerhalb von 1 Stunde ab Veröffentlichung', date:'Datum', time:'Uhrzeit', category:'Kategorie', description:'Beschreibung', duration:'Voraussichtliche Dauer', address:'Adresse', price:'Preis', registeredOnly:'REBU-Angebote und Aufträge sind nur nach Registrierung oder Anmeldung verfügbar.'
  },
  en:{
   test:'test mode', client:'Client', helper:'Helper',
@@ -377,7 +395,7 @@ const I18N={
   chatLocal:'The test chat is local to this device. Cross-device synchronization will be added with the backend.', message:'Message', send:'Send', noActive:'No active job.', estimated:'Estimated in MVP', noFinished:'No completed jobs.', switchRole:'Switch role', export:'Export test data', clear:'Clear all test data', language:'App language', changeLanguage:'Change language',
   logout:'Log out', deleteAccount:'Delete my account', deleteConfirm:'Delete the test account?', login:'I already have an account', loginTitle:'Log in', password:'Password', forgot:'Forgot password', resetPassword:'Set new password', newPassword:'New password', back:'Back', browserBack:'← Back', verifyEmail:'Confirm e-mail', verifySms:'Confirm phone number', code:'Code', verify:'Confirm', emailSentTest:'TEST: A real e-mail is not sent yet. Use the code below.', smsSentTest:'TEST: A real SMS is not sent yet. Use the code below.', wrongCode:'Incorrect test code', wrongLogin:'Incorrect e-mail or password', accountReady:'Test account is active', adminPanel:'Admin panel', adminLogin:'Administrator access', adminPin:'Administrator PIN', adminTestNote:'This is only a local test admin panel. Real admin security will be added with the backend.', usersCount:'Test users', jobsCount:'Test jobs', closeAdmin:'Leave admin panel', resetDone:'Test password changed.', logoutSuccess:'You have been logged out successfully', loginAgain:'Log in again', myAccount:'My account', signInAction:'Log in', availability:'Availability', noAccount:'No account yet?', createNew:'Create a new account',
   countryAuto:'The starting language was selected automatically. You can change it below.', verificationTitle:'Account verification', verificationIntro:'Complete verification to use all REBU features.', basicData:'Basic details', identity:'Identity / KYC', verified:'Verified', notVerified:'Verification needed', continueVerification:'Continue verification', testFullVerify:'Complete KYC in test mode', limitedOffers:'Jobs within 5 km', limitedInfo:'Without full verification you only see category, approximate distance, timing and an indicative price.', finishToSee:'Complete verification to view details.', birthDate:'Date of birth', fullAddress:'Home address', needBirth:'Enter date of birth', needAddress:'Enter address', showPassword:'Show/hide password', goToAccount:'Continue',
-  streetHouse:'Street and house number', postalCode:'Postcode', addressHelp:'Start typing — the system suggests correct names. You can still enter the address manually if needed.', continueVerify:'Continue to verification', phonePrefix:'Country code', manualAddress:'You can also enter the address manually.', resendEmail:'Resend e-mail', resendSms:'Resend SMS', resendTest:'The test code was sent again.', registeredOnly:'REBU offers and jobs are available only after registration or login.'
+  streetHouse:'Street and house number', postalCode:'Postcode', addressHelp:'Start typing — the system suggests correct names. You can still enter the address manually if needed.', continueVerify:'Continue to verification', phonePrefix:'Country code', manualAddress:'You can also enter the address manually.', resendEmail:'Resend e-mail', resendSms:'Resend SMS', resendTest:'The test code was sent again.', newJobTitle:'New job', otherDate:'Another date', todayTime:'Time today', tomorrowTime:'Time tomorrow', chooseDate:'Choose date', chooseTime:'Choose time', streetAddress:'Exact address', priceRange:'Typical range', reviewJob:'Review job', jobSummary:'Job summary', publishConfirm:'Publish job', editJob:'Back and edit', urgentWindow:'Now = complete within 1 hour of publication', date:'Date', time:'Time', category:'Category', description:'Description', duration:'Estimated time', address:'Address', price:'Price', registeredOnly:'REBU offers and jobs are available only after registration or login.'
  }
 };
 function t(k){return (I18N[S.lang||'pl']||I18N.pl)[k]||I18N.pl[k]||k}
@@ -512,6 +530,9 @@ function restoreCurrentScreen(){
  if(id==='S06.1' && !S.user.fullVerified){limitedOffers();return true}
  if(id==='S07' && S.user.fullVerified && !S.role){chooseRole();return true}
  if(id==='S09'){profile();return true}
+ if(id==='S08.2' && S.role==='client'){jobReviewScreen();return true}
+ if(id==='S08.1' && S.role==='client'){createJob();return true}
+ if(id==='S08' && S.role==='client'){clientHome();return true}
  return false;
 }
 
@@ -843,51 +864,180 @@ function home(){
 function clientHome(){const active=S.jobs.find(j=>!['completed','cancelled'].includes(j.status));main.innerHTML=`<section class="screen"><h1>${t('needQuestion')}</h1><button onclick="createJob()">+ ${t('needHelp').toUpperCase()}</button>${active?`<div class="card top-space"><h2>${t('activeJob')}</h2>${jobCard(active,true)}</div>`:''}<div class="card"><h3>${t('howWorks')}</h3><div class="timeline small"><div class="tl"><span class="dot"></span><div>${t('step1')}</div></div><div class="tl"><span class="dot"></span><div>${t('step2')}</div></div><div class="tl"><span class="dot"></span><div>${t('step3')}</div></div></div></div></section>`}
 function helperHome(){const available=S.jobs.filter(j=>['published','searching'].includes(j.status));const mine=S.jobs.find(j=>j.helper===S.user.name&&!['completed','cancelled'].includes(j.status));main.innerHTML=`<section class="screen"><div class="card row between"><div><h2 style="margin:0">${t('available')}</h2><div class="muted small">${t('visibility')}</div></div><button class="mini ${S.helperAvailable?'ok':'ghost'}" onclick="toggleAvail()">${S.helperAvailable?'ON':'OFF'}</button></div>${mine?`<div class="card"><h2>${t('yourActive')}</h2>${jobCard(mine,true)}</div>`:''}<h2>${t('availableJobs')}</h2>${available.length?available.map(j=>`<div class="card job">${jobCard(j,false)}<button onclick="interest('${j.id}')" ${!S.helperAvailable?'disabled':''}>${t('interested')}</button></div>`).join(''):`<div class="card center muted">${t('noJobs')}</div>`}</section>`}
 function toggleAvail(){S.helperAvailable=!S.helperAvailable;save();helperHome()}
-function createJob(){bottom('jobs');main.innerHTML=`<section class="screen"><h1>Nowe zlecenie</h1><div class="card stack"><label>Kategoria<select id="cat"><option>Pomoc przy meblach</option><option>Ogród</option><option>Prosta pomoc domowa</option><option>Pomoc techniczna</option><option>Odbiór / dostarczenie rzeczy</option></select></label><label>Opisz czego potrzebujesz<textarea id="desc" placeholder="Np. potrzebuję znieść szafę z 1. piętra do piwnicy"></textarea><span class="hint">AI w wersji produkcyjnej dopyta o brakujące informacje zależnie od kategorii.</span></label><div class="grid2"><label>Kiedy<select id="when"><option>Teraz</option><option>Dzisiaj</option><option>Jutro</option></select></label><label>Przewidywany czas<select id="duration"><option>15–30 min</option><option>30–60 min</option><option>1–2 h</option><option>2–3 h</option></select></label></div><label>Adres<input id="address" placeholder="ulica, miejscowość" value="${esc(S.user.city)}"></label><label>Proponowana cena (€)<input id="price" type="number" min="5" step="1" value="29"></label><div class="notice">GREEN/YELLOW/RED: na tym etapie symulacja. Dokładny adres zobaczy dopiero wybrany i potwierdzony wykonawca.</div><button onclick="publishJob()">OPUBLIKUJ ZLECENIE</button><button class="secondary" onclick="home()">Anuluj</button></div></section>`}
-function publishJob(){if(!desc.value.trim())return alert('Dodaj opis zlecenia');const id='J'+Date.now();const j={id,client:S.user.name,category:cat.value,desc:desc.value.trim(),when:when.value,duration:duration.value,address:address.value,price:Number(price.value),status:'published',interested:[],helper:null,events:[['Opublikowano zlecenie',Date.now()]],payment:'authorized'};S.jobs.unshift(j);S.currentJobId=id;save();jobDetail(id)}
-function jobCard(j,open){return `<div><div class="row between"><strong>${esc(j.category)}</strong><span class="tag">${esc(statusLabel(j.status))}</span></div><p>${esc(j.desc)}</p><div class="small muted">${esc(j.when)} • ${esc(j.duration)} • ${S.role==='helper'&&!j.helper?'okolica '+esc((j.address||'').split(',').pop()):esc(j.address)}</div><div class="row between top-space"><span class="money">${money(j.price)}</span>${open?`<button class="mini secondary" onclick="jobDetail('${j.id}')">Otwórz</button>`:''}</div></div>`}
-function statusLabel(s){return ({published:t('searching'),searching:t('searching'),selected:t('selected'),confirmed:t('confirmed'),enroute:t('enroute'),onsite:t('onsite'),inprogress:t('inprogress'),awaiting:t('awaiting'),completed:t('completed'),cancelled:t('cancelled'),dispute:t('problem')})[s]||s}
-function interest(id){const j=S.jobs.find(x=>x.id===id);if(!j)return;if(!j.interested.includes(S.user.name))j.interested.push(S.user.name);j.events.push(['Wykonawca zgłosił zainteresowanie',Date.now()]);save();alert(t('sent'));helperHome()}
-function jobsView(){bottom('jobs');main.innerHTML=`<section class="screen"><h1>Zlecenia</h1>${S.jobs.length?S.jobs.map(j=>`<div class="card">${jobCard(j,true)}</div>`).join(''):`<div class="card muted center">Brak zleceń.</div>`}</section>`}
-function jobDetail(id){S.currentJobId=id;save();const j=S.jobs.find(x=>x.id===id);if(!j)return home();bottom('jobs');let actions='';if(S.role==='client')actions=clientActions(j);else actions=helperActions(j);main.innerHTML=`<section class="screen"><div class="row between"><h1 style="margin-bottom:12px">Zlecenie</h1><span class="tag">${j.id}</span></div><div class="card">${jobCard(j,false)}</div><div class="status ${['completed'].includes(j.status)?'okay':''}">${statusLabel(j.status)}</div><div class="card top-space"><h3>Przebieg</h3><div class="timeline">${j.events.map((e,i)=>`<div class="tl"><span class="dot"></span><div><strong>${esc(e[0])}</strong><div class="muted small">${new Date(e[1]).toLocaleString('pl-PL')}</div></div></div>`).join('')}</div></div>${candidateBlock(j)}${actions}<div class="card"><h3>Płatność – tryb testowy</h3><div class="row between"><span>Status</span><strong>${esc(j.payment||'—')}</strong></div><div class="row between"><span>Kwota</span><strong>${money(j.price)}</strong></div><div class="notice top-space">Realny operator płatności nie jest jeszcze podłączony. Ten ekran służy do testowania logiki.</div></div></section>`}
-function candidateBlock(j){if(S.role!=='client'||!['published','searching','selected'].includes(j.status))return '';if(!j.interested.length)return `<div class="card"><h3>Zainteresowani</h3><p class="muted">Jeszcze nikt się nie zgłosił.</p></div>`;return `<div class="card"><h3>Zainteresowani</h3>${j.interested.map(n=>`<div class="row between"><div><strong>${esc(n)}</strong><div class="small muted">⭐ 5.0 • 0 zleceń • niezawodność 100%</div></div><button class="mini" onclick="selectHelper('${j.id}','${esc(n)}')">WYBIERZ</button></div>`).join('<div class="sep"></div>')}</div>`}
-function selectHelper(id,n){const j=S.jobs.find(x=>x.id===id);j.helper=n;j.status='selected';j.events.push(['Klient wybrał wykonawcę',Date.now()]);save();jobDetail(id)}
-function clientActions(j){let a='';if(['published','searching'].includes(j.status))a=`<div class="card stack"><button class="secondary" onclick="editPrice('${j.id}')">Zmień cenę</button><button class="danger" onclick="cancelJob('${j.id}')">Anuluj zlecenie</button></div>`;if(j.status==='awaiting')a=`<div class="card stack"><button class="ok" onclick="confirmComplete('${j.id}')">POTWIERDZAM WYKONANIE</button><button class="danger" onclick="problem('${j.id}')">ZGŁOŚ PROBLEM</button></div>`;if(j.status==='completed')a=`<div class="card"><h3>Oceń wykonawcę</h3><div class="grid2"><button class="secondary" onclick="rate('${j.id}',5)">⭐ 5</button><button class="secondary" onclick="rate('${j.id}',4)">⭐ 4</button></div></div>`;return a}
-function helperActions(j){if(j.helper&&j.helper!==S.user.name)return '';let a='';if(j.status==='selected')a=`<div class="card stack"><button class="ok" onclick="advance('${j.id}','confirmed','Wykonawca potwierdził zlecenie')">POTWIERDZAM</button><button class="danger" onclick="decline('${j.id}')">NIE MOGĘ</button></div>`;else if(j.status==='confirmed')a=`<div class="card"><button onclick="advance('${j.id}','enroute','Wykonawca ruszył w drogę')">JADĘ</button></div>`;else if(j.status==='enroute')a=`<div class="card"><button onclick="advance('${j.id}','onsite','Wykonawca potwierdził obecność na miejscu (GPS – symulacja)')">JESTEM NA MIEJSCU</button></div>`;else if(j.status==='onsite')a=`<div class="card stack"><button onclick="advance('${j.id}','inprogress','Rozpoczęto zlecenie')">ROZPOCZNIJ ZLECENIE</button><button class="secondary" onclick="extra('${j.id}')">Zaproponuj dodatkową pracę</button></div>`;else if(j.status==='inprogress')a=`<div class="card stack"><button class="ok" onclick="advance('${j.id}','awaiting','Wykonawca oznaczył pracę jako zakończoną')">ZAKOŃCZYŁEM</button><button class="secondary" onclick="extra('${j.id}')">Dodatkowa praca / dopłata</button></div>`;return a}
-function advance(id,s,msg){const j=S.jobs.find(x=>x.id===id);j.status=s;j.events.push([msg,Date.now()]);if(s==='awaiting')j.payment='awaiting_confirmation';save();jobDetail(id)}
-function decline(id){const j=S.jobs.find(x=>x.id===id);j.status='published';j.helper=null;j.events.push(['Wybrany wykonawca odmówił',Date.now()]);save();home()}
-function cancelJob(id){if(!confirm('Anulować zlecenie?'))return;const j=S.jobs.find(x=>x.id===id);j.status='cancelled';j.payment='released';j.events.push(['Zlecenie anulowano',Date.now()]);save();home()}
-function editPrice(id){const j=S.jobs.find(x=>x.id===id);const p=Number(prompt('Nowa cena (€):',j.price));if(!p||p<=0)return;j.events.push([`Cena zmieniona z ${money(j.price)} na ${money(p)}`,Date.now()]);j.price=p;save();jobDetail(id)}
-function extra(id){const j=S.jobs.find(x=>x.id===id);const p=Number(prompt('Kwota dopłaty (€):','5'));if(!p||p<=0)return;if(confirm(`Zaakceptować dodatkową pracę za ${money(p)}? (symulacja zgody obu stron)`)){j.events.push([`Dodatkowa praca zaakceptowana: +${money(p)}`,Date.now()]);j.price+=p;j.payment='authorization_updated';save();jobDetail(id)}}
-function confirmComplete(id){const j=S.jobs.find(x=>x.id===id);j.status='completed';j.payment='paid';j.events.push(['Klient potwierdził wykonanie',Date.now()]);j.events.push(['Płatność rozliczona – symulacja',Date.now()]);save();jobDetail(id)}
-function problem(id){const j=S.jobs.find(x=>x.id===id);j.status='dispute';j.payment='held';j.events.push(['Klient zgłosił problem – wypłata wstrzymana',Date.now()]);save();jobDetail(id)}
-function rate(id,n){S.ratings.push({job:id,role:S.role,value:n,at:Date.now()});save();alert('Ocena zapisana w trybie testowym.');home()}
-function messages(){bottom('msg');const j=job();main.innerHTML=`<section class="screen"><h1>Wiadomości</h1>${j?`<div class="card"><h3>${esc(j.category)}</h3><div id="chat" class="stack"><div class="notice">Czat testowy jest lokalny na tym urządzeniu. Synchronizację między telefonami podłączymy przez backend w następnym kroku technicznym.</div></div><label class="top-space">Wiadomość<input id="chatMsg" placeholder="Napisz wiadomość"></label><button class="top-space" onclick="sendChat()">Wyślij</button></div>`:`<div class="card muted">Brak aktywnego zlecenia.</div>`}</section>`}
-function sendChat(){if(!chatMsg.value.trim())return;alert('Wiadomość zapisana lokalnie w prototypie.');chatMsg.value=''}
-function earnings(){bottom('earn');const done=S.jobs.filter(j=>j.helper===S.user.name&&j.status==='completed');const total=done.reduce((a,j)=>a+j.price*.9,0);main.innerHTML=`<section class="screen"><h1>Zarobki</h1><div class="card"><div class="muted small">Szacunkowo w MVP</div><div class="money">${money(total)}</div></div>${done.map(j=>`<div class="card">${jobCard(j,false)}</div>`).join('')||'<div class="card muted">Brak zakończonych zleceń.</div>'}</section>`}
-function profile(){
- if(!(S.user&&S.loggedIn)){welcome();return}
- setTimeout(()=>setScreenId('S09'),0);
- setTimeout(updateHeaderProfile,0);
- if(!APP_NAV_LOCK)pushScreen('profile');
- bottom('profile');
- const active=activeJobForUser();
- const statusText=active?(S.lang==='de'?'Aktiv im Auftrag':S.lang==='en'?'Active in a job':'Aktywny w zleceniu'):(S.helperAvailable?(S.lang==='de'?'Online / verfügbar':S.lang==='en'?'Online / available':'Online / dostępny'):(S.lang==='de'?'Offline / nicht verfügbar':S.lang==='en'?'Offline / unavailable':'Offline / niedostępny'));
- main.innerHTML=`<section class="screen"><h1>${t('profile')}</h1>
- <div class="card"><h2>${esc(S.user.name)}</h2><div class="muted">${esc(S.user.email||'')}<br>${esc(S.user.phone||'')}<br>${esc(S.user.city||'')}</div>
- <div class="sep"></div><span class="tag">e-mail ✓ TEST</span><span class="tag">telefon ✓ TEST</span><span class="tag">KYC – test</span>
- <div class="sep"></div><div class="row between"><span>${t('language')}</span><strong>${S.lang==='de'?'Deutsch':S.lang==='en'?'English':'Polski'}</strong></div>
- <div class="sep"></div><div class="row between"><span>${t('availability')}</span><div class="row"><span class="status-dot ${active||S.helperAvailable?'online':''}" style="position:static;border-color:#fff"></span><strong>${statusText}</strong></div></div>
- </div>
- <div class="card stack">
- <button class="secondary" onclick="S.role=null;save();chooseRole()">${t('switchRole')}</button>
- ${active?'':`<button class="secondary" onclick="S.helperAvailable=!S.helperAvailable;save();profile()">${S.helperAvailable?'OFF':'ON'}</button>`}
- <button class="secondary" onclick="S.welcomeDone=false;save();welcome()">${t('changeLanguage')}</button>
- <button class="secondary" onclick="exportState()">${t('export')}</button>
- <button class="secondary" onclick="logout()">${t('logout')}</button>
- <button class="danger" onclick="deleteAccount()">${t('deleteAccount')}</button>
- </div></section>`;
+function createJob(){
+ setTimeout(()=>setScreenId('S08.1'),0);
+ S.currentScreen='S08.1'; save();
+ document.body.classList.remove('welcome-mode');
+ nav.classList.remove('hide');
+
+ const p=S.jobDraft||{};
+ const lang=S.lang||'de';
+ const catOptions = lang==='pl'
+  ? ['Pomoc przy meblach','Ogród','Drobna naprawa','Transport rzeczy','Zakupy / odbiór','Inne']
+  : lang==='de'
+  ? ['Möbelhilfe','Garten','Kleine Reparatur','Transport von Sachen','Einkauf / Abholung','Sonstiges']
+  : ['Furniture help','Garden','Small repair','Transport items','Shopping / pickup','Other'];
+
+ const whenOptions = lang==='pl'
+  ? [['now','Teraz'],['today','Dzisiaj'],['tomorrow','Jutro'],['other','Inny termin']]
+  : lang==='de'
+  ? [['now','Jetzt'],['today','Heute'],['tomorrow','Morgen'],['other','Anderer Termin']]
+  : [['now','Now'],['today','Today'],['tomorrow','Tomorrow'],['other','Another date']];
+
+ main.innerHTML=`<section class="screen">
+   <h1>${t('newJobTitle')}</h1>
+   <div class="card stack job-form-grid">
+
+   <label>${t('category')}
+     <select id="jobCategory">${catOptions.map(x=>`<option>${x}</option>`).join('')}</select>
+   </label>
+
+   <label>${t('description')}
+     <textarea id="jobDescription" rows="5" placeholder="${lang==='pl'?'Np. potrzebuję znieść szafę z 1. piętra do piwnicy':lang==='de'?'z. B. einen Schrank vom 1. Stock in den Keller tragen':'e.g. carry a wardrobe from the 1st floor to the basement'}">${p.description||''}</textarea>
+   </label>
+   <div class="tech-note-small">${lang==='pl'?'W wersji produkcyjnej AI dopyta tylko o brakujące informacje zależnie od kategorii.':lang==='de'?'In der Produktionsversion fragt die KI nur nach fehlenden Angaben passend zur Kategorie.':'In production, AI will only ask for missing information based on the category.'}</div>
+
+   <label>${lang==='pl'?'Kiedy':lang==='de'?'Wann':'When'}
+     <select id="jobWhen" onchange="updateJobWhenFields()">
+       ${whenOptions.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}
+     </select>
+   </label>
+
+   <div id="jobWhenExtra"></div>
+   <div class="tech-note-small">${t('urgentWindow')}</div>
+
+   <label>${t('duration')}
+     <select id="jobDuration">
+       <option>15–30 min</option>
+       <option>30–60 min</option>
+       <option>1–2 h</option>
+       <option>2–4 h</option>
+       <option>4+ h</option>
+     </select>
+   </label>
+
+   <label>${t('streetAddress')}
+     <input id="jobAddress" list="jobAddressSuggestions" value="${p.address||S.user?.addressFull||S.user?.city||''}" autocomplete="street-address" placeholder="${lang==='de'?'Straße, Hausnummer, Ort':lang==='pl'?'Ulica, numer domu, miejscowość':'Street, house number, city'}">
+   </label>
+   <datalist id="jobAddressSuggestions">
+     <option value="Marktstraße 12, 83646 Bad Tölz">
+     <option value="Münchner Straße 25, 83646 Bad Tölz">
+     <option value="Bahnhofstraße 10, 80335 München">
+   </datalist>
+
+   <label>${lang==='pl'?'Proponowana cena (€)':lang==='de'?'Vorgeschlagener Preis (€)':'Suggested price (€)'}
+     <input id="jobPrice" inputmode="decimal" value="${p.price||29}">
+   </label>
+   <div class="price-hint">${t('priceRange')}: 25–35 €</div>
+
+   <div class="tech-note-small">${lang==='pl'?'GREEN/YELLOW/RED pozostaje na razie symulacją. Dokładny adres zobaczy dopiero wybrany i potwierdzony wykonawca.':lang==='de'?'GREEN/YELLOW/RED bleibt vorerst eine Simulation. Die genaue Adresse sieht erst der ausgewählte und bestätigte Helfer.':'GREEN/YELLOW/RED remains simulated for now. Only the selected and confirmed helper sees the exact address.'}</div>
+
+   <button onclick="saveJobDraftAndReview()">${t('reviewJob')}</button>
+   <button class="ghost" onclick="clientHome()">${t('cancel')}</button>
+   </div>
+ </section>`;
+
+ // restore selections
+ if(p.category) document.getElementById('jobCategory').value=p.category;
+ if(p.when) document.getElementById('jobWhen').value=p.when;
+ if(p.duration) document.getElementById('jobDuration').value=p.duration;
+ updateJobWhenFields();
 }
+
+
+function updateJobWhenFields(){
+ const mode=document.getElementById('jobWhen')?.value||'now';
+ const box=document.getElementById('jobWhenExtra');
+ if(!box)return;
+ const p=S.jobDraft||{};
+ if(mode==='now'){box.innerHTML='';return;}
+ if(mode==='today'){
+   box.innerHTML=`<label>${t('todayTime')}<input id="jobTime" type="time" value="${p.time||''}"></label>`;
+   return;
+ }
+ if(mode==='tomorrow'){
+   box.innerHTML=`<label>${t('tomorrowTime')}<input id="jobTime" type="time" value="${p.time||''}"></label>`;
+   return;
+ }
+ box.innerHTML=`<div class="date-time-row">
+   <label>${t('chooseDate')}<input id="jobDate" type="date" value="${p.date||''}"></label>
+   <label>${t('chooseTime')}<input id="jobTime" type="time" value="${p.time||''}"></label>
+ </div>`;
+}
+
+function saveJobDraftAndReview(){
+ const category=document.getElementById('jobCategory').value;
+ const description=document.getElementById('jobDescription').value.trim();
+ const when=document.getElementById('jobWhen').value;
+ const duration=document.getElementById('jobDuration').value;
+ const address=document.getElementById('jobAddress').value.trim();
+ const price=document.getElementById('jobPrice').value.trim();
+ const date=document.getElementById('jobDate')?.value||'';
+ const time=document.getElementById('jobTime')?.value||'';
+
+ if(!description)return alert(S.lang==='de'?'Bitte beschreibe kurz, was du brauchst.':S.lang==='pl'?'Opisz krótko, czego potrzebujesz.':'Please describe what you need.');
+ if(!address)return alert(t('address'));
+ if(when!=='now' && !time)return alert(t('chooseTime'));
+ if(when==='other' && !date)return alert(t('chooseDate'));
+
+ S.jobDraft={category,description,when,duration,address,price,date,time};
+ save();
+ jobReviewScreen();
+}
+
+function jobReviewScreen(){
+ setTimeout(()=>setScreenId('S08.2'),0);
+ S.currentScreen='S08.2';save();
+ const p=S.jobDraft||{};
+ const lang=S.lang||'de';
+
+ let whenText='';
+ if(p.when==='now'){
+   whenText = lang==='pl'?'Teraz – do 1 godziny od publikacji':lang==='de'?'Jetzt – innerhalb 1 Stunde ab Veröffentlichung':'Now – within 1 hour of publication';
+ }else if(p.when==='today'){
+   whenText = (lang==='pl'?'Dzisiaj':'de'===lang?'Heute':'Today') + (p.time?` • ${{p.time}}`:'');
+ }else if(p.when==='tomorrow'){
+   whenText = (lang==='pl'?'Jutro':lang==='de'?'Morgen':'Tomorrow') + (p.time?` • ${{p.time}}`:'');
+ }else{
+   whenText = `${{p.date||''}}${{p.time?` • ${{p.time}}`:''}}`;
+ }
+
+ main.innerHTML=`<section class="screen">
+   <h1>${{t('jobSummary')}}</h1>
+   <div class="card">
+     <div class="summary-row"><div class="summary-label">${{t('category')}}</div><div class="summary-value">${{esc(p.category||'')}}</div></div>
+     <div class="summary-row"><div class="summary-label">${{t('description')}}</div><div class="summary-value">${{esc(p.description||'')}}</div></div>
+     <div class="summary-row"><div class="summary-label">${{lang==='pl'?'Kiedy':lang==='de'?'Wann':'When'}}</div><div class="summary-value">${{esc(whenText)}}</div></div>
+     <div class="summary-row"><div class="summary-label">${{t('duration')}}</div><div class="summary-value">${{esc(p.duration||'')}}</div></div>
+     <div class="summary-row"><div class="summary-label">${{t('address')}}</div><div class="summary-value">${{esc(p.address||'')}}</div></div>
+     <div class="summary-row"><div class="summary-label">${{t('price')}}</div><div class="summary-value">${{esc(p.price||'')}} €</div></div>
+   </div>
+   <div class="card stack">
+     <button onclick="publishJobFromReview()">${{t('publishConfirm')}}</button>
+     <button class="secondary" onclick=createJob()">${t('editJob')}</button>
+     <button class="ghost" onclick="clientHome()">${t('cancel')}</button>
+   </div>
+ </section>`;
+}
+
+function publishJobFromReview(){
+ const p=S.jobDraft;
+ if(!p)return;
+ S.jobs=S.jobs||[];
+ S.jobs.unshift({
+   id:'job_'+Date.now(),
+   ...p,
+   status:'published',
+   createdAt:new Date().toISOString(),
+   ownerId:S.user?.email||'local'
+ });
+ S.jobDraft=null;
+ S.currentScreen='S08';
+ save();
+ clientHome();
+ alert(S.lang==='de'?'Auftrag wurde im Test veröffentlicht.':S.lang==='pl'?'Zlecenie zostało opublikowane testowo.':'Job was published in test mode.');
+}
+
 function exportState(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='rebu-mvp-test.json';a.click();URL.revokeObjectURL(u)}
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});if(window.caches)caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{})}
 if(!(history.state&&history.state.rebuScreen))replaceScreen('boot');

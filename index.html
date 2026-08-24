@@ -55,6 +55,7 @@ input,select,textarea{width:100%;padding:13px 14px;border:1px solid #d1d5db;bord
 
 
 .profile-quick{width:48px!important;height:48px!important;padding:0!important;border-radius:50%!important;background:#eef1f5!important;border:1px solid #d1d5db!important;display:grid!important;place-items:center!important;position:relative!important}
+.profile-quick.hide{display:none!important}
 .profile-quick .avatar{font-size:22px}
 .status-dot{position:absolute;right:1px;bottom:2px;width:12px;height:12px;border-radius:50%;background:#9ca3af;border:2px solid #fff}
 .status-dot.online{background:#22c55e}
@@ -83,7 +84,7 @@ input,select,textarea{width:100%;padding:13px 14px;border:1px solid #d1d5db;bord
 const KEY='rebu_mvp_state';
 const LEGACY_KEYS=['rebu_mvp_state_v4','rebu_mvp_state_v3','rebu_mvp_state_v1'];
 const defaultState={
- user:null, pendingUser:null, role:null, lang:null, welcomeDone:false, loggedIn:false, admin:false, helperAvailable:true,
+ user:null, pendingUser:null, role:null, lang:null, welcomeDone:false, loggedIn:false, admin:false, justLoggedOut:false, helperAvailable:true,
  jobs:[], currentJobId:null,
  ratings:[],
  demoPayment:true
@@ -122,7 +123,7 @@ window.addEventListener('popstate',(ev)=>{
  const name=ev.state&&ev.state.rebuScreen;
  const protectedScreens=['verify','limited','role','home','profile','admin'];
  if(!(S&&S.user&&S.loggedIn)){
-   if(name && protectedScreens.includes(name)){loggedOutScreen();return}
+   if(name && protectedScreens.includes(name)){S.justLoggedOut=true;save();loggedOutScreen();return}
    if(name==='loggedout'){loggedOutScreen();return}
    if(name==='login' || name==='register' || name==='auth'){goScreen(name,true);return}
    if(S&&S.user){loggedOutScreen();return}
@@ -252,15 +253,11 @@ function logout(){
  S.role=null;
  S.admin=false;
  S.welcomeDone=true;
+ S.justLoggedOut=true;
  save();
-
  const btn=document.getElementById('profileQuick');
- if(btn)btn.classList.add('hide');
-
- try{
-   history.replaceState({rebuScreen:'loggedout',loggedOut:true},'',location.pathname+location.search);
- }catch(e){}
-
+ if(btn){btn.classList.add('hide');btn.style.display='none'}
+ try{history.replaceState({rebuScreen:'loggedout',loggedOut:true},'',location.pathname+location.search)}catch(e){}
  loggedOutScreen();
 }
 function deleteAccount(){
@@ -288,8 +285,8 @@ function updateHeaderProfile(){
  const btn=document.getElementById('profileQuick');
  const dot=document.getElementById('statusDot');
  if(!btn||!dot)return;
- if(!(S.user&&S.loggedIn)){btn.classList.add('hide');return}
- btn.classList.remove('hide');
+ if(!(S.user&&S.loggedIn)){btn.classList.add('hide');btn.style.display='none';return}
+ btn.classList.remove('hide');btn.style.display='grid';
  const active=activeJobForUser();
  dot.className='status-dot '+((active||S.helperAvailable)?'online':'');
 }
@@ -300,6 +297,7 @@ function render(){
  rolePill.textContent=S.admin?t('adminPanel'):S.role==='client'?t('client'):S.role==='helper'?t('helper'):'TEST / MVP';
  if(new URLSearchParams(location.search).get('admin')==='1'&&!S.admin)return adminLogin();
  if(S.admin)return adminPanel();
+ if(S.justLoggedOut && S.user && !S.loggedIn)return loggedOutScreen();
  if(!S.welcomeDone)return welcome();
  if(!S.user||!S.loggedIn)return authLanding();
  if(!S.user.fullVerified)return verificationHub();
@@ -338,7 +336,7 @@ function loggedOutScreen(){
 
  // Po wylogowaniu avatar i kropka nie mogą być widoczne.
  const btn=document.getElementById('profileQuick');
- if(btn)btn.classList.add('hide');
+ if(btn){btn.classList.add('hide');btn.style.display='none'}
 
  rolePill.textContent='TEST / MVP';
 
@@ -365,6 +363,7 @@ function authLanding(){
  </div></section>`;
 }
 function onboarding(){
+ S.justLoggedOut=false;save();
  setTimeout(()=>setScreenId('S03'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('register');
@@ -421,6 +420,7 @@ function verifySmsCode(){
  alert(t('accountReady'));verificationHub();
 }
 function loginScreen(){
+ S.justLoggedOut=false;save();
  setTimeout(()=>setScreenId('S04'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('login');
@@ -434,7 +434,7 @@ function loginScreen(){
 }
 function doLogin(){
  if(!S.user||document.querySelector('#loginEmail').value.trim().toLowerCase()!==(S.user.email||'').toLowerCase()||document.querySelector('#loginPassword').value!==S.user.password)return alert(t('wrongLogin'));
- S.loggedIn=true;save();S.user.fullVerified?chooseRole():verificationHub();
+ S.loggedIn=true;S.justLoggedOut=false;save();S.user.fullVerified?chooseRole():verificationHub();
 }
 function forgotPassword(){
  if(!S.user)return alert(t('noAccount'));

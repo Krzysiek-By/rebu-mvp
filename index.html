@@ -222,7 +222,16 @@ function brandHome(){
  if(S.user&&S.loggedIn){S.user.fullVerified?(S.role?home():chooseRole()):verificationHub();return}
  S.welcomeDone=false;save();welcome();
 }
-function logout(){S.loggedIn=false;S.role=null;save();authLanding()}
+function logout(){
+ S.loggedIn=false;
+ S.role=null;
+ S.admin=false;
+ S.welcomeDone=false;
+ save();
+ try{history.replaceState({rebuScreen:'welcome'},'',location.pathname+location.search)}catch(e){}
+ updateHeaderProfile();
+ welcome();
+}
 function deleteAccount(){
  if(!confirm(t('deleteConfirm')))return;
  const lang=S.lang;

@@ -193,6 +193,16 @@ input,select,textarea,button{max-width:100%}
   .phone-row,.address-grid{grid-template-columns:1fr}
 }
 
+
+.eye-btn{
+  width:30px!important;height:30px!important;
+  right:10px!important;bottom:12px!important;
+  padding:0!important;border:0!important;
+  background:transparent!important;box-shadow:none!important;
+  font-size:18px!important;line-height:1!important;
+  color:#4b5563!important;
+  display:grid!important;place-items:center!important;
+}
 </style>
 </head>
 <body>
@@ -346,6 +356,7 @@ function langCode(){return (S.lang||'de').toUpperCase()}
 function setScreenId(id){
  const el=document.getElementById('screenId');
  if(el)el.textContent=`${langCode()}-${id}`;
+ if(S){S.currentScreen=id;save();}
 }
 function detectStartLang(){
  try{
@@ -361,7 +372,10 @@ function finishWelcome(){S.welcomeDone=true;save();document.body.classList.remov
 function togglePassword(id,btn){
  const el=document.getElementById(id);if(!el)return;
  el.type=el.type==='password'?'text':'password';
- if(btn)btn.textContent=el.type==='password'?'👁':'🙈';
+ if(btn){
+   btn.textContent='◉';
+   btn.setAttribute('aria-pressed',el.type==='text'?'true':'false');
+ }
 }
 function reset(){localStorage.removeItem(KEY);LEGACY_KEYS.forEach(k=>localStorage.removeItem(k));S={...defaultState};render()}
 function brandHome(){
@@ -375,6 +389,7 @@ function logout(){
  S.admin=false;
  S.welcomeDone=true;
  S.justLoggedOut=true;
+ S.currentScreen='S01A';
  save();
  const btn=document.getElementById('profileQuick');
  if(btn){btn.classList.add('hide');btn.style.display='none'}
@@ -411,6 +426,27 @@ function updateHeaderProfile(){
  const active=activeJobForUser();
  dot.className='status-dot '+((active||S.helperAvailable)?'online':'');
 }
+
+function restoreCurrentScreen(){
+ const id=S.currentScreen;
+ if(!id)return false;
+
+ if(!(S.user&&S.loggedIn)){
+   if(id==='S03'){onboarding();return true}
+   if(id==='S04'){loginScreen();return true}
+   if(id==='S02'){authLanding();return true}
+   if(id==='S01A' && S.user){loggedOutScreen();return true}
+   if(id==='S01'){welcome();return true}
+   return false;
+ }
+
+ if(id==='S06' && !S.user.fullVerified){verificationHub();return true}
+ if(id==='S06.1' && !S.user.fullVerified){limitedOffers();return true}
+ if(id==='S07' && S.user.fullVerified){chooseRole();return true}
+ if(id==='S09'){profile();return true}
+ return false;
+}
+
 function render(){
  if(!S.lang)S.lang=detectStartLang();
  setTimeout(updateHeaderProfile,0);
@@ -419,6 +455,7 @@ function render(){
  if(new URLSearchParams(location.search).get('admin')==='1'&&!S.admin)return adminLogin();
  if(S.admin)return adminPanel();
  if(S.justLoggedOut && S.user && !S.loggedIn)return loggedOutScreen();
+ if(restoreCurrentScreen())return;
  if(!S.welcomeDone)return welcome();
  if(!S.user||!S.loggedIn)return authLanding();
  if(!S.user.fullVerified)return verificationHub();
@@ -531,7 +568,7 @@ function onboarding(){
  </datalist>
  <div class="address-hint">${t('addressHelp')}</div>
 
- <label>${t('password')}<div class="password-wrap"><input id="password" type="password" autocomplete="new-password" placeholder="••••••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('password',this)">👁</button></div></label>
+ <label>${t('password')}<div class="password-wrap"><input id="password" type="password" autocomplete="new-password" placeholder="••••••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('password',this)">◉</button></div></label>
 
  <button onclick="startRegistration()">${t('continueVerify')}</button>
  <button class="ghost" onclick="history.back()">${t('back')}</button>
@@ -605,7 +642,7 @@ function loginScreen(){
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
  main.innerHTML=`<section class="screen"><div class="card stack"><h1>${t('loginTitle')}</h1>
  <label>${t('email')}<input id="loginEmail" type="email" placeholder="alex@example.com"></label>
- <label>${t('password')}<div class="password-wrap"><input id="loginPassword" type="password" placeholder="••••••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('loginPassword',this)">👁</button></div></label>
+ <label>${t('password')}<div class="password-wrap"><input id="loginPassword" type="password" placeholder="••••••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('loginPassword',this)">◉</button></div></label>
  <button onclick="doLogin()">${t('signInAction')}</button>
  <button class="text-btn compact-link" onclick="forgotPassword()">${t('forgot')}</button>
  <button class="ghost" onclick="history.back()">${t('back')}</button></div></section>`;
@@ -618,7 +655,7 @@ function forgotPassword(){
  if(!S.user)return alert(t('noAccount'));
  main.innerHTML=`<section class="screen"><div class="card stack"><h1>${t('resetPassword')}</h1><div class="notice">${t('emailSentTest')}</div><div class="test-code">333333</div>
  <label>${t('code')}<input id="resetCode" inputmode="numeric" placeholder="333333"></label>
- <label>${t('newPassword')}<div class="password-wrap"><input id="newPw" type="password" placeholder="••••••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('newPw',this)">👁</button></div></label>
+ <label>${t('newPassword')}<div class="password-wrap"><input id="newPw" type="password" placeholder="••••••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('newPw',this)">◉</button></div></label>
  <button onclick="doResetPassword()">${t('verify')}</button><button class="ghost" onclick="loginScreen()">${t('back')}</button></div></section>`;
 }
 function doResetPassword(){
@@ -673,7 +710,7 @@ function chooseRole(){
 function adminLogin(){
  setTimeout(()=>setScreenId('S90'),0);
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');rolePill.textContent='ADMIN TEST';
- main.innerHTML=`<section class="screen"><div class="admin-shell stack"><h1>${t('adminLogin')}</h1><div class="notice">${t('adminTestNote')}</div><label>${t('adminPin')}<div class="password-wrap"><input id="adminPin" type="password" inputmode="numeric" placeholder="••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('adminPin',this)">👁</button></div></label><button onclick="doAdminLogin()">${t('login')}</button><button class="ghost" onclick="history.replaceState(null,'',location.pathname);render()">${t('back')}</button></div></section>`;
+ main.innerHTML=`<section class="screen"><div class="admin-shell stack"><h1>${t('adminLogin')}</h1><div class="notice">${t('adminTestNote')}</div><label>${t('adminPin')}<div class="password-wrap"><input id="adminPin" type="password" inputmode="numeric" placeholder="••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('adminPin',this)">◉</button></div></label><button onclick="doAdminLogin()">${t('login')}</button><button class="ghost" onclick="history.replaceState(null,'',location.pathname);render()">${t('back')}</button></div></section>`;
 }
 function doAdminLogin(){
  if(document.querySelector('#adminPin').value!=='2468')return alert('PIN');

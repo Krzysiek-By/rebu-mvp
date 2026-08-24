@@ -840,6 +840,35 @@ function home(){
  setTimeout(()=>setScreenId('S08'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('home');bottom('start');if(S.role==='client')clientHome();else helperHome()}
+
+function jobCard(j, detailed){
+ if(!j)return '';
+ const lang=S.lang||'de';
+ const category=esc(j.category||'—');
+ const description=esc(j.description||'');
+ const duration=esc(j.duration||'');
+ const price=esc(String(j.price||''));
+ const status=esc(j.status||'published');
+
+ let when='';
+ if(j.when==='now'){
+   when=lang==='pl'?'Teraz – do 1 godziny':lang==='de'?'Jetzt – innerhalb 1 Stunde':'Now – within 1 hour';
+ }else if(j.when==='today'){
+   when=(lang==='pl'?'Dzisiaj':lang==='de'?'Heute':'Today')+(j.time?` • ${esc(j.time)}`:'');
+ }else if(j.when==='tomorrow'){
+   when=(lang==='pl'?'Jutro':lang==='de'?'Morgen':'Tomorrow')+(j.time?` • ${esc(j.time)}`:'');
+ }else if(j.date){
+   when=esc(j.date)+(j.time?` • ${esc(j.time)}`:'');
+ }
+
+ return `<div class="stack">
+   <div class="row between"><strong>${category}</strong><span class="pill">${status}</span></div>
+   ${description?`<div>${description}</div>`:''}
+   <div class="muted small">${[when,duration,price?price+' €':''].filter(Boolean).join(' • ')}</div>
+   ${detailed && j.address?`<div class="muted small">${esc(j.address)}</div>`:''}
+ </div>`;
+}
+
 function clientHome(){
  const jobs=Array.isArray(S.jobs)?S.jobs:[];
  if(!Array.isArray(S.jobs)){S.jobs=[];save();}

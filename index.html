@@ -945,54 +945,6 @@ function createJob(){
 }
 
 
-
-function parseLocalDateTime(dateStr,timeStr){
- if(!dateStr || !timeStr)return null;
- const [y,m,d]=dateStr.split('-').map(Number);
- const [hh,mm]=timeStr.split(':').map(Number);
- if(!y||!m||!d||Number.isNaN(hh)||Number.isNaN(mm))return null;
- return new Date(y,m-1,d,hh,mm,0,0);
-}
-function todayLocalYMD(){
- const n=new Date();
- const y=n.getFullYear(), m=String(n.getMonth()+1).padStart(2,'0'), d=String(n.getDate()).padStart(2,'0');
- return `${y}-${m}-${d}`;
-}
-function tomorrowLocalYMD(){
- const n=new Date(); n.setDate(n.getDate()+1);
- const y=n.getFullYear(), m=String(n.getMonth()+1).padStart(2,'0'), d=String(n.getDate()).padStart(2,'0');
- return `${y}-${m}-${d}`;
-}
-function validateJobTimeDraft(p, stage){
- const lang=S.lang||'de';
- const now=new Date();
- const msgPast = lang==='pl'?'Nie można wybrać terminu w przeszłości.':lang==='de'?'Ein Termin in der Vergangenheit ist nicht möglich.':'You cannot choose a time in the past.';
- const msgTime = lang==='pl'?'Wybierz prawidłową godzinę.':lang==='de'?'Bitte wähle eine gültige Uhrzeit.':'Please choose a valid time.';
-
- if(!p)return {ok:false,msg:msgTime};
- if(p.when==='now') return {ok:true};
-
- if(p.when==='today'){
-   if(!p.time)return {ok:false,msg:msgTime};
-   const dt=parseLocalDateTime(todayLocalYMD(),p.time);
-   if(!dt || dt<=now)return {ok:false,msg:msgPast};
-   return {ok:true};
- }
- if(p.when==='tomorrow'){
-   if(!p.time)return {ok:false,msg:msgTime};
-   const dt=parseLocalDateTime(tomorrowLocalYMD(),p.time);
-   if(!dt)return {ok:false,msg:msgTime};
-   return {ok:true};
- }
- if(p.when==='other'){
-   if(!p.date || !p.time)return {ok:false,msg:msgTime};
-   const dt=parseLocalDateTime(p.date,p.time);
-   if(!dt || dt<=now)return {ok:false,msg:msgPast};
-   return {ok:true};
- }
- return {ok:true};
-}
-
 function updateJobWhenFields(){
  const mode=document.getElementById('jobWhen')?.value||'now';
  const box=document.getElementById('jobWhenExtra');
@@ -1008,7 +960,7 @@ function updateJobWhenFields(){
    return;
  }
  box.innerHTML=`<div class="date-time-row">
-   <label>${t('chooseDate')}<input id="jobDate" type="date" min="${todayLocalYMD()}" value="${p.date||''}"></label>
+   <label>${t('chooseDate')}<input id="jobDate" type="date" value="${p.date||''}"></label>
    <label>${t('chooseTime')}<input id="jobTime" type="time" value="${p.time||''}"></label>
  </div>`;
 }
@@ -1025,12 +977,10 @@ function saveJobDraftAndReview(){
 
  if(!description)return alert(S.lang==='de'?'Bitte beschreibe kurz, was du brauchst.':S.lang==='pl'?'Opisz krótko, czego potrzebujesz.':'Please describe what you need.');
  if(!address)return alert(t('address'));
+ if(when!=='now' && !time)return alert(t('chooseTime'));
+ if(when==='other' && !date)return alert(t('chooseDate'));
 
- const draft={category,description,when,duration,address,price,date,time};
- const check=validateJobTimeDraft(draft,'review');
- if(!check.ok)return alert(check.msg);
-
- S.jobDraft=draft;
+ S.jobDraft={category,description,when,duration,address,price,date,time};
  save();
  jobReviewScreen();
 }
@@ -1045,7 +995,7 @@ function jobReviewScreen(){
  if(p.when==='now'){
    whenText = lang==='pl'?'Teraz – do 1 godziny od publikacji':lang==='de'?'Jetzt – innerhalb 1 Stunde ab Veröffentlichung':'Now – within 1 hour of publication';
  }else if(p.when==='today'){
-   whenText = (lang==='pl'?'Dzisiaj':lang==='de'?'Heute':'Today') + (p.time?` • ${p.time}`:'');
+   whenText = (lang==='pl'?'Dzisiaj':'de'===lang?'Heute':'Today') + (p.time?` • ${p.time}`:'');
  }else if(p.when==='tomorrow'){
    whenText = (lang==='pl'?'Jutro':lang==='de'?'Morgen':'Tomorrow') + (p.time?` • ${p.time}`:'');
  }else{
@@ -1063,25 +1013,16 @@ function jobReviewScreen(){
      <div class="summary-row"><div class="summary-label">${t('price')}</div><div class="summary-value">${esc(p.price||'')} €</div></div>
    </div>
    <div class="card stack">
-     <button id="publishJobBtn">${t('publishConfirm')}</button>
-     <button id="editJobBtn" class="secondary">${t('editJob')}</button>
-     <button id="cancelJobBtn" class="ghost">${t('cancel')}</button>
+     <button onclick="publishJobFromReview()">${t('publishConfirm')}</button>
+     <button class="secondary" onclick=createJob()">${t('editJob')}</button>
+     <button class="ghost" onclick="clientHome()">${t('cancel')}</button>
    </div>
  </section>`;
-
- document.getElementById('publishJobBtn')?.addEventListener('click', publishJobFromReview);
- document.getElementById('editJobBtn')?.addEventListener('click', createJob);
- document.getElementById('cancelJobBtn')?.addEventListener('click', ()=>{
-   S.jobDraft=null; S.currentScreen='S08'; save(); clientHome();
- });
 }
 
 function publishJobFromReview(){
  const p=S.jobDraft;
  if(!p)return;
- const check=validateJobTimeDraft(p,'publish');
- if(!check.ok)return alert(check.msg);
-
  S.jobs=S.jobs||[];
  S.jobs.unshift({
    id:'job_'+Date.now(),
@@ -1094,7 +1035,7 @@ function publishJobFromReview(){
  S.currentScreen='S08';
  save();
  clientHome();
- setTimeout(()=>alert(S.lang==='de'?'Auftrag wurde im Test veröffentlicht.':S.lang==='pl'?'Zlecenie zostało opublikowane testowo.':'Job was published in test mode.'),0);
+ alert(S.lang==='de'?'Auftrag wurde im Test veröffentlicht.':S.lang==='pl'?'Zlecenie zostało opublikowane testowo.':'Job was published in test mode.');
 }
 
 function exportState(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='rebu-mvp-test.json';a.click();URL.revokeObjectURL(u)}

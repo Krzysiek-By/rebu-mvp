@@ -144,6 +144,55 @@ input,select,textarea,button{max-width:100%}
   .lang-grid button{min-height:44px}
 }
 
+
+/* S01A - spokojny ekran systemowy */
+.logout-success-screen{
+  min-height:calc(100dvh - 64px);
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  padding:clamp(28px,7vh,72px) 18px 28px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(211,163,61,.12), transparent 24%),
+    linear-gradient(180deg,#fbfbfa 0%,#f5f4f1 100%);
+}
+.logout-check{
+  width:58px;height:58px;margin:8px auto 16px;
+  display:grid;place-items:center;border-radius:50%;
+  font-size:34px;font-weight:800;
+  color:#9b741f;background:#fffaf0;border:1px solid #ead9aa;
+}
+.logout-card{max-width:560px;width:100%;margin:0 auto}
+
+/* mniejsze elementy pomocnicze */
+.eye-btn{
+  width:38px!important;height:38px!important;
+  right:9px!important;bottom:9px!important;
+  font-size:18px!important;border-radius:10px!important;
+}
+.text-btn.compact-link{
+  font-size:15px!important;
+  font-weight:700!important;
+  padding:6px!important;
+  opacity:.82;
+}
+.helper-link{
+  background:transparent!important;
+  color:#4b5563!important;
+  border:0!important;
+  padding:8px!important;
+  font-size:14px!important;
+  text-decoration:underline;
+}
+
+/* S03 - formularz adresowy */
+.phone-row{display:grid;grid-template-columns:120px 1fr;gap:10px}
+.address-grid{display:grid;grid-template-columns:140px 1fr;gap:10px}
+.address-hint{font-size:13px;color:#6b7280;margin-top:-4px}
+@media(max-width:520px){
+  .phone-row,.address-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -249,7 +298,7 @@ const I18N={
   chatLocal:'Czat testowy jest lokalny na tym urządzeniu. Synchronizację między telefonami podłączymy przez backend w następnym kroku technicznym.', message:'Wiadomość', send:'Wyślij', noActive:'Brak aktywnego zlecenia.', estimated:'Szacunkowo w MVP', noFinished:'Brak zakończonych zleceń.', switchRole:'Przełącz rolę', export:'Eksportuj dane testowe', clear:'Wyczyść cały test', language:'Język aplikacji', changeLanguage:'Zmień język',
   logout:'Wyloguj się', deleteAccount:'Usuń moje konto', deleteConfirm:'Na pewno usunąć konto testowe?', login:'Mam już konto', loginTitle:'Zaloguj się', password:'Hasło', forgot:'Nie pamiętam hasła', resetPassword:'Ustaw nowe hasło', newPassword:'Nowe hasło', back:'Wróć', browserBack:'← Wróć', verifyEmail:'Potwierdź e-mail', verifySms:'Potwierdź numer telefonu', code:'Kod', verify:'Potwierdź', emailSentTest:'TEST: prawdziwy e-mail nie jest jeszcze wysyłany. Użyj kodu poniżej.', smsSentTest:'TEST: prawdziwy SMS nie jest jeszcze wysyłany. Użyj kodu poniżej.', wrongCode:'Nieprawidłowy kod testowy', wrongLogin:'Nieprawidłowy e-mail lub hasło', accountReady:'Konto testowe aktywne', adminPanel:'Panel administratora', adminLogin:'Wejście administratora', adminPin:'PIN administratora', adminTestNote:'To jest tylko testowy panel lokalny. Prawdziwe zabezpieczenie administratora powstanie z backendem.', usersCount:'Użytkownicy testowi', jobsCount:'Zlecenia testowe', closeAdmin:'Wyjdź z panelu', resetDone:'Hasło testowe zostało zmienione.', logoutSuccess:'Wylogowałeś się poprawnie', loginAgain:'Zaloguj się ponownie', myAccount:'Moje konto', signInAction:'Zaloguj się', availability:'Dostępność', noAccount:'Nie masz jeszcze konta?', createNew:'Załóż nowe konto',
   countryAuto:'Język startowy dobrany automatycznie. Możesz go zmienić poniżej.', verificationTitle:'Weryfikacja konta', verificationIntro:'Dokończ weryfikację, aby korzystać ze wszystkich funkcji REBU.', basicData:'Dane podstawowe', identity:'Tożsamość / KYC', verified:'Zweryfikowano', notVerified:'Do weryfikacji', continueVerification:'Kontynuuj weryfikację', testFullVerify:'TEST: zakończ pełną weryfikację', limitedOffers:'Zobacz ograniczone oferty do 5 km', limitedInfo:'Bez pełnej weryfikacji widzisz tylko kategorię, przybliżoną odległość, termin i orientacyjną cenę. Bez zdjęć, pełnego opisu, danych klienta i możliwości zgłoszenia.', finishToSee:'Dokończ weryfikację, aby zobaczyć szczegóły i zgłosić zainteresowanie.', birthDate:'Data urodzenia', fullAddress:'Adres zamieszkania', needBirth:'Podaj datę urodzenia', needAddress:'Podaj adres', showPassword:'Pokaż/ukryj hasło', goToAccount:'Przejdź dalej',
-  registeredOnly:'Oferty i zlecenia REBU są dostępne wyłącznie po rejestracji lub zalogowaniu.'
+  streetHouse:'Ulica i numer domu', postalCode:'Kod pocztowy', addressHelp:'Zacznij pisać — system podpowiada poprawne nazwy. W razie potrzeby możesz wpisać ręcznie.', continueVerify:'Dalej do weryfikacji', phonePrefix:'Kierunkowy', manualAddress:'Możesz też wpisać adres ręcznie.', registeredOnly:'Oferty i zlecenia REBU są dostępne wyłącznie po rejestracji lub zalogowaniu.'
  },
  de:{
   test:'Testmodus', client:'Auftraggeber', helper:'Helfer',
@@ -269,7 +318,7 @@ const I18N={
   chatLocal:'Der Testchat ist lokal auf diesem Gerät. Die Synchronisierung zwischen Geräten folgt mit dem Backend.', message:'Nachricht', send:'Senden', noActive:'Kein aktiver Auftrag.', estimated:'Geschätzt im MVP', noFinished:'Keine abgeschlossenen Aufträge.', switchRole:'Rolle wechseln', export:'Testdaten exportieren', clear:'Test vollständig löschen', language:'App-Sprache', changeLanguage:'Sprache ändern',
   logout:'Abmelden', deleteAccount:'Mein Konto löschen', deleteConfirm:'Testkonto wirklich löschen?', login:'Ich habe bereits ein Konto', loginTitle:'Anmelden', password:'Passwort', forgot:'Passwort vergessen', resetPassword:'Neues Passwort festlegen', newPassword:'Neues Passwort', back:'Zurück', browserBack:'← Zurück', verifyEmail:'E-Mail bestätigen', verifySms:'Telefonnummer bestätigen', code:'Code', verify:'Bestätigen', emailSentTest:'TEST: Eine echte E-Mail wird noch nicht gesendet. Verwende den Code unten.', smsSentTest:'TEST: Eine echte SMS wird noch nicht gesendet. Verwende den Code unten.', wrongCode:'Falscher Testcode', wrongLogin:'Falsche E-Mail oder falsches Passwort', accountReady:'Testkonto ist aktiv', adminPanel:'Admin-Bereich', adminLogin:'Administrator-Zugang', adminPin:'Administrator-PIN', adminTestNote:'Dies ist nur ein lokaler Testbereich. Echte Admin-Sicherheit kommt mit dem Backend.', usersCount:'Testnutzer', jobsCount:'Testaufträge', closeAdmin:'Admin-Bereich verlassen', resetDone:'Testpasswort wurde geändert.', logoutSuccess:'Du wurdest erfolgreich abgemeldet', loginAgain:'Erneut anmelden', myAccount:'Mein Konto', signInAction:'Anmelden', availability:'Verfügbarkeit', noAccount:'Noch kein Konto?', createNew:'Neues Konto erstellen',
   countryAuto:'Die Startsprache wurde automatisch gewählt. Du kannst sie unten ändern.', verificationTitle:'Kontoverifizierung', verificationIntro:'Schließe die Verifizierung ab, um alle REBU-Funktionen zu nutzen.', basicData:'Grunddaten', identity:'Identität / KYC', verified:'Verifiziert', notVerified:'Zu verifizieren', continueVerification:'Verifizierung fortsetzen', testFullVerify:'TEST: vollständige Verifizierung abschließen', limitedOffers:'Eingeschränkte Aufträge bis 5 km ansehen', limitedInfo:'Ohne vollständige Verifizierung siehst du nur Kategorie, ungefähre Entfernung, Termin und Richtpreis. Keine Fotos, keine vollständige Beschreibung, keine Kundendaten und kein Interesse-Button.', finishToSee:'Schließe die Verifizierung ab, um Details zu sehen und Interesse zu melden.', birthDate:'Geburtsdatum', fullAddress:'Wohnadresse', needBirth:'Geburtsdatum eingeben', needAddress:'Adresse eingeben', showPassword:'Passwort anzeigen/ausblenden', goToAccount:'Weiter',
-  registeredOnly:'REBU-Angebote und Aufträge sind nur nach Registrierung oder Anmeldung verfügbar.'
+  streetHouse:'Straße und Hausnummer', postalCode:'PLZ', addressHelp:'Beginne zu tippen – das System schlägt korrekte Namen vor. Falls nötig, kannst du die Adresse manuell eingeben.', continueVerify:'Weiter zur Verifizierung', phonePrefix:'Vorwahl', manualAddress:'Die Adresse kann auch manuell eingegeben werden.', registeredOnly:'REBU-Angebote und Aufträge sind nur nach Registrierung oder Anmeldung verfügbar.'
  },
  en:{
   test:'test mode', client:'Client', helper:'Helper',
@@ -289,7 +338,7 @@ const I18N={
   chatLocal:'The test chat is local to this device. Cross-device synchronization will be added with the backend.', message:'Message', send:'Send', noActive:'No active job.', estimated:'Estimated in MVP', noFinished:'No completed jobs.', switchRole:'Switch role', export:'Export test data', clear:'Clear all test data', language:'App language', changeLanguage:'Change language',
   logout:'Log out', deleteAccount:'Delete my account', deleteConfirm:'Delete the test account?', login:'I already have an account', loginTitle:'Log in', password:'Password', forgot:'Forgot password', resetPassword:'Set new password', newPassword:'New password', back:'Back', browserBack:'← Back', verifyEmail:'Confirm e-mail', verifySms:'Confirm phone number', code:'Code', verify:'Confirm', emailSentTest:'TEST: A real e-mail is not sent yet. Use the code below.', smsSentTest:'TEST: A real SMS is not sent yet. Use the code below.', wrongCode:'Incorrect test code', wrongLogin:'Incorrect e-mail or password', accountReady:'Test account is active', adminPanel:'Admin panel', adminLogin:'Administrator access', adminPin:'Administrator PIN', adminTestNote:'This is only a local test admin panel. Real admin security will be added with the backend.', usersCount:'Test users', jobsCount:'Test jobs', closeAdmin:'Leave admin panel', resetDone:'Test password changed.', logoutSuccess:'You have been logged out successfully', loginAgain:'Log in again', myAccount:'My account', signInAction:'Log in', availability:'Availability', noAccount:'No account yet?', createNew:'Create a new account',
   countryAuto:'The starting language was selected automatically. You can change it below.', verificationTitle:'Account verification', verificationIntro:'Complete verification to use all REBU features.', basicData:'Basic details', identity:'Identity / KYC', verified:'Verified', notVerified:'Verification needed', continueVerification:'Continue verification', testFullVerify:'TEST: complete full verification', limitedOffers:'View limited jobs within 5 km', limitedInfo:'Without full verification you only see category, approximate distance, timing and an indicative price. No photos, full description, client details or interest button.', finishToSee:'Complete verification to view details and express interest.', birthDate:'Date of birth', fullAddress:'Home address', needBirth:'Enter date of birth', needAddress:'Enter address', showPassword:'Show/hide password', goToAccount:'Continue',
-  registeredOnly:'REBU offers and jobs are available only after registration or login.'
+  streetHouse:'Street and house number', postalCode:'Postcode', addressHelp:'Start typing — the system suggests correct names. You can still enter the address manually if needed.', continueVerify:'Continue to verification', phonePrefix:'Country code', manualAddress:'You can also enter the address manually.', registeredOnly:'REBU offers and jobs are available only after registration or login.'
  }
 };
 function t(k){return (I18N[S.lang||'pl']||I18N.pl)[k]||I18N.pl[k]||k}
@@ -405,19 +454,16 @@ function loggedOutScreen(){
  setTimeout(()=>setScreenId('S01A'),0);
  nav.classList.add('hide');
  document.body.classList.remove('welcome-mode');
-
- // Po wylogowaniu avatar i kropka nie mogą być widoczne.
  const btn=document.getElementById('profileQuick');
  if(btn){btn.classList.add('hide');btn.style.display='none'}
-
  rolePill.textContent='TEST / MVP';
 
- main.innerHTML=`<section class="screen">
-   <div class="center" style="padding-top:42px">
-     <div class="emoji">✓</div>
+ main.innerHTML=`<section class="logout-success-screen">
+   <div class="center">
+     <div class="logout-check">✓</div>
      <h1>${t('logoutSuccess')}</h1>
    </div>
-   <div class="card stack">
+   <div class="card stack logout-card">
      <button onclick="loginScreen()">${t('loginAgain')}</button>
    </div>
  </section>`;
@@ -428,11 +474,18 @@ function authLanding(){
  if(!APP_NAV_LOCK)pushScreen('auth');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
  if(!S.lang)return welcome();
- main.innerHTML=`<section class="screen"><div class="center"><div class="emoji">🤝</div><h1>${t('slogan')}</h1><p class="muted">${t('registeredOnly')}</p></div>
- <div class="card stack">
-   ${S.user?`<button onclick="loginScreen()">${t('login')}</button><button class="secondary" onclick="onboarding()">${t('createNew')}</button>`:`<button onclick="onboarding()">${t('createTest')}</button><button class="secondary" onclick="loginScreen()">${t('login')}</button>`}
-   <button class="ghost" onclick="S.lang=null;save();welcome()">${t('changeLanguage')}</button>
- </div></section>`;
+ main.innerHTML=`<section class="screen">
+   <div class="center">
+     <h1>${t('slogan')}</h1>
+     <p class="muted">${t('registeredOnly')}</p>
+   </div>
+   <div class="card stack">
+     ${S.user
+       ? `<button onclick="loginScreen()">${t('login')}</button><button class="secondary" onclick="onboarding()">${t('createNew')}</button>`
+       : `<button onclick="loginScreen()">${t('login')}</button><button class="secondary" onclick="onboarding()">${t('createNew')}</button>`}
+     <button class="helper-link" onclick="S.welcomeDone=false;save();welcome()">${t('changeLanguage')}</button>
+   </div>
+ </section>`;
 }
 function onboarding(){
  S.justLoggedOut=false;save();
@@ -440,36 +493,89 @@ function onboarding(){
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('register');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
- main.innerHTML=`<section class="screen"><div class="center"><div class="emoji">🤝</div><h1>${t('slogan')}</h1></div>
- <div class="card stack"><h2>${t('createTest')}</h2>
- <label>${t('firstName')}<input id="firstName" placeholder="${S.lang==='de'?'z. B. Alex':S.lang==='en'?'e.g. Alex':'np. Alex'}"></label>
- <label>${t('lastName')}<input id="lastName" placeholder="${S.lang==='de'?'z. B. Müller':S.lang==='en'?'e.g. Miller':'np. Kowalski'}"></label>
- <label>${t('email')}<input id="email" type="email" placeholder="alex@example.com"></label>
- <label>${t('phone')}<input id="phone" placeholder="+49..."></label>
- <label>${t('birthDate')}<input id="birthDate" type="date"></label>
- <label>${t('fullAddress')}<input id="fullAddress" placeholder="${S.lang==='de'?'Straße, Hausnummer, Ort':S.lang==='en'?'Street, number, city':'ulica, numer, miejscowość'}"></label>
- <label>${t('city')}<input id="city" placeholder="Bad Tölz"></label>
- <label>${t('password')}<div class="password-wrap"><input id="password" type="password" placeholder="••••••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('password',this)">👁</button></div></label>
- <button onclick="startRegistration()">${t('createAccount')}</button>
- <div class="notice">${t('regNote')}</div>
- <button class="ghost" onclick="authLanding()">${t('back')}</button></div></section>`;
+
+ const prefixes=['+49','+43','+48','+41','+31','+33','+39','+34','+44'];
+ main.innerHTML=`<section class="screen">
+ <div class="card stack"><h1>${t('createNew')}</h1>
+ <label>${t('firstName')}<input id="firstName" autocomplete="given-name" placeholder="${S.lang==='de'?'z. B. Alex':S.lang==='en'?'e.g. Alex':'np. Alex'}"></label>
+ <label>${t('lastName')}<input id="lastName" autocomplete="family-name" placeholder="${S.lang==='de'?'z. B. Müller':S.lang==='en'?'e.g. Miller':'np. Kowalski'}"></label>
+ <label>${t('email')}<input id="email" type="email" autocomplete="email" placeholder="alex@example.com"></label>
+
+ <label>${t('phone')}</label>
+ <div class="phone-row">
+   <select id="phonePrefix" aria-label="${t('phonePrefix')}">${prefixes.map(p=>`<option ${p==='+49'?'selected':''}>${p}</option>`).join('')}</select>
+   <input id="phoneNumber" inputmode="tel" autocomplete="tel-national" placeholder="151 23456789">
+ </div>
+
+ <label>${t('birthDate')}<input id="birthDate" type="date" autocomplete="bday"></label>
+
+ <label>${t('streetHouse')}<input id="streetHouse" list="streetSuggestions" autocomplete="street-address" placeholder="${S.lang==='de'?'z. B. Marktstraße 12':S.lang==='en'?'e.g. Market Street 12':'np. Marktstraße 12'}"></label>
+ <datalist id="streetSuggestions">
+   <option value="Marktstraße 12">
+   <option value="Bahnhofstraße 10">
+   <option value="Münchner Straße 25">
+   <option value="Tölzer Straße 8">
+   <option value="Rosenheimer Straße 14">
+ </datalist>
+
+ <div class="address-grid">
+   <label>${t('postalCode')}<input id="postalCode" list="postalSuggestions" inputmode="numeric" autocomplete="postal-code" placeholder="83646"></label>
+   <label>${t('city')}<input id="city" list="citySuggestions" autocomplete="address-level2" placeholder="Bad Tölz"></label>
+ </div>
+
+ <datalist id="postalSuggestions">
+   <option value="83646"><option value="80331"><option value="84453"><option value="83022"><option value="86150"><option value="82467"><option value="90402"><option value="10115"><option value="20095"><option value="50667">
+ </datalist>
+ <datalist id="citySuggestions">
+   <option value="Bad Tölz"><option value="München"><option value="Mühldorf am Inn"><option value="Rosenheim"><option value="Augsburg"><option value="Garmisch-Partenkirchen"><option value="Nürnberg"><option value="Berlin"><option value="Hamburg"><option value="Köln">
+ </datalist>
+ <div class="address-hint">${t('addressHelp')}</div>
+
+ <label>${t('password')}<div class="password-wrap"><input id="password" type="password" autocomplete="new-password" placeholder="••••••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('password',this)">👁</button></div></label>
+
+ <button onclick="startRegistration()">${t('continueVerify')}</button>
+ <button class="ghost" onclick="history.back()">${t('back')}</button>
+ </div></section>`;
+ wireAddressDemo();
+}
+function wireAddressDemo(){
+ const postal=document.getElementById('postalCode');
+ const city=document.getElementById('city');
+ if(!postal||!city)return;
+ const map={
+  '83646':'Bad Tölz','80331':'München','84453':'Mühldorf am Inn','83022':'Rosenheim',
+  '86150':'Augsburg','82467':'Garmisch-Partenkirchen','90402':'Nürnberg',
+  '10115':'Berlin','20095':'Hamburg','50667':'Köln'
+ };
+ postal.addEventListener('change',()=>{if(map[postal.value])city.value=map[postal.value]});
 }
 function startRegistration(){
  const firstName=document.querySelector('#firstName').value.trim();
  const lastName=document.querySelector('#lastName').value.trim();
  const em=document.querySelector('#email').value.trim();
- const ph=document.querySelector('#phone').value.trim();
+ const prefix=document.querySelector('#phonePrefix').value.trim();
+ const number=document.querySelector('#phoneNumber').value.trim();
+ const ph=(prefix+' '+number).trim();
  const pw=document.querySelector('#password').value;
  const birth=document.querySelector('#birthDate').value;
- const addr=document.querySelector('#fullAddress').value.trim();
+ const street=document.querySelector('#streetHouse').value.trim();
+ const postal=document.querySelector('#postalCode').value.trim();
+ const cityVal=document.querySelector('#city').value.trim();
+
  if(!firstName)return alert(t('needFirst'));
  if(!lastName)return alert(t('needLast'));
  if(!em)return alert(t('email'));
- if(!ph)return alert(t('phone'));
+ if(!number)return alert(t('phone'));
  if(!birth)return alert(t('needBirth'));
- if(!addr)return alert(t('needAddress'));
+ if(!street || !cityVal)return alert(t('needAddress'));
  if(!pw)return alert(t('password'));
- S.pendingUser={firstName,lastName,name:firstName+' '+lastName,email:em,phone:ph,birthDate:birth,addressFull:addr,city:city.value||'Bad Tölz',password:pw,emailVerified:false,phoneVerified:false,fullVerified:false};
+
+ const addr=[street,postal,cityVal].filter(Boolean).join(', ');
+ S.pendingUser={
+   firstName,lastName,name:firstName+' '+lastName,email:em,phone:ph,
+   birthDate:birth,addressFull:addr,street,postalCode:postal,city:cityVal,
+   password:pw,emailVerified:false,phoneVerified:false,fullVerified:false
+ };
  save();verifyEmailScreen();
 }
 function verifyEmailScreen(){
@@ -501,8 +607,8 @@ function loginScreen(){
  <label>${t('email')}<input id="loginEmail" type="email" placeholder="alex@example.com"></label>
  <label>${t('password')}<div class="password-wrap"><input id="loginPassword" type="password" placeholder="••••••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('loginPassword',this)">👁</button></div></label>
  <button onclick="doLogin()">${t('signInAction')}</button>
- <button class="text-btn" onclick="forgotPassword()">${t('forgot')}</button>
- <button class="ghost" onclick="authLanding()">${t('back')}</button></div></section>`;
+ <button class="text-btn compact-link" onclick="forgotPassword()">${t('forgot')}</button>
+ <button class="ghost" onclick="history.back()">${t('back')}</button></div></section>`;
 }
 function doLogin(){
  if(!S.user||document.querySelector('#loginEmail').value.trim().toLowerCase()!==(S.user.email||'').toLowerCase()||document.querySelector('#loginPassword').value!==S.user.password)return alert(t('wrongLogin'));

@@ -512,27 +512,6 @@ function updateHeaderProfile(){
 }
 
 function restoreCurrentScreen(){
- const id=S.currentScreen;
- if(!id)return false;
-
- if(!(S.user&&S.loggedIn)){
-   if(id==='S05.2' && S.pendingUser){verifySmsScreen();return true}
-   if(id==='S05.1' && S.pendingUser){verifyEmailScreen();return true}
-   if(id==='S03'){onboarding();return true}
-   if(id==='S04'){loginScreen();return true}
-   if(id==='S02'){authLanding();return true}
-   if(id==='S01A' && S.user){loggedOutScreen();return true}
-   if(id==='S01'){welcome();return true}
-   return false;
- }
-
- if(id==='S06' && !S.user.fullVerified){verificationHub();return true}
- if(id==='S06.1' && !S.user.fullVerified){limitedOffers();return true}
- if(id==='S07' && S.user.fullVerified && !S.role){chooseRole();return true}
- if(id==='S09'){profile();return true}
- if(id==='S08.2' && S.role==='client'){jobReviewScreen();return true}
- if(id==='S08.1' && S.role==='client'){createJob();return true}
- if(id==='S08' && S.role==='client'){home();return true}
  return false;
 }
 

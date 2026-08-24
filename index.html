@@ -995,25 +995,25 @@ function jobReviewScreen(){
  if(p.when==='now'){
    whenText = lang==='pl'?'Teraz – do 1 godziny od publikacji':lang==='de'?'Jetzt – innerhalb 1 Stunde ab Veröffentlichung':'Now – within 1 hour of publication';
  }else if(p.when==='today'){
-   whenText = (lang==='pl'?'Dzisiaj':'de'===lang?'Heute':'Today') + (p.time?` • ${{p.time}}`:'');
+   whenText = (lang==='pl'?'Dzisiaj':'de'===lang?'Heute':'Today') + (p.time?` • ${p.time}`:'');
  }else if(p.when==='tomorrow'){
-   whenText = (lang==='pl'?'Jutro':lang==='de'?'Morgen':'Tomorrow') + (p.time?` • ${{p.time}}`:'');
+   whenText = (lang==='pl'?'Jutro':lang==='de'?'Morgen':'Tomorrow') + (p.time?` • ${p.time}`:'');
  }else{
-   whenText = `${{p.date||''}}${{p.time?` • ${{p.time}}`:''}}`;
+   whenText = `${p.date||''}${p.time?` • ${p.time}`:''}`;
  }
 
  main.innerHTML=`<section class="screen">
-   <h1>${{t('jobSummary')}}</h1>
+   <h1>${t('jobSummary')}</h1>
    <div class="card">
-     <div class="summary-row"><div class="summary-label">${{t('category')}}</div><div class="summary-value">${{esc(p.category||'')}}</div></div>
-     <div class="summary-row"><div class="summary-label">${{t('description')}}</div><div class="summary-value">${{esc(p.description||'')}}</div></div>
-     <div class="summary-row"><div class="summary-label">${{lang==='pl'?'Kiedy':lang==='de'?'Wann':'When'}}</div><div class="summary-value">${{esc(whenText)}}</div></div>
-     <div class="summary-row"><div class="summary-label">${{t('duration')}}</div><div class="summary-value">${{esc(p.duration||'')}}</div></div>
-     <div class="summary-row"><div class="summary-label">${{t('address')}}</div><div class="summary-value">${{esc(p.address||'')}}</div></div>
-     <div class="summary-row"><div class="summary-label">${{t('price')}}</div><div class="summary-value">${{esc(p.price||'')}} €</div></div>
+     <div class="summary-row"><div class="summary-label">${t('category')}</div><div class="summary-value">${esc(p.category||'')}</div></div>
+     <div class="summary-row"><div class="summary-label">${t('description')}</div><div class="summary-value">${esc(p.description||'')}</div></div>
+     <div class="summary-row"><div class="summary-label">${lang==='pl'?'Kiedy':lang==='de'?'Wann':'When'}</div><div class="summary-value">${esc(whenText)}</div></div>
+     <div class="summary-row"><div class="summary-label">${t('duration')}</div><div class="summary-value">${esc(p.duration||'')}</div></div>
+     <div class="summary-row"><div class="summary-label">${t('address')}</div><div class="summary-value">${esc(p.address||'')}</div></div>
+     <div class="summary-row"><div class="summary-label">${t('price')}</div><div class="summary-value">${esc(p.price||'')} €</div></div>
    </div>
    <div class="card stack">
-     <button onclick="publishJobFromReview()">${{t('publishConfirm')}}</button>
+     <button onclick="publishJobFromReview()">${t('publishConfirm')}</button>
      <button class="secondary" onclick=createJob()">${t('editJob')}</button>
      <button class="ghost" onclick="clientHome()">${t('cancel')}</button>
    </div>

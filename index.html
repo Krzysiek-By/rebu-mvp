@@ -58,12 +58,25 @@ input,select,textarea{width:100%;padding:13px 14px;border:1px solid #d1d5db;bord
 .profile-quick .avatar{font-size:22px}
 .status-dot{position:absolute;right:1px;bottom:2px;width:12px;height:12px;border-radius:50%;background:#9ca3af;border:2px solid #fff}
 .status-dot.online{background:#22c55e}
+
+.screen-id{
+  position:fixed; top:76px; right:10px; z-index:9999;
+  font-size:12px; font-weight:800; letter-spacing:.3px;
+  padding:5px 8px; border-radius:999px;
+  background:rgba(255,255,255,.88); color:#111827;
+  border:1px solid rgba(17,24,39,.15);
+  backdrop-filter:blur(6px); pointer-events:none;
+}
+.welcome-mode .screen-id{
+  background:rgba(8,17,31,.82); color:#f3c75f;
+  border-color:rgba(243,199,95,.35);
+}
 </style>
 </head>
 <body>
 <div class="app">
 <header><div class="brand" onclick="brandHome()" title="REBU">REBU <span class="muted">MVP</span></div><div class="row" style="gap:10px"><div id="rolePill" class="pill">TEST / MVP</div><button id="profileQuick" class="profile-quick hide" onclick="profile()" aria-label="Profil"><span class="avatar">👤</span><span id="statusDot" class="status-dot"></span></button></div></header>
-<main id="main"></main>
+<div id="screenId" class="screen-id">S00</div><main id="main"></main>
 <div id="nav" class="nav hide"></div>
 </div>
 <script>
@@ -106,12 +119,16 @@ function goScreen(name,fromPop=false){
 }
 window.addEventListener('popstate',(ev)=>{
  const name=ev.state&&ev.state.rebuScreen;
+ const protectedScreens=['verify','limited','role','home','profile','admin'];
+ if(!(S&&S.user&&S.loggedIn)){
+   if(name && protectedScreens.includes(name)){welcome();return}
+   if(name==='login' || name==='register' || name==='auth'){goScreen(name,true);return}
+   welcome();return
+ }
  if(name){goScreen(name,true);return}
- if(S&&S.user&&S.loggedIn){
-   if(!S.user.fullVerified)verificationHub();
-   else if(!S.role)chooseRole();
-   else home();
- }else if(S&&S.welcomeDone){authLanding()}else{welcome()}
+ if(!S.user.fullVerified)verificationHub();
+ else if(!S.role)chooseRole();
+ else home();
 });
 
 function load(){
@@ -200,6 +217,11 @@ const I18N={
  }
 };
 function t(k){return (I18N[S.lang||'pl']||I18N.pl)[k]||I18N.pl[k]||k}
+function langCode(){return (S.lang||'de').toUpperCase()}
+function setScreenId(id){
+ const el=document.getElementById('screenId');
+ if(el)el.textContent=`${langCode()}-${id}`;
+}
 function detectStartLang(){
  try{
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';
@@ -228,8 +250,9 @@ function logout(){
  S.admin=false;
  S.welcomeDone=false;
  save();
- try{history.replaceState({rebuScreen:'welcome'},'',location.pathname+location.search)}catch(e){}
- updateHeaderProfile();
+ const btn=document.getElementById('profileQuick');
+ if(btn)btn.classList.add('hide');
+ try{history.replaceState({rebuScreen:'welcome',loggedOut:true},'',location.pathname+location.search)}catch(e){}
  welcome();
 }
 function deleteAccount(){
@@ -277,6 +300,7 @@ function render(){
  home();
 }
 function welcome(){
+ setTimeout(()=>setScreenId('S01'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('welcome');
  nav.classList.add('hide');
@@ -300,6 +324,7 @@ function welcome(){
  </section>`;
 }
 function authLanding(){
+ setTimeout(()=>setScreenId('S02'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('auth');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
@@ -311,6 +336,7 @@ function authLanding(){
  </div></section>`;
 }
 function onboarding(){
+ setTimeout(()=>setScreenId('S03'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('register');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
@@ -347,6 +373,7 @@ function startRegistration(){
  save();verifyEmailScreen();
 }
 function verifyEmailScreen(){
+ setTimeout(()=>setScreenId('S05.1'),0);
  main.innerHTML=`<section class="screen"><div class="card stack"><h1>${t('verifyEmail')}</h1><p class="muted">${esc(S.pendingUser?.email||'')}</p><div class="notice">${t('emailSentTest')}</div><div class="test-code">111111</div><label>${t('code')}<input id="verifyCode" inputmode="numeric" placeholder="111111"></label><button onclick="verifyEmailCode()">${t('verify')}</button><button class="ghost" onclick="onboarding()">${t('back')}</button></div></section>`;
 }
 function verifyEmailCode(){
@@ -354,6 +381,7 @@ function verifyEmailCode(){
  S.pendingUser.emailVerified=true;save();verifySmsScreen();
 }
 function verifySmsScreen(){
+ setTimeout(()=>setScreenId('S05.2'),0);
  main.innerHTML=`<section class="screen"><div class="card stack"><h1>${t('verifySms')}</h1><p class="muted">${esc(S.pendingUser?.phone||'')}</p><div class="notice">${t('smsSentTest')}</div><div class="test-code">222222</div><label>${t('code')}<input id="smsCode" inputmode="numeric" placeholder="222222"></label><button onclick="verifySmsCode()">${t('verify')}</button></div></section>`;
 }
 function verifySmsCode(){
@@ -364,6 +392,7 @@ function verifySmsCode(){
  alert(t('accountReady'));verificationHub();
 }
 function loginScreen(){
+ setTimeout(()=>setScreenId('S04'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('login');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
@@ -391,6 +420,7 @@ function doResetPassword(){
  S.user.password=p;save();alert(t('resetDone'));loginScreen();
 }
 function verificationHub(){
+ setTimeout(()=>setScreenId('S06'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('verify');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');rolePill.textContent='TEST / MVP';
@@ -414,6 +444,7 @@ function completeFullVerificationTest(){
  S.user.fullVerified=true;save();chooseRole();
 }
 function limitedOffers(){
+ setTimeout(()=>setScreenId('S06.1'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('limited');
  nav.classList.add('hide');rolePill.textContent='TEST / MVP';
@@ -426,12 +457,14 @@ function limitedOffers(){
  <div class="card stack"><button onclick="verificationHub()">${t('continueVerification')}</button></div></section>`;
 }
 function chooseRole(){
+ setTimeout(()=>setScreenId('S07'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('role');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');
  main.innerHTML=`<section class="screen"><button class="ghost" onclick="history.back()">${t('browserBack')}</button><h1>${t('hello')}, ${esc(S.user.firstName||S.user.name)}</h1><p class="muted">${t('chooseAction')}</p><div class="card stack"><button onclick="setRole('client')">${t('needHelp')}</button><button class="secondary" onclick="setRole('helper')">${t('earnHelp')}</button><button class="secondary" onclick="profile()">${t('myAccount')}</button></div><div class="card"><h3>${t('oneAccount')}</h3><p class="muted small">${t('roleHint')}</p></div></section>`;
 }
 function adminLogin(){
+ setTimeout(()=>setScreenId('S90'),0);
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');rolePill.textContent='ADMIN TEST';
  main.innerHTML=`<section class="screen"><div class="admin-shell stack"><h1>${t('adminLogin')}</h1><div class="notice">${t('adminTestNote')}</div><label>${t('adminPin')}<div class="password-wrap"><input id="adminPin" type="password" inputmode="numeric" placeholder="••••"><button type="button" class="eye-btn" aria-label="${t('showPassword')}" onclick="togglePassword('adminPin',this)">👁</button></div></label><button onclick="doAdminLogin()">${t('login')}</button><button class="ghost" onclick="history.replaceState(null,'',location.pathname);render()">${t('back')}</button></div></section>`;
 }
@@ -440,6 +473,7 @@ function doAdminLogin(){
  S.admin=true;save();adminPanel();
 }
 function adminPanel(){
+ setTimeout(()=>setScreenId('S91'),0);
  if(!APP_NAV_LOCK)pushScreen('admin');
  nav.classList.add('hide');document.body.classList.remove('welcome-mode');rolePill.textContent='ADMIN TEST';
  main.innerHTML=`<section class="screen"><div class="admin-shell"><h1>${t('adminPanel')}</h1><p class="muted">${t('adminTestNote')}</p></div>
@@ -447,6 +481,7 @@ function adminPanel(){
  <div class="card stack"><button class="secondary" onclick="S.admin=false;save();history.replaceState(null,'',location.pathname);render()">${t('closeAdmin')}</button><button class="danger" onclick="reset()">${t('clear')}</button></div></section>`;
 }
 function home(){
+ setTimeout(()=>setScreenId('S08'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('home');bottom('start');if(S.role==='client')clientHome();else helperHome()}
 function clientHome(){const active=S.jobs.find(j=>!['completed','cancelled'].includes(j.status));main.innerHTML=`<section class="screen"><h1>${t('needQuestion')}</h1><button onclick="createJob()">+ ${t('needHelp').toUpperCase()}</button>${active?`<div class="card top-space"><h2>${t('activeJob')}</h2>${jobCard(active,true)}</div>`:''}<div class="card"><h3>${t('howWorks')}</h3><div class="timeline small"><div class="tl"><span class="dot"></span><div>${t('step1')}</div></div><div class="tl"><span class="dot"></span><div>${t('step2')}</div></div><div class="tl"><span class="dot"></span><div>${t('step3')}</div></div></div></div></section>`}
@@ -475,6 +510,8 @@ function messages(){bottom('msg');const j=job();main.innerHTML=`<section class="
 function sendChat(){if(!chatMsg.value.trim())return;alert('Wiadomość zapisana lokalnie w prototypie.');chatMsg.value=''}
 function earnings(){bottom('earn');const done=S.jobs.filter(j=>j.helper===S.user.name&&j.status==='completed');const total=done.reduce((a,j)=>a+j.price*.9,0);main.innerHTML=`<section class="screen"><h1>Zarobki</h1><div class="card"><div class="muted small">Szacunkowo w MVP</div><div class="money">${money(total)}</div></div>${done.map(j=>`<div class="card">${jobCard(j,false)}</div>`).join('')||'<div class="card muted">Brak zakończonych zleceń.</div>'}</section>`}
 function profile(){
+ if(!(S.user&&S.loggedIn)){welcome();return}
+ setTimeout(()=>setScreenId('S09'),0);
  setTimeout(updateHeaderProfile,0);
  if(!APP_NAV_LOCK)pushScreen('profile');
  bottom('profile');

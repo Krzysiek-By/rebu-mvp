@@ -1351,7 +1351,9 @@ function openCandidateProfile(jobId,index){
      <div class="muted small">${uiText('W MVP pokazujemy podsumowanie opinii. Pełna lista będzie podłączona do historii ocen.','Im MVP zeigen wir eine Bewertungszusammenfassung. Die vollständige Liste wird mit der Bewertungshistorie verbunden.','In the MVP we show a review summary. The full list will be connected to rating history.')}</div>
    </div>
    <div class="card">
-     <button onclick="selectHelperForJob('${j.id}',${index})">${uiText('WYBIERZ WYKONAWCĘ','HELFER AUSWÄHLEN','SELECT HELPER')}</button>
+     ${['published','searching'].includes(j.status) && !j.helper
+       ? `<button onclick="selectHelperForJob('${j.id}',${index})">${uiText('WYBIERZ WYKONAWCĘ','HELFER AUSWÄHLEN','SELECT HELPER')}</button>`
+       : `<button class="ghost" disabled>${uiText('Wykonawca już wybrany','Helfer bereits ausgewählt','Helper already selected')}</button>`}
    </div>
  </section>`;
 }
@@ -1359,6 +1361,17 @@ function openCandidateProfile(jobId,index){
 function selectHelperForJob(jobId,index){
  const j=S.jobs.find(x=>x.id===jobId);
  if(!j)return;
+
+ if(!['published','searching'].includes(j.status) || j.helper){
+   alert(uiText(
+     'Wykonawca został już wybrany. Ponowny wybór będzie możliwy tylko wtedy, gdy wybrany wykonawca odrzuci zlecenie.',
+     'Ein Helfer wurde bereits ausgewählt. Eine neue Auswahl ist erst möglich, wenn der ausgewählte Helfer den Auftrag ablehnt.',
+     'A helper has already been selected. You can choose again only if the selected helper declines the job.'
+   ));
+   openClientJob(j.id);
+   return;
+ }
+
  const records=candidateRecords(j);
  const rec=records[index];
  if(!rec)return;
@@ -1368,11 +1381,13 @@ function selectHelperForJob(jobId,index){
  j.status='selected';
  j.selectedAt=new Date().toISOString();
 
- // Jeszcze nie znika definitywnie dla innych dopóki helper nie potwierdzi.
- // To obsłuży kolejny krok procesu potwierdzenia.
  save();
  openClientJob(j.id);
- alert(uiText('Wykonawca został wybrany. Teraz musi potwierdzić zlecenie.','Der Helfer wurde ausgewählt. Er muss den Auftrag jetzt bestätigen.','The helper was selected. They must now confirm the job.'));
+ alert(uiText(
+   'Wykonawca został wybrany. Teraz musi potwierdzić zlecenie.',
+   'Der Helfer wurde ausgewählt. Er muss den Auftrag jetzt bestätigen.',
+   'The helper was selected. They must now confirm the job.'
+ ));
 }
 
 function editClientJob(id){

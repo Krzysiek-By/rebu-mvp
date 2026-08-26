@@ -297,6 +297,17 @@ input,select,textarea,button{max-width:100%}
   color:#374151!important;
   cursor:default!important;
 }
+
+.candidate-card{cursor:pointer}
+.candidate-card:active{transform:scale(.995)}
+.candidate-head{display:flex;align-items:center;gap:12px}
+.candidate-avatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#eef1f5;border:1px solid #d1d5db;font-size:22px;flex:none}
+.candidate-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.candidate-meta > div{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:8px;text-align:center;font-size:12px}
+.dual-role-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.dual-role-switch button{font-size:13px;padding:10px 8px}
+.click-row{cursor:pointer}
+.click-row:hover{background:#fafafa}
 </style>
 </head>
 <body>
@@ -890,6 +901,23 @@ function home(){
 
 
 
+
+function candidateProfileFromRecord(c,j){
+ const name=typeof c==='string'?c:(c?.name||c?.userId||'Helper');
+ const seed=String(typeof c==='string'?c:(c?.userId||c?.name||'helper'));
+ let sum=0; for(const ch of seed)sum=(sum+ch.charCodeAt(0))%997;
+ const distance=((sum%45)+5)/10; // testowo 0.5–4.9 km
+ const reliability=88+(sum%13); // testowo 88–100
+ const rating=(4.4+((sum%6)/10)).toFixed(1);
+ const reviews=3+(sum%38);
+ const completed=5+(sum%74);
+ return {name,distance,reliability,rating,reviews,completed};
+}
+function candidateRecords(j){
+ const cands=Array.isArray(j?.candidates)?j.candidates:[];
+ return cands.map(c=>({raw:c,profile:candidateProfileFromRecord(c,j)}));
+}
+
 function currentHelperId(){
  if(!S.user)return '';
  return S.user.email||S.user.name||((S.user.firstName||'')+' '+(S.user.lastName||'')).trim();
@@ -1072,7 +1100,7 @@ function clientHome(){
  const jobs=Array.isArray(S.jobs)?S.jobs:[];
  if(!Array.isArray(S.jobs)){S.jobs=[];save();}
  const active=jobs.find(j=>!['completed','cancelled'].includes(j.status));
- main.innerHTML=`<section class="screen"><h1>${t('needQuestion')}</h1><button onclick="createJob()">+ ${t('needHelp').toUpperCase()}</button>${active?`<div class="card top-space clickable-card" onclick="openClientJob('${active.id}')"><h2>${t('activeJob')}</h2>${jobCard(active,true)}<div class="muted small" style="margin-top:10px">${uiText('Dotknij, aby zobaczyć szczegóły','Tippen für Details','Tap for details')} →</div></div>`:''}<div class="card"><h3>${t('howWorks')}</h3><div class="timeline small"><div class="tl"><span class="dot"></span><div>${t('step1')}</div></div><div class="tl"><span class="dot"></span><div>${t('step2')}</div></div><div class="tl"><span class="dot"></span><div>${t('step3')}</div></div></div></div></section>`;
+ main.innerHTML=`<section class="screen"><h1>${t('needQuestion')}</h1><button onclick="createJob()">+ ${t('needHelp').toUpperCase()}</button>${active?`<div class="card top-space clickable-card" onclick="openClientJob('${active.id}')"><h2>${t('activeJob')}</h2>${jobCard(active,true)}<div class="row between" style="margin-top:10px"><div class="muted small">${uiText('Dotknij, aby zobaczyć szczegóły','Tippen für Details','Tap for details')} →</div><div class="pill">${jobCandidateCount(active)} ${uiText('zainteresowanych','Interessenten','interested')}</div></div></div>`:''}<div class="card"><h3>${t('howWorks')}</h3><div class="timeline small"><div class="tl"><span class="dot"></span><div>${t('step1')}</div></div><div class="tl"><span class="dot"></span><div>${t('step2')}</div></div><div class="tl"><span class="dot"></span><div>${t('step3')}</div></div></div></div></section>`;
 }
 function helperHome(){autoCloseExpiredJobs();const available=S.jobs.filter(j=>['published','searching'].includes(j.status)&&!j.helper);const mine=S.jobs.find(j=>j.helper===S.user.name&&!['completed','cancelled','unfulfilled'].includes(j.status));main.innerHTML=`<section class="screen"><div class="card row between"><div><h2 style="margin:0">${t('available')}</h2><div class="muted small">${t('visibility')}</div></div><button class="mini ${S.helperAvailable?'ok':'ghost'}" onclick="toggleAvail()">${S.helperAvailable?'ON':'OFF'}</button></div>${mine?`<div class="card"><h2>${t('yourActive')}</h2>${jobCard(mine,true)}${mine.pendingChange?`<div class="pending-change"><strong>${uiText('Zleceniodawca zmienił warunki','Der Auftraggeber hat Bedingungen geändert','The client changed the terms')}</strong><div class="muted small">${esc((mine.pendingChange.changedFields||[]).join(', '))}</div><div class="grid2 top-space"><button class="ok" onclick="helperChangeDecision('${mine.id}',true)">${t('confirm')}</button><button class="danger" onclick="helperChangeDecision('${mine.id}',false)">${uiText('ODRZUĆ','ABLEHNEN','REJECT')}</button></div></div>`:''}</div>`:''}<h2>${t('availableJobs')}</h2>${available.length?available.map(j=>`<div class="card job helper-offer-card" onclick="openHelperOffer('${j.id}')">${jobCard(j,false)}<div class="interest-row">${helperAppliedToJob(j)?`<button class="interest-sent-btn" onclick="event.stopPropagation()" disabled>${uiText('Zgłoszenie wysłane','Interesse gesendet','Interest sent')}</button>`:`<button class="interest-btn" onclick="event.stopPropagation();interest('${j.id}')" ${!S.helperAvailable?'disabled':''}>${t('interested')}</button>`}</div></div>`).join(''):`<div class="card center muted">${t('noJobs')}</div>`}</section>`}
 
@@ -1163,7 +1191,7 @@ function openClientJob(id){
      <div class="summary-row"><div class="summary-label">${t('duration')}</div><div class="summary-value">${esc(j.duration||'—')}</div></div>
      <div class="summary-row"><div class="summary-label">${t('address')}</div><div class="summary-value">${esc(j.address||'—')}</div></div>
      <div class="summary-row"><div class="summary-label">${t('price')}</div><div class="summary-value">${esc(String(j.price||'—'))}${j.price?' €':''}</div></div>
-     <div class="summary-row"><div class="summary-label">${t('candidates')}</div><div class="summary-value">${interested}</div></div>
+     <div class="summary-row click-row" onclick="openCandidates('${j.id}')"><div class="summary-label">${t('candidates')}</div><div class="summary-value">${interested} →</div></div>
    </div>
    ${j.pendingChange?`<div class="pending-change">
      <strong>${uiText('Zmiana czeka na decyzję wykonawcy','Änderung wartet auf Entscheidung des Helfers','Change is waiting for helper approval')}</strong>
@@ -1175,6 +1203,90 @@ function openClientJob(id){
      ${!['completed','cancelled','unfulfilled'].includes(j.status)?`<button class="danger" onclick="cancelClientJob('${j.id}')">${t('cancelJob')}</button>`:''}
    </div>
  </section>`;
+}
+
+
+function openCandidates(jobId){
+ const j=S.jobs.find(x=>x.id===jobId);
+ if(!j)return;
+ setScreenId('S08.4');
+ S.currentScreen='S08.4';save();
+ document.body.classList.remove('welcome-mode');
+ bottom('jobs');
+ const records=candidateRecords(j);
+
+ main.innerHTML=`<section class="screen">
+   <button class="ghost" onclick="openClientJob('${j.id}')">${t('browserBack')}</button>
+   <h1>${uiText('Zainteresowani wykonawcy','Interessierte Helfer','Interested helpers')}</h1>
+   ${records.length
+     ? records.map((r,i)=>`<div class="card candidate-card" onclick="openCandidateProfile('${j.id}',${i})">
+         <div class="candidate-head">
+           <div class="candidate-avatar">👤</div>
+           <div><strong>${esc(r.profile.name)}</strong><div class="muted small">${uiText('Kandydat do zlecenia','Kandidat für den Auftrag','Job candidate')}</div></div>
+         </div>
+         <div class="candidate-meta">
+           <div><strong>${r.profile.distance.toFixed(1)} km</strong><br>${uiText('odległość','Entfernung','distance')}</div>
+           <div><strong>${r.profile.reliability}%</strong><br>${uiText('wiarygodność','Zuverlässigkeit','reliability')}</div>
+           <div><strong>⭐ ${r.profile.rating}</strong><br>${r.profile.reviews} ${uiText('opinii','Bewertungen','reviews')}</div>
+         </div>
+       </div>`).join('')
+     : `<div class="card center muted">${t('nobody')}</div>`}
+ </section>`;
+}
+
+function openCandidateProfile(jobId,index){
+ const j=S.jobs.find(x=>x.id===jobId);
+ if(!j)return;
+ const records=candidateRecords(j);
+ const rec=records[index];
+ if(!rec)return;
+ const p=rec.profile;
+
+ setScreenId('S08.5');
+ S.currentScreen='S08.5';save();
+ document.body.classList.remove('welcome-mode');
+ bottom('jobs');
+
+ main.innerHTML=`<section class="screen">
+   <button class="ghost" onclick="openCandidates('${j.id}')">${t('browserBack')}</button>
+   <div class="card center">
+     <div class="candidate-avatar" style="margin:0 auto 10px">👤</div>
+     <h1>${esc(p.name)}</h1>
+     <div class="candidate-meta">
+       <div><strong>${p.distance.toFixed(1)} km</strong><br>${uiText('od zlecenia','vom Auftrag','from job')}</div>
+       <div><strong>${p.reliability}%</strong><br>${uiText('wiarygodność','Zuverlässigkeit','reliability')}</div>
+       <div><strong>⭐ ${p.rating}</strong><br>${p.reviews} ${uiText('opinii','Bewertungen','reviews')}</div>
+     </div>
+     <div class="sep"></div>
+     <div class="muted">${p.completed} ${uiText('zrealizowanych zleceń','abgeschlossene Aufträge','completed jobs')}</div>
+   </div>
+   <div class="card">
+     <h3>${uiText('Opinie','Bewertungen','Reviews')}</h3>
+     <div class="muted small">${uiText('W MVP pokazujemy podsumowanie opinii. Pełna lista będzie podłączona do historii ocen.','Im MVP zeigen wir eine Bewertungszusammenfassung. Die vollständige Liste wird mit der Bewertungshistorie verbunden.','In the MVP we show a review summary. The full list will be connected to rating history.')}</div>
+   </div>
+   <div class="card">
+     <button onclick="selectHelperForJob('${j.id}',${index})">${uiText('WYBIERZ WYKONAWCĘ','HELFER AUSWÄHLEN','SELECT HELPER')}</button>
+   </div>
+ </section>`;
+}
+
+function selectHelperForJob(jobId,index){
+ const j=S.jobs.find(x=>x.id===jobId);
+ if(!j)return;
+ const records=candidateRecords(j);
+ const rec=records[index];
+ if(!rec)return;
+
+ j.helper=rec.profile.name;
+ j.helperId=(typeof rec.raw==='string'?rec.raw:(rec.raw?.userId||rec.raw?.name||rec.profile.name));
+ j.status='selected';
+ j.selectedAt=new Date().toISOString();
+
+ // Jeszcze nie znika definitywnie dla innych dopóki helper nie potwierdzi.
+ // To obsłuży kolejny krok procesu potwierdzenia.
+ save();
+ openClientJob(j.id);
+ alert(uiText('Wykonawca został wybrany. Teraz musi potwierdzić zlecenie.','Der Helfer wurde ausgewählt. Er muss den Auftrag jetzt bestätigen.','The helper was selected. They must now confirm the job.'));
 }
 
 function editClientJob(id){
@@ -1237,6 +1349,7 @@ function jobsView(filter){
  bottom('jobs');
 
  const jobs=Array.isArray(S.jobs)?S.jobs:[];
+ const dual=true; // jedno konto może działać w obu rolach
 
  if(S.role==='helper'){
    const f=filter||S.helperJobsFilter||'waiting';
@@ -1258,6 +1371,10 @@ function jobsView(filter){
 
    main.innerHTML=`<section class="screen">
      <h1>${uiText('Moje zlecenia','Meine Aufträge','My jobs')}</h1>
+     <div class="dual-role-switch">
+       <button class="secondary" onclick="switchRoleFromJobs('client')">${uiText('Jako zleceniodawca','Als Auftraggeber','As client')}</button>
+       <button>${uiText('Jako wykonawca','Als Helfer','As helper')}</button>
+     </div>
      <div class="helper-tabs">
        ${Object.keys(labels).map(k=>`<button class="${f===k?'':'secondary'}" onclick="jobsView('${k}')">${labels[k]} (${buckets[k].length})</button>`).join('')}
      </div>
@@ -1282,14 +1399,42 @@ function jobsView(filter){
    return;
  }
 
- // client view remains simple
- if(!jobs.length){
-   main.innerHTML=`<section class="screen"><h1>${t('jobs')}</h1><div class="card menu-empty">${t('noOrders')}</div></section>`;
-   return;
- }
- main.innerHTML=`<section class="screen"><h1>${t('jobs')}</h1>
-   ${jobs.map(j=>`<div class="card job-list-item" onclick="openClientJob('${j.id}')">${jobCard(j,true)}</div>`).join('')}
+ // client side folders
+ const clientJobs=jobs.filter(j=>j.client===S.user?.name || j.ownerId===S.user?.email || !j.client);
+ const active=clientJobs.filter(j=>!['completed','cancelled','unfulfilled'].includes(j.status));
+ const finished=clientJobs.filter(j=>j.status==='completed');
+ const unfulfilled=clientJobs.filter(j=>j.status==='unfulfilled');
+ const cancelled=clientJobs.filter(j=>j.status==='cancelled');
+ const f=filter||S.clientJobsFilter||'active';
+ S.clientJobsFilter=f;save();
+ const buckets={active,finished,unfulfilled,cancelled};
+ const labels={
+   active:uiText('Aktywne','Aktiv','Active'),
+   finished:uiText('Zrealizowane','Erledigt','Completed'),
+   unfulfilled:uiText('Niezrealizowane','Nicht ausgeführt','Unfulfilled'),
+   cancelled:uiText('Anulowane','Storniert','Cancelled')
+ };
+ const current=buckets[f]||[];
+
+ main.innerHTML=`<section class="screen">
+   <h1>${uiText('Moje zlecenia','Meine Aufträge','My jobs')}</h1>
+   <div class="dual-role-switch">
+     <button>${uiText('Jako zleceniodawca','Als Auftraggeber','As client')}</button>
+     <button class="secondary" onclick="switchRoleFromJobs('helper')">${uiText('Jako wykonawca','Als Helfer','As helper')}</button>
+   </div>
+   <div class="helper-tabs">
+     ${Object.keys(labels).map(k=>`<button class="${f===k?'':'secondary'}" onclick="jobsView('${k}')">${labels[k]} (${buckets[k].length})</button>`).join('')}
+   </div>
+   ${current.length
+     ? current.map(j=>`<div class="card job-list-item" onclick="openClientJob('${j.id}')">${jobCard(j,true)}</div>`).join('')
+     : `<div class="card center muted">${uiText('Brak zleceń w tej kategorii.','Keine Aufträge in dieser Kategorie.','No jobs in this category.')}</div>`}
  </section>`;
+}
+
+function switchRoleFromJobs(role){
+ S.role=role;
+ save();
+ jobsView();
 }
 
 function messages(){

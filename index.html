@@ -257,6 +257,9 @@ input,select,textarea,button{max-width:100%}
 .detail-actions{display:grid;gap:10px}
 .job-list-item{cursor:pointer}
 .job-list-item + .job-list-item{margin-top:10px}
+
+.rule-note{font-size:13px;line-height:1.4;padding:10px 12px;border-radius:12px;background:#f9fafb;border:1px solid #e5e7eb}
+.pending-change{border:1px solid #f59e0b;background:#fffbeb;padding:12px;border-radius:14px}
 </style>
 </head>
 <body>
@@ -862,10 +865,98 @@ function localizedJobStatus(status){
    awaiting:t('awaiting'),
    completed:t('completed'),
    cancelled:t('cancelled'),
-   problem:t('problem')
+   problem:t('problem'),
+   unfulfilled:uiText('Niezrealizowane','Nicht ausgeführt','Unfulfilled')
  };
  return map[status]||status||'—';
 }
+
+function jobCandidateCount(j){
+ if(!j)return 0;
+ if(Array.isArray(j.candidates))return j.candidates.length;
+ if(Array.isArray(j.interested))return j.interested.length;
+ return 0;
+}
+
+function jobStartDate(j){
+ if(!j)return null;
+ const created=j.createdAt?new Date(j.createdAt):new Date();
+ if(j.when==='now')return new Date(created.getTime()+60*60*1000);
+
+ const base=new Date(created);
+ const y=base.getFullYear(), m=base.getMonth(), d=base.getDate();
+ const parseTime=(s)=>{
+   const mm=String(s||'').match(/^(\d{1,2}):(\d{2})$/);
+   return mm?[Number(mm[1]),Number(mm[2])]:[0,0];
+ };
+ const [hh,mi]=parseTime(j.time);
+
+ if(j.when==='today')return new Date(y,m,d,hh,mi,0,0);
+ if(j.when==='tomorrow')return new Date(y,m,d+1,hh,mi,0,0);
+ if(j.when==='other' && j.date){
+   const dm=String(j.date).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+   if(dm)return new Date(Number(dm[1]),Number(dm[2])-1,Number(dm[3]),hh,mi,0,0);
+ }
+ return null;
+}
+
+function autoCloseExpiredJobs(){
+ if(!Array.isArray(S.jobs))return false;
+ const now=Date.now();
+ let changed=false;
+ S.jobs.forEach(j=>{
+   if(!['published','searching'].includes(j.status))return;
+   if(jobCandidateCount(j)>0 || j.helper)return;
+   const start=jobStartDate(j);
+   if(start && now>start.getTime()){
+     j.status='unfulfilled';
+     j.closedAt=new Date().toISOString();
+     j.closureReason='no_helper_before_start';
+     changed=true;
+   }
+ });
+ if(changed)save();
+ return changed;
+}
+
+function significantChangeFields(oldJ,newJ){
+ const fields=['description','when','date','time','address','price','duration','category'];
+ return fields.filter(k=>String(oldJ?.[k]??'')!==String(newJ?.[k]??''));
+}
+
+function recordClientChangeEvent(job,fields,mode){
+ if(!S.user)return;
+ S.user.reliabilityData=S.user.reliabilityData||{changeEvents:[]};
+ const start=jobStartDate(job);
+ const minutesBeforeStart=start?Math.round((start.getTime()-Date.now())/60000):null;
+ S.user.reliabilityData.changeEvents.push({
+   at:new Date().toISOString(),
+   jobId:job.id,
+   fields:[...fields],
+   mode,
+   minutesBeforeStart,
+   helperAssigned:!!job.helper
+ });
+ // Wagi/progi "krótko przed" są świadomie pozostawione do ustalenia po testach.
+}
+
+function notifyInterestedAboutChange(job,fields){
+ job.changeNotices=Array.isArray(job.changeNotices)?job.changeNotices:[];
+ job.changeNotices.push({
+   at:new Date().toISOString(),
+   fields:[...fields],
+   recipients:'interested'
+ });
+}
+
+function helperHasConfirmed(job){
+ return !!job.helper && ['confirmed','enroute','onsite','inprogress','awaiting'].includes(job.status);
+}
+
+function canNormallyEditJob(job){
+ return !!job && !['enroute','onsite','inprogress','awaiting','completed','cancelled','unfulfilled'].includes(job.status);
+}
+
 function jobWhenText(j){
  if(!j)return '—';
  if(j.when==='now')return uiText('Teraz – do 1 godziny','Jetzt – innerhalb 1 Stunde','Now – within 1 hour');
@@ -904,15 +995,35 @@ function jobCard(j, detailed){
 }
 
 function clientHome(){
+ autoCloseExpiredJobs();
  const jobs=Array.isArray(S.jobs)?S.jobs:[];
  if(!Array.isArray(S.jobs)){S.jobs=[];save();}
  const active=jobs.find(j=>!['completed','cancelled'].includes(j.status));
  main.innerHTML=`<section class="screen"><h1>${t('needQuestion')}</h1><button onclick="createJob()">+ ${t('needHelp').toUpperCase()}</button>${active?`<div class="card top-space clickable-card" onclick="openClientJob('${active.id}')"><h2>${t('activeJob')}</h2>${jobCard(active,true)}<div class="muted small" style="margin-top:10px">${uiText('Dotknij, aby zobaczyć szczegóły','Tippen für Details','Tap for details')} →</div></div>`:''}<div class="card"><h3>${t('howWorks')}</h3><div class="timeline small"><div class="tl"><span class="dot"></span><div>${t('step1')}</div></div><div class="tl"><span class="dot"></span><div>${t('step2')}</div></div><div class="tl"><span class="dot"></span><div>${t('step3')}</div></div></div></div></section>`;
 }
-function helperHome(){const available=S.jobs.filter(j=>['published','searching'].includes(j.status));const mine=S.jobs.find(j=>j.helper===S.user.name&&!['completed','cancelled'].includes(j.status));main.innerHTML=`<section class="screen"><div class="card row between"><div><h2 style="margin:0">${t('available')}</h2><div class="muted small">${t('visibility')}</div></div><button class="mini ${S.helperAvailable?'ok':'ghost'}" onclick="toggleAvail()">${S.helperAvailable?'ON':'OFF'}</button></div>${mine?`<div class="card"><h2>${t('yourActive')}</h2>${jobCard(mine,true)}</div>`:''}<h2>${t('availableJobs')}</h2>${available.length?available.map(j=>`<div class="card job">${jobCard(j,false)}<button onclick="interest('${j.id}')" ${!S.helperAvailable?'disabled':''}>${t('interested')}</button></div>`).join(''):`<div class="card center muted">${t('noJobs')}</div>`}</section>`}
+function helperHome(){autoCloseExpiredJobs();const available=S.jobs.filter(j=>['published','searching'].includes(j.status)&&!j.helper);const mine=S.jobs.find(j=>j.helper===S.user.name&&!['completed','cancelled','unfulfilled'].includes(j.status));main.innerHTML=`<section class="screen"><div class="card row between"><div><h2 style="margin:0">${t('available')}</h2><div class="muted small">${t('visibility')}</div></div><button class="mini ${S.helperAvailable?'ok':'ghost'}" onclick="toggleAvail()">${S.helperAvailable?'ON':'OFF'}</button></div>${mine?`<div class="card"><h2>${t('yourActive')}</h2>${jobCard(mine,true)}${mine.pendingChange?`<div class="pending-change"><strong>${uiText('Zleceniodawca zmienił warunki','Der Auftraggeber hat Bedingungen geändert','The client changed the terms')}</strong><div class="muted small">${esc((mine.pendingChange.changedFields||[]).join(', '))}</div><div class="grid2 top-space"><button class="ok" onclick="helperChangeDecision('${mine.id}',true)">${t('confirm')}</button><button class="danger" onclick="helperChangeDecision('${mine.id}',false)">${uiText('ODRZUĆ','ABLEHNEN','REJECT')}</button></div></div>`:''}</div>`:''}<h2>${t('availableJobs')}</h2>${available.length?available.map(j=>`<div class="card job">${jobCard(j,false)}<button onclick="interest('${j.id}')" ${!S.helperAvailable?'disabled':''}>${t('interested')}</button></div>`).join(''):`<div class="card center muted">${t('noJobs')}</div>`}</section>`}
+
+function helperChangeDecision(id,accept){
+ const j=S.jobs.find(x=>x.id===id);
+ if(!j||!j.pendingChange)return;
+ if(accept){
+   Object.assign(j,j.pendingChange.proposed||{});
+   j.changeNotices=Array.isArray(j.changeNotices)?j.changeNotices:[];
+   j.changeNotices.push({at:new Date().toISOString(),recipients:'client',result:'accepted_by_helper'});
+ }else{
+   j.changeNotices=Array.isArray(j.changeNotices)?j.changeNotices:[];
+   j.changeNotices.push({at:new Date().toISOString(),recipients:'client',result:'rejected_by_helper'});
+ }
+ j.pendingChange=null;
+ j.changeApprovalRequired=false;
+ save();
+ helperHome();
+}
+
 function toggleAvail(){S.helperAvailable=!S.helperAvailable;save();helperHome()}
 
 function openClientJob(id){
+ autoCloseExpiredJobs();
  const j=S.jobs.find(x=>x.id===id);
  if(!j)return jobsView();
  S.currentJobId=id;
@@ -924,7 +1035,7 @@ function openClientJob(id){
 
  const interested=Array.isArray(j.candidates)?j.candidates.length:
                   Array.isArray(j.interested)?j.interested.length:0;
- const canEdit=['published','searching'].includes(j.status);
+ const canEdit=canNormallyEditJob(j);
 
  main.innerHTML=`<section class="screen">
    <button class="ghost" onclick="jobsView()">${t('browserBack')}</button>
@@ -939,9 +1050,14 @@ function openClientJob(id){
      <div class="summary-row"><div class="summary-label">${t('price')}</div><div class="summary-value">${esc(String(j.price||'—'))}${j.price?' €':''}</div></div>
      <div class="summary-row"><div class="summary-label">${t('candidates')}</div><div class="summary-value">${interested}</div></div>
    </div>
+   ${j.pendingChange?`<div class="pending-change">
+     <strong>${uiText('Zmiana czeka na decyzję wykonawcy','Änderung wartet auf Entscheidung des Helfers','Change is waiting for helper approval')}</strong>
+     <div class="muted small">${esc((j.pendingChange.changedFields||[]).join(', '))}</div>
+   </div>`:''}
    <div class="card detail-actions">
      ${canEdit?`<button class="secondary" onclick="editClientJob('${j.id}')">${uiText('Popraw zlecenie','Auftrag ändern','Edit job')}</button>`:''}
-     ${!['completed','cancelled'].includes(j.status)?`<button class="danger" onclick="cancelClientJob('${j.id}')">${t('cancelJob')}</button>`:''}
+     ${j.status==='unfulfilled'?`<button onclick="repostClientJob('${j.id}')">${uiText('Wystaw ponownie z nowym terminem','Mit neuem Termin erneut einstellen','Repost with a new time')}</button>`:''}
+     ${!['completed','cancelled','unfulfilled'].includes(j.status)?`<button class="danger" onclick="cancelClientJob('${j.id}')">${t('cancelJob')}</button>`:''}
    </div>
  </section>`;
 }
@@ -949,6 +1065,10 @@ function openClientJob(id){
 function editClientJob(id){
  const j=S.jobs.find(x=>x.id===id);
  if(!j)return;
+ if(!canNormallyEditJob(j)){
+   alert(uiText('Tego zlecenia nie można już normalnie edytować. Po rozpoczęciu dojazdu obowiązują osobne zasady zmian i rozliczeń.','Dieser Auftrag kann nicht mehr normal geändert werden. Nach Beginn der Anfahrt gelten separate Änderungs- und Abrechnungsregeln.','This job can no longer be edited normally. Separate change and settlement rules apply after departure.'));
+   return;
+ }
  S.editingJobId=id;
  S.jobDraft={
    category:j.category||'',
@@ -959,6 +1079,26 @@ function editClientJob(id){
    price:j.price||29,
    date:j.date||'',
    time:j.time||''
+ };
+ save();
+ createJob();
+}
+
+
+function repostClientJob(id){
+ const j=S.jobs.find(x=>x.id===id);
+ if(!j)return;
+ S.editingJobId=null;
+ S.repostingFromJobId=id;
+ S.jobDraft={
+   category:j.category||'',
+   description:j.description||'',
+   when:'now',
+   duration:j.duration||'15–30 min',
+   address:j.address||'',
+   price:j.price||29,
+   date:'',
+   time:''
  };
  save();
  createJob();
@@ -975,6 +1115,7 @@ function cancelClientJob(id){
 }
 
 function jobsView(){
+ autoCloseExpiredJobs();
  setScreenId('S10');
  S.currentScreen='S10';save();
  document.body.classList.remove('welcome-mode');
@@ -1206,7 +1347,25 @@ function publishJobFromReview(){
  if(S.editingJobId){
    const j=S.jobs.find(x=>x.id===S.editingJobId);
    if(j){
-     Object.assign(j,p,{updatedAt:new Date().toISOString()});
+     if(!canNormallyEditJob(j)){
+       alert(uiText('Zmiany są zablokowane po rozpoczęciu dojazdu.','Änderungen sind nach Beginn der Anfahrt gesperrt.','Changes are locked after departure.'));
+       return;
+     }
+     const changedFields=significantChangeFields(j,p);
+     if(changedFields.length){
+       recordClientChangeEvent(j,changedFields,helperHasConfirmed(j)?'assigned_helper':'interested_or_open');
+       if(jobCandidateCount(j)>0)notifyInterestedAboutChange(j,changedFields);
+       if(helperHasConfirmed(j)){
+         j.pendingChange={
+           proposed:{...p},
+           changedFields,
+           requestedAt:new Date().toISOString()
+         };
+         j.changeApprovalRequired=true;
+       }else{
+         Object.assign(j,p,{updatedAt:new Date().toISOString()});
+       }
+     }
    }
    S.editingJobId=null;
  }else{
@@ -1216,8 +1375,10 @@ function publishJobFromReview(){
      status:'published',
      createdAt:new Date().toISOString(),
      ownerId:S.user?.email||'local',
-     client:S.user?.name||((S.user?.firstName||'')+' '+(S.user?.lastName||'')).trim()
+     client:S.user?.name||((S.user?.firstName||'')+' '+(S.user?.lastName||'')).trim(),
+     repostedFrom:S.repostingFromJobId||null
    });
+   S.repostingFromJobId=null;
  }
  S.jobDraft=null;
  S.currentScreen='S08';

@@ -943,10 +943,13 @@ function helperApplicationState(j){
  const helperName=currentHelperName();
  const helperId=currentHelperId();
  const selectedForMe=(j.helper===helperName || j.helper===helperId);
+ const myCandidate=(Array.isArray(j.candidates)?j.candidates:[]).find(candidateMatchesCurrentHelper);
+
+ if(myCandidate && typeof myCandidate==='object' && ['declined','not_selected'].includes(myCandidate.status))return 'rejected';
  if(['completed'].includes(j.status) && selectedForMe)return 'done';
  if(selectedForMe && !['cancelled','unfulfilled'].includes(j.status))return 'active';
  if(helperAppliedToJob(j)){
-   if(j.helper && !selectedForMe)return 'rejected';
+   if(j.helper && !selectedForMe && ['confirmed','enroute','onsite','inprogress','awaiting','completed'].includes(j.status))return 'rejected';
    if(['cancelled','unfulfilled'].includes(j.status))return 'rejected';
    return 'waiting';
  }
@@ -1102,7 +1105,17 @@ function clientHome(){
  const active=jobs.find(j=>!['completed','cancelled'].includes(j.status));
  main.innerHTML=`<section class="screen"><h1>${t('needQuestion')}</h1><button onclick="createJob()">+ ${t('needHelp').toUpperCase()}</button>${active?`<div class="card top-space clickable-card" onclick="openClientJob('${active.id}')"><h2>${t('activeJob')}</h2>${jobCard(active,true)}<div class="row between" style="margin-top:10px"><div class="muted small">${uiText('Dotknij, aby zobaczyć szczegóły','Tippen für Details','Tap for details')} →</div><div class="pill">${jobCandidateCount(active)} ${uiText('zainteresowanych','Interessenten','interested')}</div></div></div>`:''}<div class="card"><h3>${t('howWorks')}</h3><div class="timeline small"><div class="tl"><span class="dot"></span><div>${t('step1')}</div></div><div class="tl"><span class="dot"></span><div>${t('step2')}</div></div><div class="tl"><span class="dot"></span><div>${t('step3')}</div></div></div></div></section>`;
 }
-function helperHome(){autoCloseExpiredJobs();const available=S.jobs.filter(j=>['published','searching'].includes(j.status)&&!j.helper);const mine=S.jobs.find(j=>j.helper===S.user.name&&!['completed','cancelled','unfulfilled'].includes(j.status));main.innerHTML=`<section class="screen"><div class="card row between"><div><h2 style="margin:0">${t('available')}</h2><div class="muted small">${t('visibility')}</div></div><button class="mini ${S.helperAvailable?'ok':'ghost'}" onclick="toggleAvail()">${S.helperAvailable?'ON':'OFF'}</button></div>${mine?`<div class="card"><h2>${t('yourActive')}</h2>${jobCard(mine,true)}${mine.pendingChange?`<div class="pending-change"><strong>${uiText('Zleceniodawca zmienił warunki','Der Auftraggeber hat Bedingungen geändert','The client changed the terms')}</strong><div class="muted small">${esc((mine.pendingChange.changedFields||[]).join(', '))}</div><div class="grid2 top-space"><button class="ok" onclick="helperChangeDecision('${mine.id}',true)">${t('confirm')}</button><button class="danger" onclick="helperChangeDecision('${mine.id}',false)">${uiText('ODRZUĆ','ABLEHNEN','REJECT')}</button></div></div>`:''}</div>`:''}<h2>${t('availableJobs')}</h2>${available.length?available.map(j=>`<div class="card job helper-offer-card" onclick="openHelperOffer('${j.id}')">${jobCard(j,false)}<div class="interest-row">${helperAppliedToJob(j)?`<button class="interest-sent-btn" onclick="event.stopPropagation()" disabled>${uiText('Zgłoszenie wysłane','Interesse gesendet','Interest sent')}</button>`:`<button class="interest-btn" onclick="event.stopPropagation();interest('${j.id}')" ${!S.helperAvailable?'disabled':''}>${t('interested')}</button>`}</div></div>`).join(''):`<div class="card center muted">${t('noJobs')}</div>`}</section>`}
+function helperHome(){autoCloseExpiredJobs();
+ const meName=currentHelperName(), meId=currentHelperId();
+ const available=S.jobs.filter(j=>{
+   if(['published','searching'].includes(j.status))return true;
+   if(j.status==='selected'){
+     const selectedForMe=(j.helper===meName || j.helper===meId || j.helperId===meId);
+     return !selectedForMe;
+   }
+   return false;
+ });
+ const mine=S.jobs.find(j=>(j.helper===meName || j.helper===meId || j.helperId===meId)&&!['completed','cancelled','unfulfilled'].includes(j.status));main.innerHTML=`<section class="screen"><div class="card row between"><div><h2 style="margin:0">${t('available')}</h2><div class="muted small">${t('visibility')}</div></div><button class="mini ${S.helperAvailable?'ok':'ghost'}" onclick="toggleAvail()">${S.helperAvailable?'ON':'OFF'}</button></div>${mine?`<div class="card"><h2>${t('yourActive')}</h2>${jobCard(mine,true)}${mine.pendingChange?`<div class="pending-change"><strong>${uiText('Zleceniodawca zmienił warunki','Der Auftraggeber hat Bedingungen geändert','The client changed the terms')}</strong><div class="muted small">${esc((mine.pendingChange.changedFields||[]).join(', '))}</div><div class="grid2 top-space"><button class="ok" onclick="helperChangeDecision('${mine.id}',true)">${t('confirm')}</button><button class="danger" onclick="helperChangeDecision('${mine.id}',false)">${uiText('ODRZUĆ','ABLEHNEN','REJECT')}</button></div></div>`:''}</div>`:''}<h2>${t('availableJobs')}</h2>${available.length?available.map(j=>`<div class="card job helper-offer-card" onclick="openHelperOffer('${j.id}')">${jobCard(j,false)}<div class="interest-row">${helperAppliedToJob(j)?`<button class="interest-sent-btn" onclick="event.stopPropagation()" disabled>${uiText('Zgłoszenie wysłane','Interesse gesendet','Interest sent')}</button>`:`<button class="interest-btn" onclick="event.stopPropagation();interest('${j.id}')" ${!S.helperAvailable?'disabled':''}>${t('interested')}</button>`}</div></div>`).join(''):`<div class="card center muted">${t('noJobs')}</div>`}</section>`}
 
 
 function openHelperOffer(id){
@@ -1113,22 +1126,95 @@ function openHelperOffer(id){
  document.body.classList.remove('welcome-mode');
  bottom('jobs');
 
+ const meId=currentHelperId(), meName=currentHelperName();
+ const selectedForMe=(j.helper===meName || j.helper===meId || j.helperId===meId);
+ const needsDecision=selectedForMe && j.status==='selected';
+
  main.innerHTML=`<section class="screen">
-   <button class="ghost" onclick="home()">${t('browserBack')}</button>
+   <button class="ghost" onclick="jobsView()">${t('browserBack')}</button>
    <h1>${t('order')}</h1>
    <div class="card">
+     <div class="summary-row"><div class="summary-label">${t('status')}</div><div class="summary-value">${esc(localizedJobStatus(j.status))}</div></div>
      <div class="summary-row"><div class="summary-label">${t('category')}</div><div class="summary-value">${esc(j.category||'—')}</div></div>
      <div class="summary-row"><div class="summary-label">${t('description')}</div><div class="summary-value">${esc(j.description||'—')}</div></div>
      <div class="summary-row"><div class="summary-label">${t('when')}</div><div class="summary-value">${jobWhenText(j)}</div></div>
      <div class="summary-row"><div class="summary-label">${t('duration')}</div><div class="summary-value">${esc(j.duration||'—')}</div></div>
      <div class="summary-row"><div class="summary-label">${t('price')}</div><div class="summary-value">${esc(String(j.price||'—'))}${j.price?' €':''}</div></div>
    </div>
-   <div class="card">
-     ${helperAppliedToJob(j)
-       ? `<button class="ghost" disabled>${uiText('Zgłoszenie wysłane','Interesse gesendet','Interest sent')}</button>`
-       : `<button onclick="interest('${j.id}')">${t('interested')}</button>`}
-   </div>
+
+   ${needsDecision?`<div class="card stack">
+     <div class="notice">${uiText(
+       'Zleceniodawca wybrał Ciebie. Potwierdź, czy przyjmujesz to zlecenie.',
+       'Der Auftraggeber hat dich ausgewählt. Bitte bestätige, ob du den Auftrag annimmst.',
+       'The client selected you. Please confirm whether you accept the job.'
+     )}</div>
+     <button class="ok" onclick="confirmSelectedJob('${j.id}')">${t('confirm')}</button>
+     <button class="danger" onclick="declineSelectedJob('${j.id}')">${t('cannot')}</button>
+   </div>`:
+   selectedForMe && j.status==='confirmed'
+     ? `<div class="card"><div class="status okay">${t('confirmed')}</div></div>`
+     : `<div class="card">
+         ${helperAppliedToJob(j)
+           ? `<button class="ghost" disabled>${uiText('Zgłoszenie wysłane','Interesse gesendet','Interest sent')}</button>`
+           : `<button onclick="interest('${j.id}')">${t('interested')}</button>`}
+       </div>`
+   }
  </section>`;
+}
+
+
+function confirmSelectedJob(id){
+ const j=S.jobs.find(x=>x.id===id);
+ if(!j)return;
+ const meId=currentHelperId(), meName=currentHelperName();
+ const selectedForMe=(j.helper===meName || j.helper===meId || j.helperId===meId);
+ if(!selectedForMe || j.status!=='selected')return;
+
+ j.status='confirmed';
+ j.confirmedAt=new Date().toISOString();
+
+ // Odrzuć pozostałych kandydatów dopiero TERAZ — po potwierdzeniu.
+ if(Array.isArray(j.candidates)){
+   j.candidates.forEach(c=>{
+     if(typeof c==='object' && !candidateMatchesCurrentHelper(c) && c.status!=='declined'){
+       c.status='not_selected';
+     }
+   });
+ }
+ save();
+ alert(uiText(
+   'Zlecenie zostało potwierdzone.',
+   'Auftrag bestätigt.',
+   'Job confirmed.'
+ ));
+ openHelperOffer(id);
+}
+
+function declineSelectedJob(id){
+ const j=S.jobs.find(x=>x.id===id);
+ if(!j)return;
+ const meId=currentHelperId(), meName=currentHelperName();
+ const selectedForMe=(j.helper===meName || j.helper===meId || j.helperId===meId);
+ if(!selectedForMe || j.status!=='selected')return;
+
+ if(Array.isArray(j.candidates)){
+   const mine=j.candidates.find(candidateMatchesCurrentHelper);
+   if(mine && typeof mine==='object')mine.status='declined';
+ }
+
+ j.helper=null;
+ j.helperId=null;
+ j.selectedAt=null;
+ j.status='published';
+ j.declinedBySelectedHelperAt=new Date().toISOString();
+ save();
+
+ alert(uiText(
+   'Odrzuciłeś zlecenie. Oferta wróciła do dostępnych zleceń.',
+   'Du hast den Auftrag abgelehnt. Das Angebot ist wieder für andere Helfer verfügbar.',
+   'You declined the job. The offer is available to other helpers again.'
+ ));
+ jobsView('rejected');
 }
 
 function helperChangeDecision(id,accept){

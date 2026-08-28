@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.5">
+<meta name="sekretarz-version" content="DE-v9.6">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -240,6 +240,31 @@ button{cursor:pointer}
   .status-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
   .status-legend span{font-size:12px;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:#fff}
   @media(max-width:640px){.contact-grid{grid-template-columns:1fr}}
+
+
+  .ai-center{display:grid;gap:14px}
+  .ai-block{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px}
+  .ai-block h3{margin:0 0 10px;font-size:18px}
+  .ai-block p{margin:0;color:var(--muted);line-height:1.5}
+  .ai-block.purple{background:#f6f1ff;border-color:#d4c3ff}
+  .ai-block.blue{background:#eef5ff;border-color:#c7d9ff}
+  .ai-block.yellow{background:#fff9e6;border-color:#f1dc8c}
+  .ai-block.green{background:#eefaf1;border-color:#b8dfc2}
+  .ai-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .ai-plan{display:grid;gap:8px}
+  .ai-plan-item{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .ai-plan-num{min-width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#ece7ff;color:#6847e8;font-weight:700}
+  .ai-question-box{display:grid;gap:10px}
+  .ai-answer-row{display:flex;gap:8px;flex-wrap:wrap}
+  .ai-answer-row button{flex:1;min-width:120px}
+  .timeline{display:grid;gap:10px}
+  .timeline-item{display:grid;grid-template-columns:14px 1fr;gap:10px}
+  .timeline-dot{width:10px;height:10px;border-radius:50%;background:#7c4dff;margin-top:6px}
+  .timeline-item b{display:block;margin-bottom:3px}
+  .timeline-item small{color:var(--muted)}
+  .ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ai-actions .btn{margin:0}
+  @media(max-width:640px){.ai-actions{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -606,37 +631,80 @@ button{cursor:pointer}
 <!-- DE-009 -->
 <section id="de009" class="page hidden">
   <div class="detail-wrap">
-    <div class="backbar" style="justify-content:space-between">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
       <button class="backbtn" onclick="back()">← Zurück</button>
       <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
     </div>
 
     <div class="detail-card">
-      <div class="detail-head">
+      <div class="case-top" style="align-items:flex-start">
         <div>
-          <h2 id="detailTitle">Angelegenheit</h2>
+          <h2 id="detailTitle" style="margin:0 0 10px">Angelegenheit</h2>
           <span id="detailStatus" class="tag">Status</span>
         </div>
         <small id="detailDate"></small>
       </div>
 
-      <div class="detail-meta">
-        <div class="meta"><b>Beschreibung</b><p id="detailDesc" style="margin-bottom:0;color:var(--muted)"></p></div>
-        <div class="meta"><b>Nächster Schritt</b><p style="margin-bottom:0;color:var(--muted)">Sekretarz soll den nächsten sinnvollen Schritt vorschlagen.</p></div>
-        <div id="caseLocationBox" class="meta hidden"><b>Ort / Kontakt</b><p id="caseLocationContent" style="margin-bottom:0;color:var(--muted)"></p></div>
-        <div class="meta"><b>Verlauf</b><p style="margin-bottom:0;color:var(--muted)">Noch keine echte Historie — Testansicht.</p></div>
-      </div>
+      <div id="aiCaseCenter" class="ai-center" style="margin-top:16px">
+        <div class="ai-block purple">
+          <div class="ai-kicker">Sekretär-Analyse</div>
+          <h3>Was ist gerade los?</h3>
+          <p id="aiSituationText">Noch keine Analyse vorhanden.</p>
+        </div>
 
-      <div class="detail-actions">
-        <button class="btn primary">Nächsten Schritt vorbereiten</button>
-        <button class="btn secondary" onclick="editCurrentCase()">Bearbeiten</button>
-        <button class="btn secondary" onclick="goDashboard()">Zum Dashboard</button>
+        <div class="ai-block blue">
+          <div class="ai-kicker">Nächster sinnvoller Schritt</div>
+          <h3 id="aiNextStepTitle">Nächsten Schritt vorbereiten</h3>
+          <p id="aiNextStepText">Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.</p>
+        </div>
+
+        <div class="ai-block yellow">
+          <div class="ai-kicker">Frage an dich</div>
+          <h3>Fehlen Informationen?</h3>
+          <div class="ai-question-box">
+            <p id="aiQuestionText">Gab es seit dem letzten Kontakt ein Telefonat oder eine andere wichtige Information?</p>
+            <div class="ai-answer-row">
+              <button class="btn secondary" onclick="answerAIQuestion(false)">Nein</button>
+              <button class="btn primary" onclick="answerAIQuestion(true)">Ja, ergänzen</button>
+            </div>
+            <textarea id="aiUserNote" class="hidden" rows="3" placeholder="Fasse kurz zusammen, was passiert ist."></textarea>
+            <button id="aiSaveNoteBtn" class="btn primary hidden" onclick="saveAIUserNote()">Zur Historie hinzufügen</button>
+          </div>
+        </div>
+
+        <div class="ai-block">
+          <div class="ai-kicker">Plan</div>
+          <h3>Plan für diese Angelegenheit</h3>
+          <div id="aiPlanList" class="ai-plan"></div>
+        </div>
+
+        <div id="caseLocationBox" class="ai-block hidden">
+          <div class="ai-kicker">Ort / Kontakt</div>
+          <h3>Kontakt zur Angelegenheit</h3>
+          <p id="caseLocationContent"></p>
+        </div>
+
+        <div class="ai-block">
+          <div class="ai-kicker">Historie</div>
+          <h3>Was ist bisher passiert?</h3>
+          <div id="caseTimeline" class="timeline"></div>
+        </div>
+
+        <div class="ai-block green">
+          <div class="ai-kicker">Sekretär-Aktionen</div>
+          <h3>Was soll ich jetzt tun?</h3>
+          <div class="ai-actions">
+            <button class="btn primary" onclick="prepareNextStep()">Nächsten Schritt vorbereiten</button>
+            <button class="btn secondary" onclick="editCurrentCase()">Bearbeiten</button>
+            <button class="btn secondary" onclick="goDashboard()">Zum Dashboard</button>
+            <button class="btn secondary" onclick="markCaseDone()">Als erledigt markieren</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
   <div class="page-id">DE-009</div>
 </section>
-
 
 <!-- DE-010 -->
 <section id="de010" class="page hidden">
@@ -1172,6 +1240,144 @@ function goDashboard(){
 
 let currentCaseData=null;
 
+function getCaseHistory(data){
+  if(Array.isArray(data?.history) && data.history.length) return data.history;
+  const history=[];
+  if(data?.desc) history.push({type:'Start',text:data.desc,date:data.dateDisplay || ''});
+  return history;
+}
+
+function buildAIPlan(data){
+  if(data?.careType!=='ai'){
+    return [
+      'Zur gewünschten Zeit erinnern.',
+      'Bei Bestätigung als erledigt markieren.',
+      'Ohne Reaktion bis zu 5-mal nachfassen.'
+    ];
+  }
+
+  const plan=[];
+  if(data?.status==='Warte auf Antwort'){
+    plan.push('Auf die nächste Antwort warten und neue Informationen automatisch der Angelegenheit zuordnen.');
+    plan.push('Neue Antwort analysieren und mit dem bisherigen Verlauf vergleichen.');
+    plan.push('Falls keine Antwort kommt, rechtzeitig einen Follow-up-Schritt vorbereiten.');
+  }else{
+    plan.push('Aktuellen Stand prüfen und fehlende Informationen erkennen.');
+    plan.push('Den nächsten sinnvollen Schritt vorbereiten.');
+    plan.push('Neue Ereignisse, E-Mails, Dokumente oder Telefonate in die Historie aufnehmen.');
+  }
+
+  if(data?.sourceSettings?.web){
+    plan.push('Bei Bedarf aktuelle geprüfte Internetquellen einbeziehen.');
+  }
+  return plan;
+}
+
+function renderAIPlan(data){
+  const box=document.getElementById('aiPlanList');
+  if(!box) return;
+  const plan=buildAIPlan(data);
+  box.innerHTML=plan.map((item,i)=>
+    '<div class="ai-plan-item"><div class="ai-plan-num">'+(i+1)+'</div><div>'+escapeHtml(item)+'</div></div>'
+  ).join('');
+}
+
+function renderTimeline(data){
+  const box=document.getElementById('caseTimeline');
+  if(!box) return;
+  const history=getCaseHistory(data);
+  if(!history.length){
+    box.innerHTML='<p style="color:var(--muted)">Noch keine Historie vorhanden.</p>';
+    return;
+  }
+  box.innerHTML=history.map(item=>
+    '<div class="timeline-item"><div class="timeline-dot"></div><div><b>'+escapeHtml(item.type || 'Eintrag')+'</b><div>'+escapeHtml(item.text || '')+'</div><small>'+escapeHtml(item.date || '')+'</small></div></div>'
+  ).join('');
+}
+
+function renderAICenter(data){
+  const situation=document.getElementById('aiSituationText');
+  const nextText=document.getElementById('aiNextStepText');
+  const nextTitle=document.getElementById('aiNextStepTitle');
+  const question=document.getElementById('aiQuestionText');
+
+  if(data?.careType==='ai'){
+    if(situation){
+      situation.textContent=(data.status==='Warte auf Antwort')
+        ? 'Diese Angelegenheit ist aktiv unter KI-Betreuung. Aktuell warten wir auf eine Antwort. Der Sekretär soll neue Informationen automatisch in den Verlauf einordnen und den nächsten Schritt vorbereiten.'
+        : 'Diese Angelegenheit wird aktiv durch den Sekretär begleitet. Der aktuelle Stand wird laufend mit neuen Informationen ergänzt.';
+    }
+    if(nextTitle) nextTitle.textContent=data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten';
+    if(nextText) nextText.textContent=data?.nextStep || 'Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.';
+    if(question) question.textContent='Gab es seit dem letzten Kontakt ein Telefonat, eine Nachricht oder eine andere wichtige Information?';
+  }else{
+    if(situation) situation.textContent='Dies ist eine einfache Erinnerung. Es ist keine laufende KI-Analyse erforderlich.';
+    if(nextTitle) nextTitle.textContent='Erinnerung';
+    if(nextText) nextText.textContent='Der Sekretär erinnert zur gespeicherten Zeit und verfolgt die Bestätigung.';
+    if(question) question.textContent='Möchtest du zu dieser Aufgabe noch etwas ergänzen?';
+  }
+
+  renderAIPlan(data);
+  renderTimeline(data);
+}
+
+function answerAIQuestion(hasInfo){
+  const note=document.getElementById('aiUserNote');
+  const btn=document.getElementById('aiSaveNoteBtn');
+  if(!note || !btn) return;
+  note.classList.toggle('hidden',!hasInfo);
+  btn.classList.toggle('hidden',!hasInfo);
+  if(hasInfo) note.focus();
+}
+
+function saveAIUserNote(){
+  const note=document.getElementById('aiUserNote');
+  const btn=document.getElementById('aiSaveNoteBtn');
+  const text=(note?.value || '').trim();
+  if(!text || !currentCaseData) return;
+
+  const history=getCaseHistory(currentCaseData);
+  history.push({
+    type:'Deine Notiz',
+    text,
+    date:new Date().toLocaleString('de-DE')
+  });
+
+  currentCaseData.history=history;
+  const saved=upsertStoredCase(currentCaseData);
+  currentCaseData=saved;
+  renderTimeline(saved);
+
+  note.value='';
+  note.classList.add('hidden');
+  btn.classList.add('hidden');
+}
+
+function prepareNextStep(){
+  if(!currentCaseData) return;
+  const box=document.getElementById('aiNextStepText');
+  if(!box) return;
+
+  if(currentCaseData.status==='Warte auf Antwort'){
+    box.textContent='Wenn keine neue Antwort eingeht, soll der Sekretär einen Follow-up-Termin setzen und eine passende Erinnerung oder Antwort vorbereiten.';
+  }else{
+    box.textContent='Der Sekretär prüft den aktuellen Stand und schlägt den nächsten konkreten Schritt vor.';
+  }
+}
+
+function markCaseDone(){
+  if(!currentCaseData) return;
+  currentCaseData.status='Erledigt';
+  const saved=upsertStoredCase(currentCaseData);
+  currentCaseData=saved;
+  renderDashboardCases();
+  openCase(
+    saved.title,saved.status,saved.desc,saved.dateDisplay || '',saved.category,
+    saved.nextStep,saved.careType,saved.reminderDateTime,saved.sourceSettings,
+    saved.contact,saved.id
+  );
+}
+
 function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null,contact=null,id=null){
   currentCaseData={id,title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact,dateDisplay:date};
 
@@ -1199,6 +1405,7 @@ function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careTy
   }
 
   renderCurrentCaseLocation();
+  renderAICenter(currentCaseData);
   go('de009');
 }
 
@@ -1217,7 +1424,8 @@ function getDefaultCases(){
       careType:'ai',
       reminderDateTime:'',
       sourceSettings:{email:true,docs:true,calls:true,web:true},
-      contact:null
+      contact:null,
+      history:[]
     },
     {
       id:'demo-werkstatt',
@@ -1230,7 +1438,8 @@ function getDefaultCases(){
       careType:'reminder',
       reminderDateTime:'',
       sourceSettings:{email:false,docs:false,calls:false,web:false},
-      contact:null
+      contact:null,
+      history:[]
     },
     {
       id:'demo-autoversicherung',
@@ -1243,7 +1452,8 @@ function getDefaultCases(){
       careType:'reminder',
       reminderDateTime:'',
       sourceSettings:{email:false,docs:false,calls:false,web:false},
-      contact:null
+      contact:null,
+      history:[]
     }
   ];
 }
@@ -1494,6 +1704,10 @@ function bindCaseCard(el,data,dateDisplay,cardText){
     data.contact,
     data.id || null
   );
+  if(currentCaseData){
+    currentCaseData.history=Array.isArray(data.history) ? data.history : [];
+    renderAICenter(currentCaseData);
+  }
 
   el.classList.remove('status-blue','status-yellow','status-orange','status-red','status-green','status-purple');
   const visual=getStatusVisual(data.status,data.careType);
@@ -1554,7 +1768,8 @@ function saveCaseForm(){
     nextStep,
     sourceSettings,
     contact,
-    dateDisplay
+    dateDisplay,
+    history:Array.isArray(currentCaseData?.history) ? currentCaseData.history : []
   };
 
   const isEditing=!!(editingCaseOriginalTitle || editingCaseId);
@@ -1631,6 +1846,8 @@ function restoreCaseById(id){
     data.contact || null,
     data.id || null
   );
+  if(currentCaseData) currentCaseData.history=Array.isArray(data.history) ? data.history : [];
+  renderAICenter(currentCaseData);
   return true;
 }
 

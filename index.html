@@ -170,6 +170,19 @@ button{cursor:pointer}
   .bottom{width:100%;max-width:none}
   .detail-wrap{padding:14px}.detail-card{padding:18px}
 }
+
+.password-wrap{position:relative}
+.password-wrap input{padding-right:48px}
+.eye-btn{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:38px;height:38px;border:0;background:transparent;border-radius:10px;
+  display:grid;place-items:center;color:#78839a;font-size:20px
+}
+.eye-btn:hover{background:#f3f6fb}
+.phone-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px}
+.phone-row select,.phone-row input{width:100%}
+@media(max-width:430px){.phone-row{grid-template-columns:135px minmax(0,1fr)}}
+
 </style>
 </head>
 <body>
@@ -241,28 +254,67 @@ button{cursor:pointer}
 
       <div class="field">
         <label>Vorname</label>
-        <input id="regName" placeholder="Dein Vorname">
+        <input id="regFirstName" autocomplete="given-name" placeholder="Vorname">
+      </div>
+
+      <div class="field">
+        <label>Nachname</label>
+        <input id="regLastName" autocomplete="family-name" placeholder="Nachname">
+      </div>
+
+      <div class="field">
+        <label>Straße und Hausnummer</label>
+        <input id="regStreet" autocomplete="street-address" placeholder="z. B. Musterstraße 12">
+      </div>
+
+      <div class="field">
+        <label>PLZ</label>
+        <input id="regZip" inputmode="numeric" autocomplete="postal-code" placeholder="z. B. 83646">
+      </div>
+
+      <div class="field">
+        <label>Ort</label>
+        <input id="regCity" autocomplete="address-level2" placeholder="Ort">
       </div>
 
       <div class="field">
         <label>E-Mail-Adresse</label>
-        <input id="regEmail" type="email" placeholder="name@beispiel.de">
+        <input id="regEmail" type="email" autocomplete="email" placeholder="name@beispiel.de">
       </div>
 
       <div class="field">
         <label>Telefonnummer</label>
-        <input id="regPhone" type="tel" placeholder="+49 ...">
-        <div class="helper">Wird später auch für Anmeldung und Kontowiederherstellung nutzbar sein.</div>
+        <div class="phone-row">
+          <select id="regPhonePrefix" aria-label="Ländervorwahl">
+            <option value="+49" selected>🇩🇪 +49</option>
+            <option value="+43">🇦🇹 +43</option>
+            <option value="+41">🇨🇭 +41</option>
+            <option value="+48">🇵🇱 +48</option>
+            <option value="+31">🇳🇱 +31</option>
+            <option value="+33">🇫🇷 +33</option>
+            <option value="+39">🇮🇹 +39</option>
+            <option value="+34">🇪🇸 +34</option>
+            <option value="+44">🇬🇧 +44</option>
+          </select>
+          <input id="regPhone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="171 1234567">
+        </div>
+        <div class="helper">Nummer ohne führende 0 eingeben. Beispiel Deutschland: <b>171 1234567</b> statt <b>0171 1234567</b>.</div>
       </div>
 
       <div class="field">
         <label>Passwort</label>
-        <input id="regPassword" type="password" placeholder="Mindestens 8 Zeichen">
+        <div class="password-wrap">
+          <input id="regPassword" type="password" autocomplete="new-password" placeholder="Mindestens 8 Zeichen">
+          <button type="button" class="eye-btn" onclick="togglePassword('regPassword', this)" aria-label="Passwort anzeigen">◉̸</button>
+        </div>
       </div>
 
       <div class="field">
         <label>Passwort wiederholen</label>
-        <input id="regPassword2" type="password" placeholder="Passwort erneut eingeben">
+        <div class="password-wrap">
+          <input id="regPassword2" type="password" autocomplete="new-password" placeholder="Passwort erneut eingeben">
+          <button type="button" class="eye-btn" onclick="togglePassword('regPassword2', this)" aria-label="Passwort anzeigen">◉̸</button>
+        </div>
       </div>
 
       <label class="checkrow">
@@ -302,7 +354,10 @@ button{cursor:pointer}
 
       <div class="field">
         <label>Passwort</label>
-        <input id="loginPassword" type="password" placeholder="Passwort">
+        <div class="password-wrap">
+          <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort">
+          <button type="button" class="eye-btn" onclick="togglePassword('loginPassword', this)" aria-label="Passwort anzeigen">◉̸</button>
+        </div>
       </div>
 
       <div id="loginMsg" class="hidden"></div>
@@ -506,38 +561,77 @@ function clearMsg(id){
   el.textContent='';
 }
 
+function togglePassword(inputId, button){
+  const input=document.getElementById(inputId);
+  const showing=input.type==='text';
+  input.type=showing?'password':'text';
+  button.textContent=showing?'◉̸':'◉';
+  button.setAttribute('aria-label',showing?'Passwort anzeigen':'Passwort ausblenden');
+}
+
 function registerUser(){
   clearMsg('regMsg');
 
-  const name=document.getElementById('regName').value.trim();
+  const firstName=document.getElementById('regFirstName').value.trim();
+  const lastName=document.getElementById('regLastName').value.trim();
+  const street=document.getElementById('regStreet').value.trim();
+  const zip=document.getElementById('regZip').value.trim();
+  const city=document.getElementById('regCity').value.trim();
   const email=document.getElementById('regEmail').value.trim();
-  const phone=document.getElementById('regPhone').value.trim();
+  const prefix=document.getElementById('regPhonePrefix').value;
+  const phoneRaw=document.getElementById('regPhone').value.trim();
   const p1=document.getElementById('regPassword').value;
   const p2=document.getElementById('regPassword2').value;
   const terms=document.getElementById('regTerms').checked;
 
-  if(!name || !email || !phone || !p1 || !p2){
+  if(!firstName || !lastName || !street || !zip || !city || !email || !phoneRaw || !p1 || !p2){
     setMsg('regMsg','error','Bitte alle Felder ausfüllen.');
     return;
   }
-  if(!email.includes('@')){
+
+  if(!email.includes('@') || !email.includes('.')){
     setMsg('regMsg','error','Bitte eine gültige E-Mail-Adresse eingeben.');
     return;
   }
+
+  const phoneDigits=phoneRaw.replace(/\D/g,'');
+
+  if(phoneDigits.startsWith('0')){
+    setMsg('regMsg','error','Bitte die Telefonnummer ohne führende 0 eingeben.');
+    return;
+  }
+
+  if(phoneDigits.length<6){
+    setMsg('regMsg','error','Bitte eine gültige Telefonnummer eingeben.');
+    return;
+  }
+
   if(p1.length<8){
     setMsg('regMsg','error','Das Passwort muss mindestens 8 Zeichen haben.');
     return;
   }
+
   if(p1!==p2){
     setMsg('regMsg','error','Die Passwörter stimmen nicht überein.');
     return;
   }
+
   if(!terms){
     setMsg('regMsg','error','Bitte Nutzungsbedingungen und Datenschutz akzeptieren.');
     return;
   }
 
-  setMsg('regMsg','success','Registrierung erfolgreich vorbereitet. Im echten System folgt jetzt die E-Mail-/Telefon-Bestätigung.');
+  const fullPhone=prefix+' '+phoneDigits;
+  const profile={firstName,lastName,street,zip,city,email,phone:fullPhone};
+
+  localStorage.setItem('sekretarzDemoProfile',JSON.stringify(profile));
+
+  setMsg(
+    'regMsg',
+    'success',
+    `Daten geprüft. Telefonnummer: ${fullPhone}. Im echten System folgt jetzt die E-Mail-/Telefon-Bestätigung.`
+  );
+
   setTimeout(()=>{
     loggedIn=true;
     historyStack=['de001','de002','de003','de006'];

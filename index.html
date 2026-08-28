@@ -6,165 +6,650 @@
 <meta name="theme-color" content="#356df3">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
-:root{--blue:#356df3;--blue2:#5d4ef7;--navy:#0c1b3b;--muted:#74809a;--bg:#f7f9fe;--card:#fff;--line:#e7ebf3;--shadow:0 14px 40px rgba(28,58,128,.10)}
-*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;overflow-x:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fff,#f6f9ff);color:var(--navy)}
-button,input,textarea,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}.page{min-height:100vh}
-.container{width:min(1160px,100%);margin:0 auto;padding:0 22px}
-.page-id{position:fixed;right:10px;bottom:10px;z-index:50;font-size:11px;font-weight:800;color:#7b86a0;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:999px;padding:5px 9px;backdrop-filter:blur(8px)}
-.logo{width:42px;height:42px;flex:0 0 42px;border:0;border-radius:13px;background:linear-gradient(135deg,var(--blue),var(--blue2));position:relative;box-shadow:0 8px 20px rgba(53,109,243,.25);padding:0}
-.logo:before{content:"✓";position:absolute;inset:7px;background:#fff;border-radius:9px;color:var(--blue);display:grid;place-items:center;font-size:24px;font-weight:900}
-.logo:after{content:"";position:absolute;left:7px;bottom:-6px;border:7px solid transparent;border-top-color:var(--blue2);transform:rotate(18deg)}
-.brand{display:flex;align-items:center;gap:10px;min-width:0;font-weight:800;font-size:24px}.brand-text{min-width:0}.brand small{display:block;font-weight:500;font-size:11px;color:var(--muted);line-height:1.25;margin-top:2px}
-.btn{border:0;border-radius:13px;padding:13px 18px;font-weight:750}.primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 10px 26px rgba(53,109,243,.22)}.secondary{background:#fff;border:1px solid var(--line);color:var(--navy)}
-.backbar{display:flex;align-items:center;gap:10px}.backbtn{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;color:var(--blue);padding:8px 0;font-weight:800}
-/* DE-001 */
-.lang-page{min-height:100vh;display:grid;place-items:center;padding:28px 18px;background:radial-gradient(circle at 50% 20%,#eef4ff 0,#fff 46%,#f7f9fe 100%)}
-.lang-card{width:min(540px,100%);text-align:center}.lang-logo{display:flex;justify-content:center;align-items:center;gap:14px;margin-bottom:22px}
-.lang-logo .logo{width:68px;height:68px;flex-basis:68px;border-radius:20px}.lang-logo .logo:before{font-size:36px;inset:11px;border-radius:13px}.lang-logo .logo:after{left:12px;bottom:-9px;border-width:10px}
-.lang-logo h1{font-size:46px;letter-spacing:-1.5px;margin:0}.tagline{font-size:18px;line-height:1.5;color:var(--muted);margin:0 auto 36px;max-width:430px}
-.choose-title{font-size:18px;font-weight:800;margin-bottom:14px}.langs{display:grid;grid-template-columns:1fr;gap:10px}
-.lang-btn{background:#fff;border:1px solid var(--line);border-radius:18px;padding:17px 14px;font-weight:800;color:var(--navy);box-shadow:0 8px 24px rgba(28,58,128,.06);display:flex;align-items:center;justify-content:center;gap:12px}
-.lang-btn span{font-size:25px}.lang-btn.active{border-color:#b8c8ff;background:#f7f9ff}.lang-btn.disabled{opacity:.45;cursor:not-allowed}.note{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.45}
-/* DE-002 */
-.topbar{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:14px}.top-actions{display:flex;align-items:center;gap:10px}.nav{display:flex;gap:20px;align-items:center;white-space:nowrap}.nav a{color:var(--navy);text-decoration:none;font-size:14px}
-.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:56px 0 62px}.badge{display:inline-block;background:#edf3ff;color:var(--blue);padding:10px 14px;border-radius:999px;font-weight:700;font-size:13px}
-.hero h1{font-size:58px;line-height:1.03;margin:22px 0 18px;letter-spacing:-2px}.hero p{font-size:19px;line-height:1.55;color:var(--muted);max-width:620px}.actions{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
-.mock{background:#fff;border:1px solid #edf0f7;border-radius:28px;box-shadow:var(--shadow);padding:24px}.mock-head{display:flex;justify-content:space-between;align-items:center}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}.stat{padding:18px;border-radius:18px;background:#f8faff}.stat b{font-size:28px}.list{display:grid;gap:12px}
-.item{padding:16px;border:1px solid var(--line);border-radius:16px;background:#fff}.status{font-size:12px;padding:5px 9px;border-radius:999px;background:#edf3ff;color:var(--blue);display:inline-block;margin-top:6px}
-.features{padding:18px 0 70px}.features h2{text-align:center;font-size:32px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px}
-.feature{background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px;box-shadow:0 10px 30px rgba(28,58,128,.05)}.feature p{color:var(--muted);line-height:1.5}
-/* DE-003 */
-.center-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}.auth{width:min(480px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:var(--shadow)}
-.auth-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.auth h2{text-align:center;font-size:31px;margin:16px 0 8px}.auth>p{text-align:center;color:var(--muted);margin-bottom:25px}
-.field{margin:14px 0}.field label{display:block;font-weight:700;margin-bottom:8px}.field input,.field textarea,.field select{width:100%;padding:15px;border:1px solid #d9dfeb;border-radius:12px;outline:none;background:#fff}
-.full{width:100%}.divider{text-align:center;color:#a1a8b7;margin:18px 0}.social{width:100%;background:white;border:1px solid var(--line);padding:14px;border-radius:12px;margin-top:10px;font-weight:700}.tiny{font-size:12px;color:var(--muted);text-align:center;margin-top:16px}
-/* DE-004 */
-.app-shell{max-width:900px;margin:auto;min-height:100vh;background:#f7f9fe;padding-bottom:92px}.app-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.94);position:sticky;top:0;z-index:8;backdrop-filter:blur(12px)}
-.app-brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800}.app-nav-right{display:flex;align-items:center;gap:12px}.app-content{padding:18px}.app-content h1{font-size:34px;margin:8px 0 18px}
-.search{background:white;border:1px solid var(--line);border-radius:15px;padding:14px 16px;color:#8b94a8}.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
-.sum{background:white;border:1px solid var(--line);border-radius:16px;padding:15px}.sum span{display:block;color:var(--muted);font-size:13px}.sum b{font-size:28px}.cases{display:grid;gap:12px}
-.case{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(28,58,128,.04)}.case-top{display:flex;justify-content:space-between;gap:12px}.case h3{margin:0 0 8px}
-.tag{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;background:#edf3ff;color:var(--blue)}.case p{color:var(--muted);margin:10px 0 0}
-.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:76px;z-index:5}.bottom{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(900px,100%);background:rgba(255,255,255,.97);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:10px 6px calc(10px + env(safe-area-inset-bottom))}
-.bottom button{background:none;border:0;color:#778198}.bottom button.active{color:var(--blue);font-weight:800}
-/* DE-005 */
-.detail-wrap{max-width:760px;margin:0 auto;padding:20px}.detail-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
-.detail-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.detail-head h2{margin:0 0 8px}.detail-meta{display:grid;gap:12px;margin-top:20px}.meta{padding:14px;border-radius:14px;background:#f8faff}
-.detail-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
-/* modal */
-.modal{position:fixed;inset:0;background:rgba(7,16,39,.45);display:grid;place-items:center;padding:20px;z-index:20}.modal-card{width:min(520px,100%);background:white;border-radius:22px;padding:24px}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
-@media(max-width:980px){.container{max-width:760px}.hero{grid-template-columns:1fr;gap:30px;padding:36px 0 50px}.hero>div:first-child{text-align:center}.hero p{margin-left:auto;margin-right:auto}.actions{justify-content:center}.mock{max-width:680px;width:100%;margin:0 auto;order:-1}.grid3{grid-template-columns:1fr}.feature{max-width:680px;width:100%;margin:0 auto}}
-@media(max-width:700px){
-.container{padding:0 14px}.topbar{min-height:68px;padding:8px 0}.brand{font-size:19px;gap:8px;max-width:calc(100% - 86px)}.brand small{display:none}.logo{width:36px;height:36px;flex-basis:36px}.logo:before{font-size:20px}.nav{display:none}.top-actions .secondary{padding:9px 11px;font-size:12px;border-radius:10px}
-.hero{display:flex;flex-direction:column;gap:26px;padding:20px 0 40px}.hero>div:first-child{text-align:center;width:100%}.badge{font-size:11.5px;padding:8px 10px;max-width:100%}.hero h1{font-size:clamp(34px,10vw,46px);line-height:1.04;letter-spacing:-1.1px;margin:18px auto 14px}.hero p{font-size:16.5px;line-height:1.5}.actions{display:grid;grid-template-columns:1fr;width:100%;gap:9px}.actions .btn{width:100%}.mock{order:-1;width:100%;padding:17px;border-radius:22px}.stats{gap:7px}.stat{padding:13px 7px;text-align:center}.stat b{font-size:24px}
-.features{padding:18px 0 46px}.features h2{font-size:28px;line-height:1.15}.feature{padding:21px}.center-wrap{padding:14px}.auth{padding:20px 17px}.auth-top .brand-text{display:none}.app-shell{width:100%;max-width:100%}.app-head{padding:13px 14px}.app-brand{font-size:18px}.app-nav-right .secondary{font-size:12px;padding:9px 10px}.app-content{padding:14px}.app-content h1{font-size:30px}.summary{gap:7px}.sum{padding:13px 9px}.case{padding:15px}.bottom{width:100%;max-width:none}
-.lang-page{padding:22px 16px}.lang-logo{flex-direction:column;gap:10px}.lang-logo h1{font-size:40px}.tagline{font-size:16px;margin-bottom:30px}.detail-wrap{padding:14px}.detail-card{padding:18px}
+:root{
+  --blue:#356df3;--blue2:#5d4ef7;--navy:#0c1b3b;--muted:#74809a;
+  --bg:#f7f9fe;--card:#fff;--line:#e7ebf3;--shadow:0 14px 40px rgba(28,58,128,.10);
+  --danger:#d84545;--ok:#238a57
 }
-@media(max-width:390px){.top-actions .secondary{padding:8px 9px;font-size:11px}.brand{font-size:18px;max-width:calc(100% - 76px)}.hero h1{font-size:34px}.app-nav-right{gap:7px}.app-nav-right .secondary{font-size:11px;padding:8px 8px}}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;min-height:100%;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fff,#f6f9ff);color:var(--navy)}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.page{min-height:100vh}
+.container{width:min(1160px,100%);margin:0 auto;padding:0 22px}
+.page-id{
+  position:fixed;right:10px;bottom:10px;z-index:50;font-size:11px;font-weight:800;color:#7b86a0;
+  background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:999px;padding:5px 9px;
+  backdrop-filter:blur(8px)
+}
+.logo{
+  width:42px;height:42px;flex:0 0 42px;border:0;border-radius:13px;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));position:relative;
+  box-shadow:0 8px 20px rgba(53,109,243,.25);padding:0
+}
+.logo:before{
+  content:"✓";position:absolute;inset:7px;background:#fff;border-radius:9px;color:var(--blue);
+  display:grid;place-items:center;font-size:24px;font-weight:900
+}
+.logo:after{
+  content:"";position:absolute;left:7px;bottom:-6px;border:7px solid transparent;
+  border-top-color:var(--blue2);transform:rotate(18deg)
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;font-weight:800;font-size:24px}
+.brand-text{min-width:0}
+.brand small{display:block;font-weight:500;font-size:11px;color:var(--muted);line-height:1.25;margin-top:2px}
+.btn{border:0;border-radius:13px;padding:13px 18px;font-weight:750}
+.primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 10px 26px rgba(53,109,243,.22)}
+.secondary{background:#fff;border:1px solid var(--line);color:var(--navy)}
+.danger{background:#fff1f1;border:1px solid #ffd2d2;color:var(--danger)}
+.backbar{display:flex;align-items:center;gap:10px}
+.backbtn{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;color:var(--blue);padding:8px 0;font-weight:800}
+.full{width:100%}
+.helper{font-size:12px;color:var(--muted);line-height:1.45}
+.error{background:#fff2f2;border:1px solid #ffd0d0;color:var(--danger);padding:11px 12px;border-radius:12px;font-size:13px;margin:12px 0}
+.success{background:#eefaf4;border:1px solid #cbeedb;color:var(--ok);padding:11px 12px;border-radius:12px;font-size:13px;margin:12px 0}
+
+/* DE-001 */
+.lang-page{
+  min-height:100vh;display:grid;place-items:center;padding:28px 18px;
+  background:radial-gradient(circle at 50% 20%,#eef4ff 0,#fff 46%,#f7f9fe 100%)
+}
+.lang-card{width:min(540px,100%);text-align:center}
+.lang-logo{display:flex;justify-content:center;align-items:center;gap:14px;margin-bottom:22px}
+.lang-logo .logo{width:68px;height:68px;flex-basis:68px;border-radius:20px}
+.lang-logo .logo:before{font-size:36px;inset:11px;border-radius:13px}
+.lang-logo .logo:after{left:12px;bottom:-9px;border-width:10px}
+.lang-logo h1{font-size:46px;letter-spacing:-1.5px;margin:0}
+.tagline{font-size:18px;line-height:1.5;color:var(--muted);margin:0 auto 36px;max-width:430px}
+.choose-title{font-size:18px;font-weight:800;margin-bottom:14px}
+.langs{display:grid;grid-template-columns:1fr;gap:10px}
+.lang-btn{
+  background:#fff;border:1px solid var(--line);border-radius:18px;padding:17px 14px;font-weight:800;
+  color:var(--navy);box-shadow:0 8px 24px rgba(28,58,128,.06);
+  display:flex;align-items:center;justify-content:center;gap:12px
+}
+.lang-btn span{font-size:25px}
+.lang-btn.active{border-color:#b8c8ff;background:#f7f9ff}
+.lang-btn.disabled{opacity:.45;cursor:not-allowed}
+.note{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.45}
+
+/* DE-002 */
+.choice-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+.choice-card{width:min(560px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:var(--shadow)}
+.choice-top{display:flex;justify-content:space-between;align-items:center}
+.choice-title{text-align:center;margin:18px 0 6px;font-size:31px}
+.choice-sub{text-align:center;color:var(--muted);margin:0 0 22px}
+.choice-grid{display:grid;gap:12px}
+.choice-option{width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
+.choice-option:hover{border-color:#b8c8ff;background:#f8faff}
+.choice-option b{display:block;font-size:18px;margin-bottom:6px}
+.choice-option span{color:var(--muted);font-size:14px;line-height:1.4}
+
+/* Auth DE-003/004/005 */
+.center-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+.auth{width:min(500px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:var(--shadow)}
+.auth-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.auth h2{text-align:center;font-size:31px;margin:16px 0 8px}
+.auth>p{text-align:center;color:var(--muted);margin-bottom:25px}
+.field{margin:14px 0}
+.field label{display:block;font-weight:700;margin-bottom:8px}
+.field input,.field textarea,.field select{
+  width:100%;padding:15px;border:1px solid #d9dfeb;border-radius:12px;outline:none;background:#fff
+}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#9bb1ff;box-shadow:0 0 0 3px rgba(53,109,243,.08)}
+.checkrow{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--muted);margin:14px 0}
+.checkrow input{margin-top:3px}
+.linkbtn{border:0;background:none;color:var(--blue);font-weight:750;padding:0}
+.divider{text-align:center;color:#a1a8b7;margin:18px 0}
+.social{width:100%;background:white;border:1px solid var(--line);padding:14px;border-radius:12px;margin-top:10px;font-weight:700}
+.tiny{font-size:12px;color:var(--muted);text-align:center;margin-top:16px}
+
+/* DE-006 */
+.app-shell{max-width:900px;margin:auto;min-height:100vh;background:#f7f9fe;padding-bottom:92px}
+.app-head{
+  display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.94);position:sticky;top:0;z-index:8;backdrop-filter:blur(12px)
+}
+.app-brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800}
+.app-nav-right{display:flex;align-items:center;gap:12px}
+.app-content{padding:18px}
+.app-content h1{font-size:34px;margin:8px 0 18px}
+.search{background:white;border:1px solid var(--line);border-radius:15px;padding:14px 16px;color:#8b94a8}
+.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.sum{background:white;border:1px solid var(--line);border-radius:16px;padding:15px}
+.sum span{display:block;color:var(--muted);font-size:13px}
+.sum b{font-size:28px}
+.cases{display:grid;gap:12px}
+.case{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(28,58,128,.04)}
+.case-top{display:flex;justify-content:space-between;gap:12px}
+.case h3{margin:0 0 8px}
+.tag{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;background:#edf3ff;color:var(--blue)}
+.case p{color:var(--muted);margin:10px 0 0}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:76px;z-index:5}
+.bottom{
+  position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(900px,100%);
+  background:rgba(255,255,255,.97);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(4,1fr);padding:10px 6px calc(10px + env(safe-area-inset-bottom))
+}
+.bottom button{background:none;border:0;color:#778198}
+.bottom button.active{color:var(--blue);font-weight:800}
+
+/* DE-007 */
+.detail-wrap{max-width:760px;margin:0 auto;padding:20px}
+.detail-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+.detail-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.detail-head h2{margin:0 0 8px}
+.detail-meta{display:grid;gap:12px;margin-top:20px}
+.meta{padding:14px;border-radius:14px;background:#f8faff}
+.detail-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(7,16,39,.45);display:grid;place-items:center;padding:20px;z-index:20}
+.modal-card{width:min(520px,100%);background:white;border-radius:22px;padding:24px}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+
+@media(max-width:700px){
+  .container{padding:0 14px}
+  .logo{width:36px;height:36px;flex-basis:36px}.logo:before{font-size:20px}
+  .choice-wrap,.center-wrap{padding:14px}
+  .choice-card,.auth{padding:20px 17px}
+  .auth-top .brand-text{display:none}
+  .choice-title,.auth h2{font-size:28px}
+  .lang-page{padding:22px 16px}
+  .lang-logo{flex-direction:column;gap:10px}.lang-logo h1{font-size:40px}
+  .tagline{font-size:16px;margin-bottom:30px}
+  .app-shell{width:100%;max-width:100%}
+  .app-head{padding:13px 14px}
+  .app-brand{font-size:18px}
+  .app-nav-right{gap:7px}
+  .app-nav-right .secondary{font-size:11px;padding:8px 8px}
+  .app-content{padding:14px}.app-content h1{font-size:30px}
+  .summary{gap:7px}.sum{padding:13px 9px}.case{padding:15px}
+  .bottom{width:100%;max-width:none}
+  .detail-wrap{padding:14px}.detail-card{padding:18px}
+}
 </style>
 </head>
 <body>
 
+<!-- DE-001 -->
 <section id="de001" class="page">
-<div class="lang-page"><div class="lang-card">
-<div class="lang-logo"><button class="logo" aria-label="Startseite" onclick="goStart()"></button><h1>Sekretarz</h1></div>
-<p class="tagline">Dein persönlicher Sekretär für den Alltag.</p>
-<div class="choose-title">Sprache wählen</div>
-<div class="langs">
-<button class="lang-btn active" onclick="go('de002')"><span>🇩🇪</span>Deutsch</button>
-<button class="lang-btn disabled" disabled><span>🇵🇱</span>Polski — später</button>
-<button class="lang-btn disabled" disabled><span>🇬🇧</span>English — später</button>
-</div>
-<p class="note">Für die aktuelle Testphase wird nur die deutsche Version entwickelt.</p>
-</div></div><div class="page-id">DE-001</div>
+  <div class="lang-page">
+    <div class="lang-card">
+      <div class="lang-logo">
+        <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+        <h1>Sekretarz</h1>
+      </div>
+      <p class="tagline">Dein persönlicher Sekretär für den Alltag.</p>
+      <div class="choose-title">Sprache wählen</div>
+      <div class="langs">
+        <button class="lang-btn active" onclick="go('de002')"><span>🇩🇪</span>Deutsch</button>
+        <button class="lang-btn disabled" disabled><span>🇵🇱</span>Polski — später</button>
+        <button class="lang-btn disabled" disabled><span>🇬🇧</span>English — später</button>
+      </div>
+      <p class="note">Für die aktuelle Testphase wird nur die deutsche Version entwickelt.</p>
+    </div>
+  </div>
+  <div class="page-id">DE-001</div>
 </section>
 
+<!-- DE-002 -->
 <section id="de002" class="page hidden">
-<div class="container">
-<header class="topbar">
-<div class="brand"><button class="logo" aria-label="Zur Sprachwahl" onclick="goStart()"></button><div class="brand-text">Sekretarz<small>Dein persönlicher Sekretär für den Alltag.</small></div></div>
-<div class="top-actions"><nav class="nav"><a href="#funktionen">Funktionen</a><a href="#wie">So funktioniert es</a></nav><button class="btn secondary" onclick="go('de003')">Anmelden</button></div>
-</header>
-<div class="backbar"><button class="backbtn" onclick="back()">← Zurück</button></div>
-<main class="hero">
-<div><div class="badge">✦ Mehr Ruhe. Mehr Ordnung. Jeden Tag.</div><h1>Dein persönlicher Sekretär für den Alltag</h1>
-<p>Sekretarz hilft dir bei privaten E-Mails, Terminen, Erinnerungen und Alltagsangelegenheiten — an einem Ort, ohne unnötiges Chaos.</p>
-<div class="actions"><button class="btn primary" onclick="go('de003')">Starten →</button><button class="btn secondary" onclick="go('de004',true)">Demo ansehen</button></div></div>
-<div class="mock"><div class="mock-head"><div><small>Heute</small><h2 style="margin:4px 0">Guten Tag 👋</h2></div><b>DEMO</b></div>
-<p style="color:var(--muted)">Du hast 3 wichtige Angelegenheiten und 2 Termine im Blick.</p>
-<div class="stats"><div class="stat"><small>Dringend</small><br><b>3</b></div><div class="stat"><small>Warte</small><br><b>5</b></div><div class="stat"><small>Heute</small><br><b>2</b></div></div>
-<div class="list"><div class="item"><b>Fenster – Isarwinkel</b><br><span class="status">Warte auf Antwort</span></div><div class="item"><b>Werkstatt – Termin</b><br><span class="status">Zu bestätigen</span></div><div class="item"><b>Autoversicherung</b><br><span class="status">Zu erledigen</span></div></div></div>
-</main>
-<section class="features" id="funktionen"><h2>Alles, was du im Alltag brauchst</h2>
-<div class="grid3"><div class="feature"><h3>✉ E-Mail</h3><p>Private Nachrichten an einem Ort. Sekretarz sortiert, fasst zusammen und erinnert dich an Wichtiges.</p></div>
-<div class="feature"><h3>▣ Termine</h3><p>Kalender, Besuche und wichtige Daten. Sekretarz achtet darauf, dass nichts verloren geht.</p></div>
-<div class="feature"><h3>✓ Angelegenheiten</h3><p>Jede Angelegenheit hat einen Status, nächsten Schritt und Termin. Sekretarz verfolgt sie bis zum Abschluss.</p></div></div></section>
-</div><div class="page-id">DE-002</div>
+  <div class="choice-wrap">
+    <div class="choice-card">
+      <div class="choice-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+        <div style="width:60px"></div>
+      </div>
+      <h2 class="choice-title">Wie möchtest du fortfahren?</h2>
+      <p class="choice-sub">Wähle, ob du neu bei Sekretarz bist oder bereits ein Konto hast.</p>
+
+      <div class="choice-grid">
+        <button class="choice-option" onclick="go('de003')">
+          <b>Neues Konto erstellen</b>
+          <span>Registriere dich mit E-Mail, Telefonnummer und sicherem Passwort.</span>
+        </button>
+
+        <button class="choice-option" onclick="go('de004')">
+          <b>Ich habe bereits ein Konto</b>
+          <span>Melde dich mit E-Mail oder Telefonnummer und deinem Passwort an.</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="page-id">DE-002</div>
 </section>
 
+<!-- DE-003 -->
 <section id="de003" class="page hidden">
-<div class="center-wrap"><div class="auth">
-<div class="auth-top"><button class="backbtn" onclick="back()">← Zurück</button><div class="brand"><button class="logo" aria-label="Startseite" onclick="goStart()"></button><div class="brand-text">Sekretarz</div></div><div style="width:60px"></div></div>
-<h2>Willkommen zurück</h2><p>Organisiere deinen Alltag mit KI-Unterstützung.</p>
-<div class="field"><label>E-Mail</label><input value="demo@sekretarz.app" placeholder="E-Mail-Adresse"></div>
-<div class="field"><label>Passwort</label><input type="password" value="sekretarz" placeholder="Passwort"></div>
-<button class="btn primary full" onclick="login()">Anmelden</button><div class="divider">oder weiter mit</div>
-<button class="social" onclick="login()"> Apple</button><button class="social" onclick="login()">G Google</button>
-<p class="tiny">Testprototyp — Anmeldung ist noch nicht mit einem echten Konto verbunden.</p>
-</div></div><div class="page-id">DE-003</div>
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>Konto erstellen</h2>
+      <p>Erstelle dein persönliches, geschütztes Sekretarz-Konto.</p>
+
+      <div class="field">
+        <label>Vorname</label>
+        <input id="regName" placeholder="Dein Vorname">
+      </div>
+
+      <div class="field">
+        <label>E-Mail-Adresse</label>
+        <input id="regEmail" type="email" placeholder="name@beispiel.de">
+      </div>
+
+      <div class="field">
+        <label>Telefonnummer</label>
+        <input id="regPhone" type="tel" placeholder="+49 ...">
+        <div class="helper">Wird später auch für Anmeldung und Kontowiederherstellung nutzbar sein.</div>
+      </div>
+
+      <div class="field">
+        <label>Passwort</label>
+        <input id="regPassword" type="password" placeholder="Mindestens 8 Zeichen">
+      </div>
+
+      <div class="field">
+        <label>Passwort wiederholen</label>
+        <input id="regPassword2" type="password" placeholder="Passwort erneut eingeben">
+      </div>
+
+      <label class="checkrow">
+        <input id="regTerms" type="checkbox">
+        <span>Ich akzeptiere die Nutzungsbedingungen und die Datenschutzerklärung.</span>
+      </label>
+
+      <div id="regMsg" class="hidden"></div>
+
+      <button class="btn primary full" onclick="registerUser()">Konto erstellen</button>
+      <p class="tiny">Im aktuellen Prototyp wird noch kein echtes Konto auf einem Server angelegt.</p>
+    </div>
+  </div>
+  <div class="page-id">DE-003</div>
 </section>
 
+<!-- DE-004 -->
 <section id="de004" class="page hidden">
-<div class="app-shell">
-<header class="app-head"><div class="app-brand"><button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button><span>Sekretarz</span></div>
-<div class="app-nav-right"><button class="backbtn" onclick="back()">← Zurück</button><button class="btn secondary" onclick="logout()">Abmelden</button></div></header>
-<div class="app-content"><h1>Meine Angelegenheiten</h1><div class="search">🔎 Suchen...</div>
-<div class="summary"><div class="sum"><span>Dringend</span><b>3</b></div><div class="sum"><span>Warte</span><b>5</b></div><div class="sum"><span>Heute</span><b>2</b></div></div>
-<div id="cases" class="cases">
-<button class="case" style="text-align:left;width:100%" onclick="openCase('Fenster – Isarwinkel','Warte auf Antwort','Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.','28.08.2026')"><div class="case-top"><div><h3>Fenster – Isarwinkel</h3><span class="tag">Warte auf Antwort</span></div><small>28.08.2026</small></div><p>Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.</p></button>
-<button class="case" style="text-align:left;width:100%" onclick="openCase('Werkstatt – Termin','Zu bestätigen','Vorgeschlagenen Werkstatttermin bestätigen.','02.09.2026')"><div class="case-top"><div><h3>Werkstatt – Termin</h3><span class="tag">Zu bestätigen</span></div><small>02.09.2026</small></div><p>Vorgeschlagenen Werkstatttermin bestätigen.</p></button>
-<button class="case" style="text-align:left;width:100%" onclick="openCase('Autoversicherung','Zu erledigen','Angebot und Verlängerungsfrist prüfen.','05.09.2026')"><div class="case-top"><div><h3>Autoversicherung</h3><span class="tag">Zu erledigen</span></div><small>05.09.2026</small></div><p>Angebot und Verlängerungsfrist prüfen.</p></button>
-</div></div>
-<button class="btn primary fab" onclick="openModal()">＋ Angelegenheit</button>
-<nav class="bottom"><button class="active">☷<br>Angelegenheiten</button><button>▣<br>Kalender</button><button>✉<br>E-Mail</button><button>◯<br>Profil</button></nav>
-</div><div class="page-id">DE-004</div>
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>Anmelden</h2>
+      <p>Melde dich mit E-Mail oder Telefonnummer an.</p>
+
+      <div class="field">
+        <label>E-Mail oder Telefonnummer</label>
+        <input id="loginId" value="demo@sekretarz.app" placeholder="E-Mail oder Telefonnummer">
+      </div>
+
+      <div class="field">
+        <label>Passwort</label>
+        <input id="loginPassword" type="password" placeholder="Passwort">
+      </div>
+
+      <div id="loginMsg" class="hidden"></div>
+
+      <button class="btn primary full" onclick="attemptLogin()">Anmelden</button>
+
+      <div style="text-align:center;margin-top:14px">
+        <button class="linkbtn" onclick="go('de005')">Passwort vergessen?</button>
+      </div>
+
+      <p class="tiny">Demo-Zugang: <b>demo@sekretarz.app</b> / <b>sekretarz</b></p>
+    </div>
+  </div>
+  <div class="page-id">DE-004</div>
 </section>
 
+<!-- DE-005 -->
 <section id="de005" class="page hidden">
-<div class="detail-wrap"><div class="backbar" style="justify-content:space-between"><button class="backbtn" onclick="back()">← Zurück</button><button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button></div>
-<div class="detail-card"><div class="detail-head"><div><h2 id="detailTitle">Angelegenheit</h2><span id="detailStatus" class="tag">Status</span></div><small id="detailDate"></small></div>
-<div class="detail-meta"><div class="meta"><b>Beschreibung</b><p id="detailDesc" style="margin-bottom:0;color:var(--muted)"></p></div>
-<div class="meta"><b>Nächster Schritt</b><p style="margin-bottom:0;color:var(--muted)">Sekretarz soll den nächsten sinnvollen Schritt vorschlagen.</p></div>
-<div class="meta"><b>Verlauf</b><p style="margin-bottom:0;color:var(--muted)">Noch keine echte Historie — Testansicht.</p></div></div>
-<div class="detail-actions"><button class="btn primary">Nächsten Schritt vorbereiten</button><button class="btn secondary" onclick="goDashboard()">Zum Dashboard</button></div>
-</div></div><div class="page-id">DE-005</div>
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>Passwort zurücksetzen</h2>
+      <p>Gib deine E-Mail-Adresse oder Telefonnummer ein.</p>
+
+      <div class="field">
+        <label>E-Mail oder Telefonnummer</label>
+        <input id="recoveryId" placeholder="E-Mail oder Telefonnummer">
+      </div>
+
+      <div id="recoveryMsg" class="hidden"></div>
+
+      <button class="btn primary full" onclick="sendRecovery()">Wiederherstellungslink senden</button>
+      <p class="tiny">Später wird die Wiederherstellung per sicherem Link oder Bestätigungscode erfolgen.</p>
+    </div>
+  </div>
+  <div class="page-id">DE-005</div>
 </section>
 
-<div id="modal" class="modal hidden"><div class="modal-card"><h2>Neue Angelegenheit</h2>
-<div class="field"><label>Titel</label><input id="newTitle" placeholder="z. B. Werkstatt anrufen"></div>
-<div class="field"><label>Status</label><select id="newStatus"><option>Zu erledigen</option><option>Warte auf Antwort</option><option>Zu bestätigen</option></select></div>
-<div class="field"><label>Notiz</label><textarea id="newNote" rows="3"></textarea></div>
-<div class="modal-actions"><button class="btn secondary" onclick="closeModal()">Abbrechen</button><button class="btn primary" onclick="addCase()">Hinzufügen</button></div></div></div>
+<!-- DE-006 -->
+<section id="de006" class="page hidden">
+  <div class="app-shell">
+    <header class="app-head">
+      <div class="app-brand">
+        <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
+        <span>Sekretarz</span>
+      </div>
+      <div class="app-nav-right">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <button class="btn secondary" onclick="logout()">Abmelden</button>
+      </div>
+    </header>
+
+    <div class="app-content">
+      <h1>Meine Angelegenheiten</h1>
+      <div class="search">🔎 Suchen...</div>
+
+      <div class="summary">
+        <div class="sum"><span>Dringend</span><b>3</b></div>
+        <div class="sum"><span>Warte</span><b>5</b></div>
+        <div class="sum"><span>Heute</span><b>2</b></div>
+      </div>
+
+      <div id="cases" class="cases">
+        <button class="case" style="text-align:left;width:100%" onclick="openCase('Fenster – Isarwinkel','Warte auf Antwort','Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.','28.08.2026')">
+          <div class="case-top"><div><h3>Fenster – Isarwinkel</h3><span class="tag">Warte auf Antwort</span></div><small>28.08.2026</small></div>
+          <p>Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.</p>
+        </button>
+
+        <button class="case" style="text-align:left;width:100%" onclick="openCase('Werkstatt – Termin','Zu bestätigen','Vorgeschlagenen Werkstatttermin bestätigen.','02.09.2026')">
+          <div class="case-top"><div><h3>Werkstatt – Termin</h3><span class="tag">Zu bestätigen</span></div><small>02.09.2026</small></div>
+          <p>Vorgeschlagenen Werkstatttermin bestätigen.</p>
+        </button>
+
+        <button class="case" style="text-align:left;width:100%" onclick="openCase('Autoversicherung','Zu erledigen','Angebot und Verlängerungsfrist prüfen.','05.09.2026')">
+          <div class="case-top"><div><h3>Autoversicherung</h3><span class="tag">Zu erledigen</span></div><small>05.09.2026</small></div>
+          <p>Angebot und Verlängerungsfrist prüfen.</p>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn primary fab" onclick="openModal()">＋ Angelegenheit</button>
+
+    <nav class="bottom">
+      <button class="active">☷<br>Angelegenheiten</button>
+      <button>▣<br>Kalender</button>
+      <button>✉<br>E-Mail</button>
+      <button>◯<br>Profil</button>
+    </nav>
+  </div>
+  <div class="page-id">DE-006</div>
+</section>
+
+<!-- DE-007 -->
+<section id="de007" class="page hidden">
+  <div class="detail-wrap">
+    <div class="backbar" style="justify-content:space-between">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
+    </div>
+
+    <div class="detail-card">
+      <div class="detail-head">
+        <div>
+          <h2 id="detailTitle">Angelegenheit</h2>
+          <span id="detailStatus" class="tag">Status</span>
+        </div>
+        <small id="detailDate"></small>
+      </div>
+
+      <div class="detail-meta">
+        <div class="meta"><b>Beschreibung</b><p id="detailDesc" style="margin-bottom:0;color:var(--muted)"></p></div>
+        <div class="meta"><b>Nächster Schritt</b><p style="margin-bottom:0;color:var(--muted)">Sekretarz soll den nächsten sinnvollen Schritt vorschlagen.</p></div>
+        <div class="meta"><b>Verlauf</b><p style="margin-bottom:0;color:var(--muted)">Noch keine echte Historie — Testansicht.</p></div>
+      </div>
+
+      <div class="detail-actions">
+        <button class="btn primary">Nächsten Schritt vorbereiten</button>
+        <button class="btn secondary" onclick="goDashboard()">Zum Dashboard</button>
+      </div>
+    </div>
+  </div>
+  <div class="page-id">DE-007</div>
+</section>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <h2>Neue Angelegenheit</h2>
+    <div class="field"><label>Titel</label><input id="newTitle" placeholder="z. B. Werkstatt anrufen"></div>
+    <div class="field"><label>Status</label>
+      <select id="newStatus">
+        <option>Zu erledigen</option>
+        <option>Warte auf Antwort</option>
+        <option>Zu bestätigen</option>
+      </select>
+    </div>
+    <div class="field"><label>Notiz</label><textarea id="newNote" rows="3"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="addCase()">Hinzufügen</button>
+    </div>
+  </div>
+</div>
 
 <script>
 let loggedIn=false;
 let historyStack=['de001'];
 let currentPage='de001';
+let failedAttempts=0;
+const MAX_ATTEMPTS=3;
 
-function hideAll(){['de001','de002','de003','de004','de005'].forEach(id=>document.getElementById(id).classList.add('hidden'))}
-function showDirect(id){hideAll();document.getElementById(id).classList.remove('hidden');currentPage=id;window.scrollTo(0,0)}
-function go(id,demo=false){if(demo)loggedIn=true;if(currentPage!==id)historyStack.push(id);showDirect(id)}
-function back(){if(historyStack.length>1){historyStack.pop();showDirect(historyStack[historyStack.length-1])}else goStart()}
-function goStart(){loggedIn=false;historyStack=['de001'];showDirect('de001')}
-function login(){loggedIn=true;historyStack.push('de004');showDirect('de004')}
-function logout(){loggedIn=false;historyStack=['de001','de002'];showDirect('de002')}
-function goDashboard(){if(loggedIn){if(currentPage!=='de004')historyStack.push('de004');showDirect('de004')}else goStart()}
-function openCase(title,status,desc,date){document.getElementById('detailTitle').textContent=title;document.getElementById('detailStatus').textContent=status;document.getElementById('detailDesc').textContent=desc;document.getElementById('detailDate').textContent=date;go('de005')}
+function hideAll(){
+  ['de001','de002','de003','de004','de005','de006','de007'].forEach(id=>{
+    document.getElementById(id).classList.add('hidden');
+  });
+}
+
+function showDirect(id){
+  hideAll();
+  document.getElementById(id).classList.remove('hidden');
+  currentPage=id;
+  window.scrollTo(0,0);
+}
+
+function go(id){
+  if(currentPage!==id) historyStack.push(id);
+  showDirect(id);
+}
+
+function back(){
+  if(historyStack.length>1){
+    historyStack.pop();
+    showDirect(historyStack[historyStack.length-1]);
+  } else {
+    goStart();
+  }
+}
+
+function goStart(){
+  loggedIn=false;
+  historyStack=['de001'];
+  showDirect('de001');
+}
+
+function setMsg(id,type,text){
+  const el=document.getElementById(id);
+  el.className=type;
+  el.textContent=text;
+}
+
+function clearMsg(id){
+  const el=document.getElementById(id);
+  el.className='hidden';
+  el.textContent='';
+}
+
+function registerUser(){
+  clearMsg('regMsg');
+
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim();
+  const phone=document.getElementById('regPhone').value.trim();
+  const p1=document.getElementById('regPassword').value;
+  const p2=document.getElementById('regPassword2').value;
+  const terms=document.getElementById('regTerms').checked;
+
+  if(!name || !email || !phone || !p1 || !p2){
+    setMsg('regMsg','error','Bitte alle Felder ausfüllen.');
+    return;
+  }
+  if(!email.includes('@')){
+    setMsg('regMsg','error','Bitte eine gültige E-Mail-Adresse eingeben.');
+    return;
+  }
+  if(p1.length<8){
+    setMsg('regMsg','error','Das Passwort muss mindestens 8 Zeichen haben.');
+    return;
+  }
+  if(p1!==p2){
+    setMsg('regMsg','error','Die Passwörter stimmen nicht überein.');
+    return;
+  }
+  if(!terms){
+    setMsg('regMsg','error','Bitte Nutzungsbedingungen und Datenschutz akzeptieren.');
+    return;
+  }
+
+  setMsg('regMsg','success','Registrierung erfolgreich vorbereitet. Im echten System folgt jetzt die E-Mail-/Telefon-Bestätigung.');
+  setTimeout(()=>{
+    loggedIn=true;
+    historyStack=['de001','de002','de003','de006'];
+    showDirect('de006');
+  },900);
+}
+
+function attemptLogin(){
+  clearMsg('loginMsg');
+
+  const id=document.getElementById('loginId').value.trim();
+  const pw=document.getElementById('loginPassword').value;
+
+  const validId=(id==='demo@sekretarz.app' || id==='+49123456789');
+  const validPw=(pw==='sekretarz');
+
+  if(validId && validPw){
+    failedAttempts=0;
+    loggedIn=true;
+    historyStack.push('de006');
+    showDirect('de006');
+    return;
+  }
+
+  failedAttempts++;
+
+  const remaining=MAX_ATTEMPTS-failedAttempts;
+
+  if(remaining>0){
+    setMsg(
+      'loginMsg',
+      'error',
+      `Anmeldung fehlgeschlagen. Noch ${remaining} ${remaining===1?'Versuch':'Versuche'} möglich.`
+    );
+  } else {
+    setMsg(
+      'loginMsg',
+      'error',
+      'Drei falsche Anmeldeversuche. Die Passwort-Wiederherstellung wird gestartet.'
+    );
+    setTimeout(()=>{
+      failedAttempts=0;
+      document.getElementById('recoveryId').value=id;
+      go('de005');
+    },1000);
+  }
+}
+
+function sendRecovery(){
+  clearMsg('recoveryMsg');
+  const id=document.getElementById('recoveryId').value.trim();
+
+  if(!id){
+    setMsg('recoveryMsg','error','Bitte E-Mail-Adresse oder Telefonnummer eingeben.');
+    return;
+  }
+
+  setMsg(
+    'recoveryMsg',
+    'success',
+    'Wiederherstellung vorbereitet. Im echten System wird jetzt ein sicherer Link oder Bestätigungscode gesendet.'
+  );
+}
+
+function logout(){
+  loggedIn=false;
+  historyStack=['de001','de002'];
+  showDirect('de002');
+}
+
+function goDashboard(){
+  if(loggedIn){
+    if(currentPage!=='de006') historyStack.push('de006');
+    showDirect('de006');
+  } else {
+    goStart();
+  }
+}
+
+function openCase(title,status,desc,date){
+  document.getElementById('detailTitle').textContent=title;
+  document.getElementById('detailStatus').textContent=status;
+  document.getElementById('detailDesc').textContent=desc;
+  document.getElementById('detailDate').textContent=date;
+  go('de007');
+}
+
 function openModal(){document.getElementById('modal').classList.remove('hidden')}
 function closeModal(){document.getElementById('modal').classList.add('hidden')}
-function escapeHtml(s){return s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function addCase(){const t=document.getElementById('newTitle').value.trim();if(!t)return alert('Bitte einen Titel eingeben.');const s=document.getElementById('newStatus').value;const n=document.getElementById('newNote').value.trim()||'Neue Angelegenheit.';const el=document.createElement('button');el.className='case';el.style.cssText='text-align:left;width:100%';el.onclick=()=>openCase(t,s,n,'Heute');el.innerHTML=`<div class="case-top"><div><h3>${escapeHtml(t)}</h3><span class="tag">${escapeHtml(s)}</span></div><small>Heute</small></div><p>${escapeHtml(n)}</p>`;document.getElementById('cases').prepend(el);document.getElementById('newTitle').value='';document.getElementById('newNote').value='';closeModal()}
+
+function escapeHtml(s){
+  return s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))
+}
+
+function addCase(){
+  const t=document.getElementById('newTitle').value.trim();
+  if(!t) return alert('Bitte einen Titel eingeben.');
+
+  const s=document.getElementById('newStatus').value;
+  const n=document.getElementById('newNote').value.trim()||'Neue Angelegenheit.';
+
+  const el=document.createElement('button');
+  el.className='case';
+  el.style.cssText='text-align:left;width:100%';
+  el.onclick=()=>openCase(t,s,n,'Heute');
+  el.innerHTML=`<div class="case-top"><div><h3>${escapeHtml(t)}</h3><span class="tag">${escapeHtml(s)}</span></div><small>Heute</small></div><p>${escapeHtml(n)}</p>`;
+
+  document.getElementById('cases').prepend(el);
+  document.getElementById('newTitle').value='';
+  document.getElementById('newNote').value='';
+  closeModal();
+}
 </script>
-</body></html>
+</body>
+</html>

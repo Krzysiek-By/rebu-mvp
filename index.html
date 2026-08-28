@@ -183,6 +183,22 @@ button{cursor:pointer}
 .phone-row select,.phone-row input{width:100%}
 @media(max-width:430px){.phone-row{grid-template-columns:135px minmax(0,1fr)}}
 
+
+/* DE-010 */
+.form-wrap{max-width:760px;margin:0 auto;padding:20px}
+.form-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+.form-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+.form-head h2{margin:0;font-size:30px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .wide{grid-column:1/-1}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.form-actions .btn{flex:1 1 180px}
+.preview-box{margin-top:18px;padding:16px;background:#f8faff;border:1px solid var(--line);border-radius:16px}
+.preview-box h3{margin:0 0 10px}
+@media(max-width:620px){
+  .form-wrap{padding:14px}.form-card{padding:18px}.form-grid{grid-template-columns:1fr}
+  .form-grid .wide{grid-column:auto}.form-head h2{font-size:26px}
+}
 </style>
 </head>
 <body>
@@ -226,7 +242,7 @@ button{cursor:pointer}
           <span>Registriere dich mit E-Mail, Telefonnummer und sicherem Passwort.</span>
         </button>
 
-        <button class="choice-option" onclick="go('de004')">
+        <button class="choice-option" onclick="go('de006')">
           <b>Ich habe bereits ein Konto</b>
           <span>Melde dich mit E-Mail oder Telefonnummer und deinem Passwort an.</span>
         </button>
@@ -332,7 +348,7 @@ button{cursor:pointer}
 </section>
 
 <!-- DE-004 -->
-<section id="de004" class="page hidden">
+<section id="de008" class="page hidden">
   <div class="center-wrap">
     <div class="auth">
       <div class="auth-top">
@@ -371,11 +387,11 @@ button{cursor:pointer}
       <p class="tiny">Demo-Zugang: <b>demo@sekretarz.app</b> / <b>sekretarz</b></p>
     </div>
   </div>
-  <div class="page-id">DE-004</div>
+  <div class="page-id">DE-008</div>
 </section>
 
 <!-- DE-005 -->
-<section id="de005" class="page hidden">
+<section id="de009" class="page hidden">
   <div class="center-wrap">
     <div class="auth">
       <div class="auth-top">
@@ -401,11 +417,11 @@ button{cursor:pointer}
       <p class="tiny">Später wird die Wiederherstellung per sicherem Link oder Bestätigungscode erfolgen.</p>
     </div>
   </div>
-  <div class="page-id">DE-005</div>
+  <div class="page-id">DE-009</div>
 </section>
 
-<!-- DE-006 -->
-<section id="de006" class="page hidden">
+<!-- DE-008 -->
+<section id="de008" class="page hidden">
   <div class="app-shell">
     <header class="app-head">
       <div class="app-brand">
@@ -446,7 +462,7 @@ button{cursor:pointer}
       </div>
     </div>
 
-    <button class="btn primary fab" onclick="openModal()">＋ Angelegenheit</button>
+    <button class="btn primary fab" onclick="openNewCase()">＋ Angelegenheit</button>
 
     <nav class="bottom">
       <button class="active">☷<br>Angelegenheiten</button>
@@ -455,11 +471,11 @@ button{cursor:pointer}
       <button>◯<br>Profil</button>
     </nav>
   </div>
-  <div class="page-id">DE-006</div>
+  <div class="page-id">DE-008</div>
 </section>
 
-<!-- DE-007 -->
-<section id="de007" class="page hidden">
+<!-- DE-009 -->
+<section id="de009" class="page hidden">
   <div class="detail-wrap">
     <div class="backbar" style="justify-content:space-between">
       <button class="backbtn" onclick="back()">← Zurück</button>
@@ -483,11 +499,89 @@ button{cursor:pointer}
 
       <div class="detail-actions">
         <button class="btn primary">Nächsten Schritt vorbereiten</button>
+        <button class="btn secondary" onclick="editCurrentCase()">Bearbeiten</button>
         <button class="btn secondary" onclick="goDashboard()">Zum Dashboard</button>
       </div>
     </div>
   </div>
-  <div class="page-id">DE-007</div>
+  <div class="page-id">DE-009</div>
+</section>
+
+
+<!-- DE-010 -->
+<section id="de010" class="page hidden">
+  <div class="form-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
+    </div>
+    <div class="form-card">
+      <div class="form-head">
+        <h2 id="caseFormHeading">Neue Angelegenheit</h2>
+        <span class="tag" id="caseFormMode">Neu</span>
+      </div>
+      <div class="form-grid">
+        <div class="field wide">
+          <label>Titel</label>
+          <input id="caseTitle" placeholder="z. B. Werkstatt – Termin">
+        </div>
+        <div class="field">
+          <label>Kategorie</label>
+          <select id="caseCategory">
+            <option>Auto</option>
+            <option>Haus & Wohnung</option>
+            <option>Gesundheit</option>
+            <option>Versicherung</option>
+            <option>Behörde</option>
+            <option>Finanzen</option>
+            <option>Familie</option>
+            <option>Sonstiges</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="caseStatus">
+            <option>Zu erledigen</option>
+            <option>Warte auf Antwort</option>
+            <option>Zu bestätigen</option>
+            <option>Dringend</option>
+            <option>Erledigt</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Termin</label>
+          <input id="caseDate" type="date">
+        </div>
+        <div class="field">
+          <label>Erinnerung</label>
+          <select id="caseReminder">
+            <option value="none">Keine</option>
+            <option value="1">1 Tag vorher</option>
+            <option value="3">3 Tage vorher</option>
+            <option value="7">7 Tage vorher</option>
+          </select>
+        </div>
+        <div class="field wide">
+          <label>Beschreibung</label>
+          <textarea id="caseDescription" rows="4" placeholder="Worum geht es?"></textarea>
+        </div>
+        <div class="field wide">
+          <label>Nächster Schritt</label>
+          <textarea id="caseNextStep" rows="3" placeholder="Was soll als Nächstes passieren?"></textarea>
+        </div>
+      </div>
+      <div id="caseFormMsg" class="hidden"></div>
+      <div class="preview-box">
+        <h3>Vorschau</h3>
+        <div id="casePreview" class="helper">Fülle den Titel aus, um die Vorschau zu sehen.</div>
+      </div>
+      <div class="form-actions">
+        <button class="btn secondary" onclick="back()">Abbrechen</button>
+        <button class="btn primary" onclick="saveCaseForm()">Speichern</button>
+      </div>
+    </div>
+  </div>
+  <div class="page-id">DE-010</div>
 </section>
 
 <div id="modal" class="modal hidden">
@@ -517,7 +611,7 @@ let failedAttempts=0;
 const MAX_ATTEMPTS=3;
 
 function hideAll(){
-  ['de001','de002','de003','de004','de005','de006','de007'].forEach(id=>{
+  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010'].forEach(id=>{
     document.getElementById(id).classList.add('hidden');
   });
 }
@@ -629,14 +723,75 @@ function registerUser(){
   setMsg(
     'regMsg',
     'success',
-    `Daten geprüft. Telefonnummer: ${fullPhone}. Im echten System folgt jetzt die E-Mail-/Telefon-Bestätigung.`
+    `Daten geprüft. Bestätigungs-E-Mail wird vorbereitet.`
   );
 
+  localStorage.setItem('sekretarzPendingEmail',email);
+  localStorage.setItem('sekretarzPendingPhone',fullPhone);
+
   setTimeout(()=>{
-    loggedIn=true;
-    historyStack=['de001','de002','de003','de006'];
+    historyStack=['de001','de002','de003','de004'];
+    prepareEmailVerification(email);
+    showDirect('de004');
+  },700);
+}
+
+
+let currentSmsCode='';
+
+function prepareEmailVerification(email){
+  document.getElementById('verifyEmailDisplay').value=email || localStorage.getItem('sekretarzPendingEmail') || '';
+  document.getElementById('emailVerifyInfo').textContent='Bestätigungs-E-Mail wurde an '+document.getElementById('verifyEmailDisplay').value+' vorbereitet.';
+}
+
+function resendEmail(){
+  const email=document.getElementById('verifyEmailDisplay').value;
+  document.getElementById('emailVerifyInfo').textContent='Neue Bestätigungs-E-Mail wurde an '+email+' vorbereitet.';
+}
+
+function simulateEmailClick(){
+  const phone=localStorage.getItem('sekretarzPendingPhone') || '';
+  document.getElementById('verifyPhoneDisplay').value=phone;
+  sendSmsCode();
+  go('de005');
+}
+
+function sendSmsCode(){
+  currentSmsCode=String(Math.floor(100000+Math.random()*900000));
+  localStorage.setItem('sekretarzDemoSmsCode',currentSmsCode);
+
+  const phone=localStorage.getItem('sekretarzPendingPhone') || '';
+  document.getElementById('verifyPhoneDisplay').value=phone;
+
+  const box=document.getElementById('smsTestCode');
+  box.className='success';
+  box.textContent='TEST-SMS-Code: '+currentSmsCode;
+
+  clearMsg('smsMsg');
+}
+
+function verifySmsCode(){
+  const entered=document.getElementById('smsCodeInput').value.trim();
+  const expected=currentSmsCode || localStorage.getItem('sekretarzDemoSmsCode') || '';
+
+  if(!entered){
+    setMsg('smsMsg','error','Bitte den 6-stelligen SMS-Code eingeben.');
+    return;
+  }
+
+  if(entered!==expected){
+    setMsg('smsMsg','error','Der eingegebene Code ist falsch.');
+    return;
+  }
+
+  setMsg('smsMsg','success','Telefonnummer bestätigt. Dein Konto ist jetzt aktiviert.');
+
+  setTimeout(()=>{
+    loggedIn=false;
+    historyStack=['de001','de002','de003','de004','de005','de006'];
+    document.getElementById('loginId').value=localStorage.getItem('sekretarzPendingEmail') || '';
     showDirect('de006');
-  },900);
+  },700);
 }
 
 function attemptLogin(){
@@ -651,8 +806,8 @@ function attemptLogin(){
   if(validId && validPw){
     failedAttempts=0;
     loggedIn=true;
-    historyStack.push('de006');
-    showDirect('de006');
+    historyStack.push('de008');
+    showDirect('de008');
     return;
   }
 
@@ -675,7 +830,7 @@ function attemptLogin(){
     setTimeout(()=>{
       failedAttempts=0;
       document.getElementById('recoveryId').value=id;
-      go('de005');
+      go('de007');
     },1000);
   }
 }
@@ -704,20 +859,116 @@ function logout(){
 
 function goDashboard(){
   if(loggedIn){
-    if(currentPage!=='de006') historyStack.push('de006');
-    showDirect('de006');
+    if(currentPage!=='de008') historyStack.push('de008');
+    showDirect('de008');
   } else {
     goStart();
   }
 }
 
-function openCase(title,status,desc,date){
+let currentCaseData=null;
+
+function openCase(title,status,desc,date,category='Sonstiges',nextStep=''){
+  currentCaseData={title,status,desc,date,category,nextStep};
   document.getElementById('detailTitle').textContent=title;
   document.getElementById('detailStatus').textContent=status;
   document.getElementById('detailDesc').textContent=desc;
   document.getElementById('detailDate').textContent=date;
-  go('de007');
+  go('de009');
 }
+
+function openNewCase(){
+  currentCaseData=null;
+  document.getElementById('caseFormHeading').textContent='Neue Angelegenheit';
+  document.getElementById('caseFormMode').textContent='Neu';
+  document.getElementById('caseTitle').value='';
+  document.getElementById('caseCategory').value='Auto';
+  document.getElementById('caseStatus').value='Zu erledigen';
+  document.getElementById('caseDate').value='';
+  document.getElementById('caseReminder').value='none';
+  document.getElementById('caseDescription').value='';
+  document.getElementById('caseNextStep').value='';
+  clearMsg('caseFormMsg');
+  updateCasePreview();
+  go('de010');
+}
+
+function editCurrentCase(){
+  if(!currentCaseData) return;
+  document.getElementById('caseFormHeading').textContent='Angelegenheit bearbeiten';
+  document.getElementById('caseFormMode').textContent='Bearbeiten';
+  document.getElementById('caseTitle').value=currentCaseData.title || '';
+  document.getElementById('caseCategory').value=currentCaseData.category || 'Sonstiges';
+  document.getElementById('caseStatus').value=currentCaseData.status || 'Zu erledigen';
+  let d=currentCaseData.date || '';
+  if(/^\d{2}\.\d{2}\.\d{4}$/.test(d)){
+    const parts=d.split('.');
+    d=parts[2]+'-'+parts[1]+'-'+parts[0];
+  }
+  document.getElementById('caseDate').value=d;
+  document.getElementById('caseReminder').value='none';
+  document.getElementById('caseDescription').value=currentCaseData.desc || '';
+  document.getElementById('caseNextStep').value=currentCaseData.nextStep || '';
+  clearMsg('caseFormMsg');
+  updateCasePreview();
+  go('de010');
+}
+
+function formatDateDE(value){
+  if(!value) return 'Kein Termin';
+  const parts=value.split('-');
+  return parts.length===3 ? parts[2]+'.'+parts[1]+'.'+parts[0] : value;
+}
+
+function updateCasePreview(){
+  const title=(document.getElementById('caseTitle')?.value || '').trim();
+  const status=document.getElementById('caseStatus')?.value || '';
+  const category=document.getElementById('caseCategory')?.value || '';
+  const date=formatDateDE(document.getElementById('caseDate')?.value || '');
+  const preview=document.getElementById('casePreview');
+  if(!preview) return;
+  preview.innerHTML=title
+    ? '<b>'+escapeHtml(title)+'</b><br>'+escapeHtml(category)+' · '+escapeHtml(status)+' · '+escapeHtml(date)
+    : 'Fülle den Titel aus, um die Vorschau zu sehen.';
+}
+
+function saveCaseForm(){
+  clearMsg('caseFormMsg');
+  const title=document.getElementById('caseTitle').value.trim();
+  const category=document.getElementById('caseCategory').value;
+  const status=document.getElementById('caseStatus').value;
+  const dateRaw=document.getElementById('caseDate').value;
+  const desc=document.getElementById('caseDescription').value.trim();
+  const nextStep=document.getElementById('caseNextStep').value.trim();
+
+  if(!title){
+    setMsg('caseFormMsg','error','Bitte einen Titel eingeben.');
+    return;
+  }
+
+  const dateDisplay=formatDateDE(dateRaw);
+  const el=document.createElement('button');
+  el.className='case';
+  el.style.cssText='text-align:left;width:100%';
+  el.onclick=()=>openCase(title,status,desc || 'Keine Beschreibung.',dateDisplay,category,nextStep);
+  el.innerHTML='<div class="case-top"><div><h3>'+escapeHtml(title)+'</h3><span class="tag">'+escapeHtml(status)+'</span></div><small>'+escapeHtml(dateDisplay)+'</small></div><p>'+escapeHtml(desc || 'Keine Beschreibung.')+'</p>';
+
+  document.getElementById('cases').prepend(el);
+  currentCaseData={title,status,desc:desc || 'Keine Beschreibung.',date:dateDisplay,category,nextStep};
+  setMsg('caseFormMsg','success','Angelegenheit gespeichert.');
+
+  setTimeout(()=>{
+    historyStack=['de001','de002','de008'];
+    showDirect('de008');
+  },450);
+}
+
+document.addEventListener('input',e=>{
+  if(['caseTitle','caseCategory','caseStatus','caseDate'].includes(e.target?.id)) updateCasePreview();
+});
+document.addEventListener('change',e=>{
+  if(['caseTitle','caseCategory','caseStatus','caseDate'].includes(e.target?.id)) updateCasePreview();
+});
 
 function openModal(){document.getElementById('modal').classList.remove('hidden')}
 function closeModal(){document.getElementById('modal').classList.add('hidden')}

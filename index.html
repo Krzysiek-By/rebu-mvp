@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.6">
+<meta name="sekretarz-version" content="DE-v9.7">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1387,13 +1387,16 @@ function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careTy
       localStorage.setItem('sekretarzLastCaseId',id);
     }
   }catch(e){}
-  document.getElementById('detailTitle').textContent=title;
-  document.getElementById('detailStatus').textContent=status;
-  document.getElementById('detailDesc').textContent=desc;
-  document.getElementById('detailDate').textContent=date;
+  const detailTitle=document.getElementById('detailTitle');
+  const detailStatusNode=document.getElementById('detailStatus');
+  const detailDate=document.getElementById('detailDate');
+
+  if(detailTitle) detailTitle.textContent=title;
+  if(detailStatusNode) detailStatusNode.textContent=status;
+  if(detailDate) detailDate.textContent=date;
 
   const detailCard=document.querySelector('#de009 .detail-card');
-  const detailStatus=document.getElementById('detailStatus');
+  const detailStatus=detailStatusNode;
   const visual=getStatusVisual(status,careType);
 
   if(detailCard){
@@ -1691,23 +1694,25 @@ function findExistingCaseCardByTitle(title){
 }
 
 function bindCaseCard(el,data,dateDisplay,cardText){
-  el.onclick=()=>openCase(
-    data.title,
-    data.status,
-    data.desc,
-    dateDisplay,
-    data.category,
-    data.nextStep,
-    data.careType,
-    data.reminderDateTime,
-    data.sourceSettings,
-    data.contact,
-    data.id || null
-  );
-  if(currentCaseData){
-    currentCaseData.history=Array.isArray(data.history) ? data.history : [];
-    renderAICenter(currentCaseData);
-  }
+  el.onclick=()=>{
+    openCase(
+      data.title,
+      data.status,
+      data.desc,
+      dateDisplay,
+      data.category,
+      data.nextStep,
+      data.careType,
+      data.reminderDateTime,
+      data.sourceSettings,
+      data.contact,
+      data.id || null
+    );
+    if(currentCaseData){
+      currentCaseData.history=Array.isArray(data.history) ? data.history : [];
+      renderAICenter(currentCaseData);
+    }
+  };
 
   el.classList.remove('status-blue','status-yellow','status-orange','status-red','status-green','status-purple');
   const visual=getStatusVisual(data.status,data.careType);

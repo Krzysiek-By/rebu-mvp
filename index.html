@@ -347,8 +347,93 @@ button{cursor:pointer}
   <div class="page-id">DE-003</div>
 </section>
 
+
 <!-- DE-004 -->
-<section id="de008" class="page hidden">
+<section id="de004" class="page hidden">
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>E-Mail bestätigen</h2>
+      <p>Wir haben einen Bestätigungslink an deine E-Mail-Adresse gesendet.</p>
+
+      <div class="success" id="emailVerifyInfo">
+        Bestätigungs-E-Mail wurde vorbereitet.
+      </div>
+
+      <div class="field">
+        <label>E-Mail-Adresse</label>
+        <input id="verifyEmailDisplay" disabled>
+      </div>
+
+      <button class="btn primary full" onclick="simulateEmailClick()">
+        Test: Bestätigungslink öffnen
+      </button>
+
+      <button class="btn secondary full" style="margin-top:10px" onclick="resendEmail()">
+        E-Mail erneut senden
+      </button>
+
+      <p class="tiny">
+        Testmodus: Dieser Button simuliert den Klick auf den Link aus der Bestätigungs-E-Mail.
+      </p>
+    </div>
+  </div>
+  <div class="page-id">DE-004</div>
+</section>
+
+<!-- DE-005 -->
+<section id="de005" class="page hidden">
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>Telefon bestätigen</h2>
+      <p>Wir haben einen 6-stelligen Sicherheitscode an deine Telefonnummer gesendet.</p>
+
+      <div class="field">
+        <label>Telefonnummer</label>
+        <input id="verifyPhoneDisplay" disabled>
+      </div>
+
+      <div class="field">
+        <label>SMS-Code</label>
+        <input id="smsCodeInput" inputmode="numeric" maxlength="6" placeholder="6-stelliger Code">
+      </div>
+
+      <div id="smsTestCode" class="success hidden"></div>
+      <div id="smsMsg" class="hidden"></div>
+
+      <button class="btn primary full" onclick="verifySmsCode()">Code bestätigen</button>
+
+      <button class="btn secondary full" style="margin-top:10px" onclick="sendSmsCode()">
+        Neuen Code senden
+      </button>
+
+      <p class="tiny">
+        Testmodus: Der erzeugte SMS-Code wird angezeigt, damit der Ablauf sofort getestet werden kann.
+      </p>
+    </div>
+  </div>
+  <div class="page-id">DE-005</div>
+</section>
+
+<!-- DE-006 -->
+<section id="de006" class="page hidden">
   <div class="center-wrap">
     <div class="auth">
       <div class="auth-top">
@@ -381,17 +466,17 @@ button{cursor:pointer}
       <button class="btn primary full" onclick="attemptLogin()">Anmelden</button>
 
       <div style="text-align:center;margin-top:14px">
-        <button class="linkbtn" onclick="go('de005')">Passwort vergessen?</button>
+        <button class="linkbtn" onclick="go('de007')">Passwort vergessen?</button>
       </div>
 
       <p class="tiny">Demo-Zugang: <b>demo@sekretarz.app</b> / <b>sekretarz</b></p>
     </div>
   </div>
-  <div class="page-id">DE-008</div>
+  <div class="page-id">DE-006</div>
 </section>
 
-<!-- DE-005 -->
-<section id="de009" class="page hidden">
+<!-- DE-007 -->
+<section id="de007" class="page hidden">
   <div class="center-wrap">
     <div class="auth">
       <div class="auth-top">
@@ -417,7 +502,7 @@ button{cursor:pointer}
       <p class="tiny">Später wird die Wiederherstellung per sicherem Link oder Bestätigungscode erfolgen.</p>
     </div>
   </div>
-  <div class="page-id">DE-009</div>
+  <div class="page-id">DE-007</div>
 </section>
 
 <!-- DE-008 -->
@@ -612,7 +697,8 @@ const MAX_ATTEMPTS=3;
 
 function hideAll(){
   ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010'].forEach(id=>{
-    document.getElementById(id).classList.add('hidden');
+    const page=document.getElementById(id);
+    if(page) page.classList.add('hidden');
   });
 }
 

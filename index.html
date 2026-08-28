@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.0">
+<meta name="sekretarz-version" content="DE-v9.1">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -222,6 +222,24 @@ button{cursor:pointer}
   @media(max-width:640px){
     .care-choice,.mini-grid,.check-grid{grid-template-columns:1fr}
   }
+
+
+  .status-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .status-blue{background:#eaf2ff;border-color:#bdd2ff!important}
+  .status-yellow{background:#fff9df;border-color:#f0dc84!important}
+  .status-orange{background:#fff0df;border-color:#f1b66f!important}
+  .status-red{background:#ffe8e8;border-color:#ef9b9b!important}
+  .status-green{background:#e9f8ed;border-color:#9bd0a7!important}
+  .status-purple{background:#f1eaff;border-color:#c8afff!important}
+  .dot-blue{background:#3b82f6}.dot-yellow{background:#e6b800}.dot-orange{background:#f28c28}
+  .dot-red{background:#dc3545}.dot-green{background:#35a853}.dot-purple{background:#7c4dff}
+  .contact-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+  .contact-card h3{margin:0 0 10px;font-size:16px}
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .nav-preview{margin-top:10px;border:1px dashed #b9c8e8;border-radius:12px;padding:11px;background:#f7faff;font-size:13px;line-height:1.45}
+  .status-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .status-legend span{font-size:12px;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:#fff}
+  @media(max-width:640px){.contact-grid{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -605,6 +623,7 @@ button{cursor:pointer}
       <div class="detail-meta">
         <div class="meta"><b>Beschreibung</b><p id="detailDesc" style="margin-bottom:0;color:var(--muted)"></p></div>
         <div class="meta"><b>Nächster Schritt</b><p style="margin-bottom:0;color:var(--muted)">Sekretarz soll den nächsten sinnvollen Schritt vorschlagen.</p></div>
+        <div id="caseLocationBox" class="meta hidden"><b>Ort / Kontakt</b><p id="caseLocationContent" style="margin-bottom:0;color:var(--muted)"></p></div>
         <div class="meta"><b>Verlauf</b><p style="margin-bottom:0;color:var(--muted)">Noch keine echte Historie — Testansicht.</p></div>
       </div>
 
@@ -683,6 +702,53 @@ button{cursor:pointer}
             <option>Erledigt</option>
             <option>Nicht erledigt</option>
           </select>
+        </div>
+
+
+        <div class="field wide">
+          <div class="contact-card">
+            <h3>Ort / Kontakt zur Angelegenheit</h3>
+            <div class="contact-grid">
+              <div class="field" style="margin:0">
+                <label>Name / Praxis / Firma</label>
+                <input id="casePlaceName" placeholder="z. B. Zahnarztpraxis Dr. Müller">
+              </div>
+              <div class="field" style="margin:0">
+                <label>Kontaktart</label>
+                <select id="caseContactType">
+                  <option value="">Nicht festgelegt</option>
+                  <option>Arzt / Praxis</option>
+                  <option>Firma</option>
+                  <option>Behörde</option>
+                  <option>Versicherung</option>
+                  <option>Vermieter / Hausverwaltung</option>
+                  <option>Privatkontakt</option>
+                  <option>Sonstiges</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label>Straße und Hausnummer</label>
+                <input id="casePlaceStreet" placeholder="Musterstraße 12">
+              </div>
+              <div class="field" style="margin:0">
+                <label>PLZ / Ort</label>
+                <input id="casePlaceCity" placeholder="80331 München">
+              </div>
+              <div class="field" style="margin:0">
+                <label>Telefon</label>
+                <input id="casePlacePhone" placeholder="+49 ...">
+              </div>
+              <div class="field" style="margin:0">
+                <label>E-Mail</label>
+                <input id="casePlaceEmail" type="email" placeholder="praxis@example.de">
+              </div>
+            </div>
+            <div class="nav-preview">
+              Wenn später ein Termin an diesem Ort ansteht, kann der Sekretär fragen:
+              <b>„Soll ich dich jetzt dorthin navigieren?“</b>
+              Falls Adresse oder Kontaktdaten fehlen, soll er sie beim Nutzer erfragen oder passende öffentliche Daten im Internet vorschlagen.
+            </div>
+          </div>
         </div>
 
         <!-- SIMPLE REMINDER -->
@@ -1100,13 +1166,80 @@ function goDashboard(){
 
 let currentCaseData=null;
 
-function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null){
-  currentCaseData={title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings};
+function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null,contact=null){
+  currentCaseData={title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact};
   document.getElementById('detailTitle').textContent=title;
   document.getElementById('detailStatus').textContent=status;
   document.getElementById('detailDesc').textContent=desc;
   document.getElementById('detailDate').textContent=date;
+
+  const detailCard=document.querySelector('#de009 .detail-card');
+  const detailStatus=document.getElementById('detailStatus');
+  const visual=getStatusVisual(status,careType);
+
+  if(detailCard){
+    detailCard.classList.remove('status-blue','status-yellow','status-orange','status-red','status-green','status-purple');
+    detailCard.classList.add(visual.cls);
+  }
+  if(detailStatus){
+    detailStatus.innerHTML='<i class="status-dot '+visual.dot+'"></i>'+escapeHtml(status);
+  }
+
+  renderCurrentCaseLocation();
   go('de009');
+}
+
+function getStatusVisual(status,careType){
+  if(careType==='ai') return {cls:'status-purple',dot:'dot-purple',label:'KI betreut'};
+  if(status==='Erledigt') return {cls:'status-green',dot:'dot-green',label:'Erledigt'};
+  if(status==='Nicht erledigt' || status==='Dringend') return {cls:'status-red',dot:'dot-red',label:status};
+  if(status==='Warte auf Antwort' || status==='Zu bestätigen') return {cls:'status-yellow',dot:'dot-yellow',label:status};
+  if(status==='Wichtig' || status==='Termin naht') return {cls:'status-orange',dot:'dot-orange',label:status};
+  return {cls:'status-blue',dot:'dot-blue',label:status || 'Aktiv'};
+}
+
+function readContactData(){
+  return {
+    name:(document.getElementById('casePlaceName')?.value || '').trim(),
+    type:(document.getElementById('caseContactType')?.value || '').trim(),
+    street:(document.getElementById('casePlaceStreet')?.value || '').trim(),
+    city:(document.getElementById('casePlaceCity')?.value || '').trim(),
+    phone:(document.getElementById('casePlacePhone')?.value || '').trim(),
+    email:(document.getElementById('casePlaceEmail')?.value || '').trim()
+  };
+}
+
+function fillContactData(contact){
+  contact=contact || {};
+  document.getElementById('casePlaceName').value=contact.name || '';
+  document.getElementById('caseContactType').value=contact.type || '';
+  document.getElementById('casePlaceStreet').value=contact.street || '';
+  document.getElementById('casePlaceCity').value=contact.city || '';
+  document.getElementById('casePlacePhone').value=contact.phone || '';
+  document.getElementById('casePlaceEmail').value=contact.email || '';
+}
+
+function renderCurrentCaseLocation(){
+  const box=document.getElementById('caseLocationBox');
+  const content=document.getElementById('caseLocationContent');
+  if(!box || !content) return;
+
+  const c=currentCaseData?.contact || {};
+  const lines=[];
+  if(c.name) lines.push('<b>'+escapeHtml(c.name)+'</b>');
+  if(c.type) lines.push(escapeHtml(c.type));
+  const addr=[c.street,c.city].filter(Boolean).join(', ');
+  if(addr) lines.push(escapeHtml(addr));
+  if(c.phone) lines.push('Telefon: '+escapeHtml(c.phone));
+  if(c.email) lines.push('E-Mail: '+escapeHtml(c.email));
+
+  if(lines.length){
+    content.innerHTML=lines.join('<br>');
+    box.classList.remove('hidden');
+  }else{
+    box.classList.add('hidden');
+    content.innerHTML='';
+  }
 }
 
 function setCaseCareType(type){
@@ -1141,6 +1274,7 @@ function openNewCase(){
   document.getElementById('caseReminderDateTime').value='';
   document.getElementById('caseDescription').value='';
   document.getElementById('caseNextStep').value='';
+  fillContactData(null);
   setCaseCareType('reminder');
   clearMsg('caseFormMsg');
   updateCasePreview();
@@ -1165,6 +1299,7 @@ function editCurrentCase(){
   document.getElementById('caseReminderDateTime').value=currentCaseData.reminderDateTime || '';
   document.getElementById('caseDescription').value=currentCaseData.desc || '';
   document.getElementById('caseNextStep').value=currentCaseData.nextStep || '';
+  fillContactData(currentCaseData.contact || null);
 
   const inferredType=currentCaseData.careType || (currentCaseData.title==='Fenster – Isarwinkel' ? 'ai' : 'reminder');
   setCaseCareType(inferredType);
@@ -1194,6 +1329,8 @@ function updateCasePreview(){
   }
 
   const typeLabel=type==='ai' ? 'Mit KI betreuen' : 'Nur erinnern';
+  const contact=readContactData();
+  const contactLine=contact.name ? '<br>Ort/Kontakt: '+escapeHtml(contact.name)+(contact.city ? ' · '+escapeHtml(contact.city) : '') : '';
   let extra='';
 
   if(type==='reminder'){
@@ -1203,7 +1340,7 @@ function updateCasePreview(){
     extra='<br>KI verfolgt Verlauf, fragt bei fehlenden Informationen nach und bereitet nächste Schritte vor.';
   }
 
-  preview.innerHTML='<b>'+escapeHtml(title)+'</b><br>'+escapeHtml(category)+' · '+escapeHtml(status)+'<br><b>'+escapeHtml(typeLabel)+'</b>'+extra;
+  preview.innerHTML='<b>'+escapeHtml(title)+'</b><br>'+escapeHtml(category)+' · '+escapeHtml(status)+'<br><b>'+escapeHtml(typeLabel)+'</b>'+extra+contactLine;
 }
 
 function saveCaseForm(){
@@ -1232,6 +1369,8 @@ function saveCaseForm(){
     return;
   }
 
+  const contact=readContactData();
+
   const sourceSettings={
     email:!!document.getElementById('sourceEmail')?.checked,
     docs:!!document.getElementById('sourceDocs')?.checked,
@@ -1251,7 +1390,8 @@ function saveCaseForm(){
     title,status,category,careType,reminderDateTime,
     desc:desc || cardText,
     nextStep,
-    sourceSettings
+    sourceSettings,
+    contact
   };
 
   const el=document.createElement('button');
@@ -1266,11 +1406,14 @@ function saveCaseForm(){
     data.nextStep,
     data.careType,
     data.reminderDateTime,
-    data.sourceSettings
+    data.sourceSettings,
+    data.contact
   );
 
   const modeTag=careType==='ai' ? 'KI betreut' : 'Erinnerung';
-  el.innerHTML='<div class="case-top"><div><h3>'+escapeHtml(title)+'</h3><span class="tag">'+escapeHtml(status)+'</span> <span class="tag">'+escapeHtml(modeTag)+'</span></div><small>'+escapeHtml(dateDisplay)+'</small></div><p>'+escapeHtml(cardText)+'</p>';
+  const visual=getStatusVisual(status,careType);
+  el.classList.add(visual.cls);
+  el.innerHTML='<div class="case-top"><div><h3><i class="status-dot '+visual.dot+'"></i>'+escapeHtml(title)+'</h3><span class="tag">'+escapeHtml(status)+'</span> <span class="tag">'+escapeHtml(modeTag)+'</span></div><small>'+escapeHtml(dateDisplay)+'</small></div><p>'+escapeHtml(cardText)+'</p>';
 
   document.getElementById('cases').prepend(el);
   currentCaseData=data;
@@ -1283,10 +1426,10 @@ function saveCaseForm(){
 }
 
 document.addEventListener('input',e=>{
-  if(['caseTitle','caseCategory','caseStatus','caseReminderDateTime'].includes(e.target?.id)) updateCasePreview();
+  if(['caseTitle','caseCategory','caseStatus','caseReminderDateTime','casePlaceName','casePlaceCity'].includes(e.target?.id)) updateCasePreview();
 });
 document.addEventListener('change',e=>{
-  if(['caseTitle','caseCategory','caseStatus','caseReminderDateTime'].includes(e.target?.id)) updateCasePreview();
+  if(['caseTitle','caseCategory','caseStatus','caseReminderDateTime','casePlaceName','casePlaceCity'].includes(e.target?.id)) updateCasePreview();
 });
 
 function openModal(){document.getElementById('modal').classList.remove('hidden')}
@@ -1355,6 +1498,30 @@ if('serviceWorker' in navigator){
     caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
   }
 }
+
+
+function colorizeDashboardCases(){
+  document.querySelectorAll('#cases .case').forEach(el=>{
+    const text=el.textContent || '';
+    let status='Zu erledigen';
+    if(text.includes('Warte auf Antwort')) status='Warte auf Antwort';
+    else if(text.includes('Dringend')) status='Dringend';
+    else if(text.includes('Nicht erledigt')) status='Nicht erledigt';
+    else if(text.includes('Erledigt')) status='Erledigt';
+    else if(text.includes('Zu bestätigen')) status='Zu bestätigen';
+
+    const isAI=text.includes('Fenster – Isarwinkel') || text.includes('KI betreut');
+    const visual=getStatusVisual(status,isAI ? 'ai' : '');
+    el.classList.add(visual.cls);
+
+    const h3=el.querySelector('h3');
+    if(h3 && !h3.querySelector('.status-dot')){
+      h3.insertAdjacentHTML('afterbegin','<i class="status-dot '+visual.dot+'"></i>');
+    }
+  });
+}
+
+window.addEventListener('pageshow',()=>setTimeout(colorizeDashboardCases,0));
 
 </script>
 </body>

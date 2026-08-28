@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.1">
+<meta name="sekretarz-version" content="DE-v9.2">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1264,8 +1264,11 @@ function getCaseCareType(){
   return document.querySelector('input[name="caseCareType"]:checked')?.value || 'reminder';
 }
 
+let editingCaseOriginalTitle=null;
+
 function openNewCase(){
   currentCaseData=null;
+  editingCaseOriginalTitle=null;
   document.getElementById('caseFormHeading').textContent='Neue Angelegenheit';
   document.getElementById('caseFormMode').textContent='Neu';
   document.getElementById('caseTitle').value='';
@@ -1283,6 +1286,7 @@ function openNewCase(){
 
 function editCurrentCase(){
   if(!currentCaseData) return;
+  editingCaseOriginalTitle=currentCaseData.title || null;
   document.getElementById('caseFormHeading').textContent='Angelegenheit bearbeiten';
   document.getElementById('caseFormMode').textContent='Bearbeiten';
   document.getElementById('caseTitle').value=currentCaseData.title || '';
@@ -1343,6 +1347,37 @@ function updateCasePreview(){
   preview.innerHTML='<b>'+escapeHtml(title)+'</b><br>'+escapeHtml(category)+' · '+escapeHtml(status)+'<br><b>'+escapeHtml(typeLabel)+'</b>'+extra+contactLine;
 }
 
+function findExistingCaseCardByTitle(title){
+  const cards=[...document.querySelectorAll('#cases .case')];
+  return cards.find(card=>{
+    const h3=card.querySelector('h3');
+    return h3 && h3.textContent.trim()===title;
+  }) || null;
+}
+
+function bindCaseCard(el,data,dateDisplay,cardText){
+  el.onclick=()=>openCase(
+    data.title,
+    data.status,
+    data.desc,
+    dateDisplay,
+    data.category,
+    data.nextStep,
+    data.careType,
+    data.reminderDateTime,
+    data.sourceSettings,
+    data.contact
+  );
+
+  el.classList.remove('status-blue','status-yellow','status-orange','status-red','status-green','status-purple');
+  const visual=getStatusVisual(data.status,data.careType);
+  el.classList.add('case',visual.cls);
+  el.style.cssText='text-align:left;width:100%';
+
+  const modeTag=data.careType==='ai' ? 'KI betreut' : 'Erinnerung';
+  el.innerHTML='<div class="case-top"><div><h3><i class="status-dot '+visual.dot+'"></i>'+escapeHtml(data.title)+'</h3><span class="tag">'+escapeHtml(data.status)+'</span> <span class="tag">'+escapeHtml(modeTag)+'</span></div><small>'+escapeHtml(dateDisplay)+'</small></div><p>'+escapeHtml(cardText)+'</p>';
+}
+
 function saveCaseForm(){
   clearMsg('caseFormMsg');
 
@@ -1394,30 +1429,29 @@ function saveCaseForm(){
     contact
   };
 
-  const el=document.createElement('button');
-  el.className='case';
-  el.style.cssText='text-align:left;width:100%';
-  el.onclick=()=>openCase(
-    data.title,
-    data.status,
-    data.desc,
-    dateDisplay,
-    data.category,
-    data.nextStep,
-    data.careType,
-    data.reminderDateTime,
-    data.sourceSettings,
-    data.contact
-  );
+  const isEditing=!!editingCaseOriginalTitle;
+  let el=null;
 
-  const modeTag=careType==='ai' ? 'KI betreut' : 'Erinnerung';
-  const visual=getStatusVisual(status,careType);
-  el.classList.add(visual.cls);
-  el.innerHTML='<div class="case-top"><div><h3><i class="status-dot '+visual.dot+'"></i>'+escapeHtml(title)+'</h3><span class="tag">'+escapeHtml(status)+'</span> <span class="tag">'+escapeHtml(modeTag)+'</span></div><small>'+escapeHtml(dateDisplay)+'</small></div><p>'+escapeHtml(cardText)+'</p>';
+  if(isEditing){
+    el=findExistingCaseCardByTitle(editingCaseOriginalTitle);
+  }
 
-  document.getElementById('cases').prepend(el);
+  if(!el){
+    el=document.createElement('button');
+    document.getElementById('cases').prepend(el);
+  }
+
+  bindCaseCard(el,data,dateDisplay,cardText);
+
   currentCaseData=data;
-  setMsg('caseFormMsg','success',careType==='ai' ? 'KI-Angelegenheit gespeichert.' : 'Erinnerung gespeichert.');
+  editingCaseOriginalTitle=null;
+
+  setMsg(
+    'caseFormMsg',
+    'success',
+    isEditing ? 'Angelegenheit aktualisiert.' :
+    (careType==='ai' ? 'KI-Angelegenheit gespeichert.' : 'Erinnerung gespeichert.')
+  );
 
   setTimeout(()=>{
     historyStack=['de001','de002','de008'];

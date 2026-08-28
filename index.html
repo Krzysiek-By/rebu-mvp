@@ -805,6 +805,7 @@ function registerUser(){
   const profile={firstName,lastName,street,zip,city,email,phone:fullPhone};
 
   localStorage.setItem('sekretarzDemoProfile',JSON.stringify(profile));
+  localStorage.setItem('sekretarzDemoLoginPassword',p1);
 
   setMsg(
     'regMsg',
@@ -886,10 +887,18 @@ function attemptLogin(){
   const id=document.getElementById('loginId').value.trim();
   const pw=document.getElementById('loginPassword').value;
 
-  const validId=(id==='demo@sekretarz.app' || id==='+49123456789');
-  const validPw=(pw==='sekretarz');
+  const storedProfile=JSON.parse(localStorage.getItem('sekretarzDemoProfile') || 'null');
+  const storedPassword=localStorage.getItem('sekretarzDemoLoginPassword') || '';
 
-  if(validId && validPw){
+  const normalizedId=id.replace(/\s+/g,'');
+  const normalizedStoredPhone=(storedProfile?.phone || '').replace(/\s+/g,'');
+
+  const demoValid=(id==='demo@sekretarz.app' || normalizedId==='+49123456789') && pw==='sekretarz';
+  const registeredValid=!!storedProfile &&
+    (id===storedProfile.email || normalizedId===normalizedStoredPhone) &&
+    pw===storedPassword;
+
+  if(demoValid || registeredValid){
     failedAttempts=0;
     loggedIn=true;
     historyStack.push('de008');

@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.2">
+<meta name="sekretarz-version" content="DE-v9.3">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1166,8 +1166,8 @@ function goDashboard(){
 
 let currentCaseData=null;
 
-function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null,contact=null){
-  currentCaseData={title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact};
+function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null,contact=null,id=null){
+  currentCaseData={id,title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact,dateDisplay:date};
   document.getElementById('detailTitle').textContent=title;
   document.getElementById('detailStatus').textContent=status;
   document.getElementById('detailDesc').textContent=desc;
@@ -1187,6 +1187,115 @@ function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careTy
 
   renderCurrentCaseLocation();
   go('de009');
+}
+
+const CASES_STORAGE_KEY='sekretarzCasesV1';
+
+function getDefaultCases(){
+  return [
+    {
+      id:'demo-isarwinkel',
+      title:'Fenster – Isarwinkel',
+      status:'Warte auf Antwort',
+      desc:'Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.',
+      dateDisplay:'28.08.2026',
+      category:'Haus & Wohnung',
+      nextStep:'Antwort von Isarwinkel analysieren und nächsten Schritt planen.',
+      careType:'ai',
+      reminderDateTime:'',
+      sourceSettings:{email:true,docs:true,calls:true,web:true},
+      contact:null
+    },
+    {
+      id:'demo-werkstatt',
+      title:'Werkstatt – Termin',
+      status:'Zu bestätigen',
+      desc:'Vorgeschlagenen Werkstatttermin bestätigen.',
+      dateDisplay:'02.09.2026',
+      category:'Auto & Mobilität',
+      nextStep:'',
+      careType:'reminder',
+      reminderDateTime:'',
+      sourceSettings:{email:false,docs:false,calls:false,web:false},
+      contact:null
+    },
+    {
+      id:'demo-autoversicherung',
+      title:'Autoversicherung',
+      status:'Zu erledigen',
+      desc:'Angebot und Verlängerungsfrist prüfen.',
+      dateDisplay:'05.09.2026',
+      category:'Versicherungen',
+      nextStep:'',
+      careType:'reminder',
+      reminderDateTime:'',
+      sourceSettings:{email:false,docs:false,calls:false,web:false},
+      contact:null
+    }
+  ];
+}
+
+function loadCasesFromStorage(){
+  try{
+    const raw=localStorage.getItem(CASES_STORAGE_KEY);
+    if(!raw){
+      const defaults=getDefaultCases();
+      localStorage.setItem(CASES_STORAGE_KEY,JSON.stringify(defaults));
+      return defaults;
+    }
+    const parsed=JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){
+    return getDefaultCases();
+  }
+}
+
+function saveCasesToStorage(cases){
+  try{
+    localStorage.setItem(CASES_STORAGE_KEY,JSON.stringify(cases));
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function getStoredCases(){
+  return loadCasesFromStorage();
+}
+
+function upsertStoredCase(data){
+  const cases=getStoredCases();
+  const copy={...data};
+  if(!copy.id){
+    copy.id='case-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
+  }
+
+  const idx=cases.findIndex(c=>c.id===copy.id);
+  if(idx>=0) cases[idx]=copy;
+  else cases.unshift(copy);
+
+  saveCasesToStorage(cases);
+  return copy;
+}
+
+function findStoredCaseById(id){
+  return getStoredCases().find(c=>c.id===id) || null;
+}
+
+function renderDashboardCases(){
+  const container=document.getElementById('cases');
+  if(!container) return;
+  container.innerHTML='';
+
+  const cases=getStoredCases();
+  cases.forEach(data=>{
+    const el=document.createElement('button');
+    bindCaseCard(el,data,data.dateDisplay || data.reminderDateTime?.replace('T',' ') || '',data.desc || '');
+    el.dataset.caseId=data.id || '';
+    container.appendChild(el);
+  });
+
+  colorizeDashboardCases();
 }
 
 function getStatusVisual(status,careType){
@@ -1265,10 +1374,12 @@ function getCaseCareType(){
 }
 
 let editingCaseOriginalTitle=null;
+let editingCaseId=null;
 
 function openNewCase(){
   currentCaseData=null;
   editingCaseOriginalTitle=null;
+  editingCaseId=null;
   document.getElementById('caseFormHeading').textContent='Neue Angelegenheit';
   document.getElementById('caseFormMode').textContent='Neu';
   document.getElementById('caseTitle').value='';
@@ -1287,6 +1398,7 @@ function openNewCase(){
 function editCurrentCase(){
   if(!currentCaseData) return;
   editingCaseOriginalTitle=currentCaseData.title || null;
+  editingCaseId=currentCaseData.id || null;
   document.getElementById('caseFormHeading').textContent='Angelegenheit bearbeiten';
   document.getElementById('caseFormMode').textContent='Bearbeiten';
   document.getElementById('caseTitle').value=currentCaseData.title || '';
@@ -1366,7 +1478,8 @@ function bindCaseCard(el,data,dateDisplay,cardText){
     data.careType,
     data.reminderDateTime,
     data.sourceSettings,
-    data.contact
+    data.contact,
+    data.id || null
   );
 
   el.classList.remove('status-blue','status-yellow','status-orange','status-red','status-green','status-purple');
@@ -1422,29 +1535,24 @@ function saveCaseForm(){
   }
 
   const data={
+    id:editingCaseId || null,
     title,status,category,careType,reminderDateTime,
     desc:desc || cardText,
     nextStep,
     sourceSettings,
-    contact
+    contact,
+    dateDisplay
   };
 
-  const isEditing=!!editingCaseOriginalTitle;
-  let el=null;
+  const isEditing=!!(editingCaseOriginalTitle || editingCaseId);
 
-  if(isEditing){
-    el=findExistingCaseCardByTitle(editingCaseOriginalTitle);
-  }
+  const savedData=upsertStoredCase(data);
+  currentCaseData=savedData;
 
-  if(!el){
-    el=document.createElement('button');
-    document.getElementById('cases').prepend(el);
-  }
-
-  bindCaseCard(el,data,dateDisplay,cardText);
-
-  currentCaseData=data;
   editingCaseOriginalTitle=null;
+  editingCaseId=null;
+
+  renderDashboardCases();
 
   setMsg(
     'caseFormMsg',
@@ -1520,6 +1628,7 @@ function restoreAppState(){
 }
 
 window.addEventListener('pageshow',()=>{
+  renderDashboardCases();
   restoreAppState();
 });
 
@@ -1555,7 +1664,13 @@ function colorizeDashboardCases(){
   });
 }
 
-window.addEventListener('pageshow',()=>setTimeout(colorizeDashboardCases,0));
+window.addEventListener('pageshow',()=>setTimeout(renderDashboardCases,0));
+
+
+function resetDemoCases(){
+  localStorage.removeItem(CASES_STORAGE_KEY);
+  renderDashboardCases();
+}
 
 </script>
 </body>

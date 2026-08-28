@@ -1,9 +1,13 @@
 <!doctype html>
 <html lang="de">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
+<meta name="sekretarz-version" content="DE-v8.4">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -448,6 +452,8 @@ button{cursor:pointer}
       <h2>Anmelden</h2>
       <p>Melde dich mit E-Mail oder Telefonnummer an.</p>
 
+      <div id="recognizedAccount" class="success hidden"></div>
+
       <div class="field">
         <label>E-Mail oder Telefonnummer</label>
         <input id="loginId" value="demo@sekretarz.app" placeholder="E-Mail oder Telefonnummer">
@@ -704,8 +710,12 @@ function hideAll(){
 
 function showDirect(id){
   hideAll();
-  document.getElementById(id).classList.remove('hidden');
+  const page=document.getElementById(id);
+  if(!page) return;
+  page.classList.remove('hidden');
   currentPage=id;
+  try{ sessionStorage.setItem('sekretarzCurrentPage',id); }catch(e){}
+  if(id==='de006') setTimeout(refreshRecognizedAccount,0);
   window.scrollTo(0,0);
 }
 
@@ -726,6 +736,7 @@ function back(){
 function goStart(){
   loggedIn=false;
   historyStack=['de001'];
+  try{ sessionStorage.setItem('sekretarzCurrentPage','de001'); }catch(e){}
   showDirect('de001');
 }
 
@@ -802,23 +813,50 @@ function registerUser(){
   }
 
   const fullPhone=prefix+' '+phoneDigits;
-  const profile={firstName,lastName,street,zip,city,email,phone:fullPhone};
+  const account={
+    firstName:firstName,
+    lastName:lastName,
+    street:street,
+    zip:zip,
+    city:city,
+    email:email.trim().toLowerCase(),
+    phone:fullPhone,
+    password:p1
+  };
 
-  localStorage.setItem('sekretarzDemoProfile',JSON.stringify(profile));
-  localStorage.setItem('sekretarzDemoLoginPassword',p1);
+  try{
+    localStorage.setItem('sekretarzDemoAccount',JSON.stringify(account));
+
+    const savedAccount=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
+
+    if(!savedAccount ||
+       savedAccount.email!==account.email ||
+       savedAccount.phone!==account.phone ||
+       savedAccount.password!==account.password){
+      setMsg('regMsg','error','Das Testkonto konnte im Browser nicht korrekt gespeichert werden.');
+      return;
+    }
+
+    // Compatibility with older prototype builds.
+    localStorage.setItem('sekretarzDemoProfile',JSON.stringify(account));
+    localStorage.setItem('sekretarzDemoLoginPassword',p1);
+  }catch(err){
+    setMsg('regMsg','error','Das Testkonto konnte im Browser nicht gespeichert werden.');
+    return;
+  }
 
   setMsg(
     'regMsg',
     'success',
-    `Daten geprüft. Bestätigungs-E-Mail wird vorbereitet.`
+    `Konto gespeichert. Bestätigungs-E-Mail wird vorbereitet.`
   );
 
-  localStorage.setItem('sekretarzPendingEmail',email);
+  localStorage.setItem('sekretarzPendingEmail',account.email);
   localStorage.setItem('sekretarzPendingPhone',fullPhone);
 
   setTimeout(()=>{
     historyStack=['de001','de002','de003','de004'];
-    prepareEmailVerification(email);
+    prepareEmailVerification(account.email);
     showDirect('de004');
   },700);
 }
@@ -881,26 +919,46 @@ function verifySmsCode(){
   },700);
 }
 
+function refreshRecognizedAccount(){
+  const box=document.getElementById('recognizedAccount');
+  if(!box) return;
+
+  const account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
+
+  if(account && account.email){
+    box.className='success';
+    box.textContent='Konto erkannt: '+account.email;
+  }else{
+    box.className='error';
+    box.textContent='Kein registriertes Testkonto in diesem Browser gefunden.';
+  }
+}
+
 function attemptLogin(){
   clearMsg('loginMsg');
 
   const id=document.getElementById('loginId').value.trim();
   const pw=document.getElementById('loginPassword').value;
 
-  const storedProfile=JSON.parse(localStorage.getItem('sekretarzDemoProfile') || 'null');
-  const storedPassword=localStorage.getItem('sekretarzDemoLoginPassword') || '';
+  const storedAccount=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
 
-  const normalizedId=id.replace(/\s+/g,'');
-  const normalizedStoredPhone=(storedProfile?.phone || '').replace(/\s+/g,'');
+  const normalizedEmail=id.trim().toLowerCase();
+  const normalizedPhone=id.replace(/\s+/g,'');
+  const normalizedStoredPhone=(storedAccount?.phone || '').replace(/\s+/g,'');
 
-  const demoValid=(id==='demo@sekretarz.app' || normalizedId==='+49123456789') && pw==='sekretarz';
-  const registeredValid=!!storedProfile &&
-    (id===storedProfile.email || normalizedId===normalizedStoredPhone) &&
-    pw===storedPassword;
+  const demoValid=(normalizedEmail==='demo@sekretarz.app' || normalizedPhone==='+49123456789') && pw==='sekretarz';
+
+  const registeredValid=!!storedAccount &&
+    (
+      normalizedEmail===(storedAccount.email || '').trim().toLowerCase() ||
+      normalizedPhone===normalizedStoredPhone
+    ) &&
+    pw===storedAccount.password;
 
   if(demoValid || registeredValid){
     failedAttempts=0;
     loggedIn=true;
+    try{ localStorage.setItem('sekretarzLoggedIn','1'); }catch(e){}
     historyStack.push('de008');
     showDirect('de008');
     return;
@@ -948,12 +1006,15 @@ function sendRecovery(){
 
 function logout(){
   loggedIn=false;
+  try{ localStorage.removeItem('sekretarzLoggedIn'); }catch(e){}
   historyStack=['de001','de002'];
   showDirect('de002');
 }
 
 function goDashboard(){
-  if(loggedIn){
+  const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
+  if(loggedIn || persistedLogin){
+    loggedIn=true;
     if(currentPage!=='de008') historyStack.push('de008');
     showDirect('de008');
   } else {
@@ -1090,6 +1151,48 @@ function addCase(){
   document.getElementById('newNote').value='';
   closeModal();
 }
+
+function restoreAppState(){
+  let target='de001';
+  try{
+    const saved=sessionStorage.getItem('sekretarzCurrentPage');
+    const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
+    const account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
+
+    if(saved && document.getElementById(saved)){
+      target=saved;
+    }else if(persistedLogin){
+      target='de008';
+    }else if(account && account.email){
+      target='de006';
+    }
+
+    if(['de008','de009','de010'].includes(target) && !persistedLogin){
+      target='de006';
+    }
+
+    loggedIn=persistedLogin;
+    historyStack=[target];
+    showDirect(target);
+  }catch(e){
+    showDirect('de001');
+  }
+}
+
+window.addEventListener('pageshow',()=>{
+  restoreAppState();
+});
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations()
+    .then(regs=>Promise.all(regs.map(r=>r.unregister())))
+    .catch(()=>{});
+
+  if('caches' in window){
+    caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
+  }
+}
+
 </script>
 </body>
 </html>

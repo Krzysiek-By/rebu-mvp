@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v8.4">
+<meta name="sekretarz-version" content="DE-v9.0">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -203,6 +203,26 @@ button{cursor:pointer}
   .form-wrap{padding:14px}.form-card{padding:18px}.form-grid{grid-template-columns:1fr}
   .form-grid .wide{grid-column:auto}.form-head h2{font-size:26px}
 }
+
+  .care-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 6px}
+  .care-card{border:1.5px solid var(--line);border-radius:16px;padding:14px;background:#fff;cursor:pointer;text-align:left}
+  .care-card.active{border-color:#356df3;box-shadow:0 0 0 2px rgba(53,109,243,.08)}
+  .care-card input{margin-right:7px}
+  .care-card b{display:block;margin-bottom:5px}
+  .care-card small{display:block;color:var(--muted);line-height:1.35}
+  .mode-panel{grid-column:1/-1;border:1px solid var(--line);border-radius:16px;padding:14px;background:#fafbff}
+  .mode-panel h3{margin:0 0 8px;font-size:16px}
+  .mode-panel p{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.45}
+  .ai-note{background:#eef4ff;border:1px solid #cbdcff;border-radius:12px;padding:11px 12px;font-size:13px;line-height:1.4}
+  .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .check-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .check-item{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;font-size:13px}
+  .check-item input{margin-top:2px}
+  .hidden-mode{display:none!important}
+  @media(max-width:640px){
+    .care-choice,.mini-grid,.check-grid{grid-template-columns:1fr}
+  }
+
 </style>
 </head>
 <body>
@@ -536,7 +556,7 @@ button{cursor:pointer}
       </div>
 
       <div id="cases" class="cases">
-        <button class="case" style="text-align:left;width:100%" onclick="openCase('Fenster – Isarwinkel','Warte auf Antwort','Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.','28.08.2026')">
+        <button class="case" style="text-align:left;width:100%" onclick="openCase('Fenster – Isarwinkel','Warte auf Antwort','Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.','KI betreut','Haus & Wohnung','Antwort von Isarwinkel analysieren und nächsten Schritt planen.','ai','','')">
           <div class="case-top"><div><h3>Fenster – Isarwinkel</h3><span class="tag">Warte auf Antwort</span></div><small>28.08.2026</small></div>
           <p>Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.</p>
         </button>
@@ -606,29 +626,53 @@ button{cursor:pointer}
       <button class="backbtn" onclick="back()">← Zurück</button>
       <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
     </div>
+
     <div class="form-card">
       <div class="form-head">
         <h2 id="caseFormHeading">Neue Angelegenheit</h2>
         <span class="tag" id="caseFormMode">Neu</span>
       </div>
+
       <div class="form-grid">
         <div class="field wide">
-          <label>Titel</label>
-          <input id="caseTitle" placeholder="z. B. Werkstatt – Termin">
+          <label>Wie soll dein Sekretär diese Angelegenheit behandeln?</label>
+          <div class="care-choice">
+            <label class="care-card active" id="careCardReminder">
+              <span><input type="radio" name="caseCareType" value="reminder" checked onchange="setCaseCareType('reminder')"><b>Nur erinnern</b></span>
+              <small>Für einfache Aufgaben wie „Brötchen kaufen“, Medikamente, Anruf oder einmaligen Termin.</small>
+            </label>
+
+            <label class="care-card" id="careCardAI">
+              <span><input type="radio" name="caseCareType" value="ai" onchange="setCaseCareType('ai')"><b>Mit KI betreuen</b></span>
+              <small>Der Sekretär verfolgt die Angelegenheit, analysiert neue Informationen und plant die nächsten Schritte.</small>
+            </label>
+          </div>
         </div>
+
+        <div class="field wide">
+          <label>Titel</label>
+          <input id="caseTitle" placeholder="z. B. Fenster – Isarwinkel">
+        </div>
+
         <div class="field">
-          <label>Kategorie</label>
+          <label>Lebensbereich</label>
           <select id="caseCategory">
-            <option>Auto</option>
             <option>Haus & Wohnung</option>
-            <option>Gesundheit</option>
-            <option>Versicherung</option>
-            <option>Behörde</option>
+            <option>Gesundheit & Ärzte</option>
+            <option>Auto & Mobilität</option>
+            <option>Versicherungen</option>
+            <option>Behörden</option>
             <option>Finanzen</option>
             <option>Familie</option>
+            <option>Arbeit</option>
+            <option>Verträge & Abos</option>
+            <option>Einkäufe</option>
+            <option>Reisen</option>
+            <option>Dokumente</option>
             <option>Sonstiges</option>
           </select>
         </div>
+
         <div class="field">
           <label>Status</label>
           <select id="caseStatus">
@@ -637,35 +681,67 @@ button{cursor:pointer}
             <option>Zu bestätigen</option>
             <option>Dringend</option>
             <option>Erledigt</option>
+            <option>Nicht erledigt</option>
           </select>
         </div>
-        <div class="field">
-          <label>Termin</label>
-          <input id="caseDate" type="date">
+
+        <!-- SIMPLE REMINDER -->
+        <div id="reminderPanel" class="mode-panel">
+          <h3>Einfaches Erinnern</h3>
+          <p>Der Sekretär erinnert dich zur gewünschten Zeit. Wenn du nicht reagierst, erinnert er dich alle 5 Minuten erneut – maximal 5-mal.</p>
+
+          <div class="mini-grid">
+            <div class="field" style="margin:0">
+              <label>Zeitpunkt</label>
+              <input id="caseReminderDateTime" type="datetime-local">
+            </div>
+            <div class="field" style="margin:0">
+              <label>Nach 5 erfolglosen Erinnerungen</label>
+              <input value="Rot markieren: Nicht erledigt" disabled>
+            </div>
+          </div>
+
+          <div class="ai-note" style="margin-top:10px">
+            Sobald du „Erledigt“ bestätigst, wird die Aufgabe geschlossen. Ohne Bestätigung bleibt sie im Kalender sichtbar und wird nach der fünften Erinnerung rot als „Nicht erledigt“ markiert.
+          </div>
         </div>
-        <div class="field">
-          <label>Erinnerung</label>
-          <select id="caseReminder">
-            <option value="none">Keine</option>
-            <option value="1">1 Tag vorher</option>
-            <option value="3">3 Tage vorher</option>
-            <option value="7">7 Tage vorher</option>
-          </select>
-        </div>
-        <div class="field wide">
-          <label>Beschreibung</label>
-          <textarea id="caseDescription" rows="4" placeholder="Worum geht es?"></textarea>
-        </div>
-        <div class="field wide">
-          <label>Nächster Schritt</label>
-          <textarea id="caseNextStep" rows="3" placeholder="Was soll als Nächstes passieren?"></textarea>
+
+        <!-- AI CASE -->
+        <div id="aiPanel" class="mode-panel hidden-mode">
+          <h3>KI-Betreuung der Angelegenheit</h3>
+          <p>Der Sekretär soll diese Angelegenheit aktiv verfolgen, fehlende Informationen erfragen und den nächsten sinnvollen Schritt vorbereiten.</p>
+
+          <div class="field" style="margin:0 0 10px">
+            <label>Worum geht es und was soll erreicht werden?</label>
+            <textarea id="caseDescription" rows="4" placeholder="Beschreibe die Angelegenheit und das gewünschte Ergebnis."></textarea>
+          </div>
+
+          <div class="field" style="margin:0 0 10px">
+            <label>Aktueller Stand / letzter bekannter Schritt</label>
+            <textarea id="caseNextStep" rows="3" placeholder="z. B. Wir warten auf die Antwort von Isarwinkel."></textarea>
+          </div>
+
+          <label style="font-weight:700;font-size:14px">Welche Informationen darf der Sekretär für diese Angelegenheit berücksichtigen?</label>
+          <div class="check-grid">
+            <label class="check-item"><input id="sourceEmail" type="checkbox" checked> E-Mails und Antworten</label>
+            <label class="check-item"><input id="sourceDocs" type="checkbox" checked> Dokumente und Anhänge</label>
+            <label class="check-item"><input id="sourceCalls" type="checkbox" checked> Meine Notizen / Telefonate</label>
+            <label class="check-item"><input id="sourceWeb" type="checkbox" checked> Aktuelle geprüfte Internetquellen</label>
+          </div>
+
+          <div class="ai-note" style="margin-top:10px">
+            Wenn Informationen fehlen, soll der Sekretär nachfragen – z. B. ob seit der letzten E-Mail ein Telefonat stattgefunden hat. Neue Angaben werden Teil der Historie dieser Angelegenheit.
+          </div>
         </div>
       </div>
+
       <div id="caseFormMsg" class="hidden"></div>
+
       <div class="preview-box">
         <h3>Vorschau</h3>
         <div id="casePreview" class="helper">Fülle den Titel aus, um die Vorschau zu sehen.</div>
       </div>
+
       <div class="form-actions">
         <button class="btn secondary" onclick="back()">Abbrechen</button>
         <button class="btn primary" onclick="saveCaseForm()">Speichern</button>
@@ -1024,8 +1100,8 @@ function goDashboard(){
 
 let currentCaseData=null;
 
-function openCase(title,status,desc,date,category='Sonstiges',nextStep=''){
-  currentCaseData={title,status,desc,date,category,nextStep};
+function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null){
+  currentCaseData={title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings};
   document.getElementById('detailTitle').textContent=title;
   document.getElementById('detailStatus').textContent=status;
   document.getElementById('detailDesc').textContent=desc;
@@ -1033,17 +1109,39 @@ function openCase(title,status,desc,date,category='Sonstiges',nextStep=''){
   go('de009');
 }
 
+function setCaseCareType(type){
+  const isAI=type==='ai';
+  const reminder=document.getElementById('reminderPanel');
+  const ai=document.getElementById('aiPanel');
+  const reminderCard=document.getElementById('careCardReminder');
+  const aiCard=document.getElementById('careCardAI');
+
+  if(reminder) reminder.classList.toggle('hidden-mode',isAI);
+  if(ai) ai.classList.toggle('hidden-mode',!isAI);
+  if(reminderCard) reminderCard.classList.toggle('active',!isAI);
+  if(aiCard) aiCard.classList.toggle('active',isAI);
+
+  const radio=document.querySelector('input[name="caseCareType"][value="'+type+'"]');
+  if(radio) radio.checked=true;
+
+  updateCasePreview();
+}
+
+function getCaseCareType(){
+  return document.querySelector('input[name="caseCareType"]:checked')?.value || 'reminder';
+}
+
 function openNewCase(){
   currentCaseData=null;
   document.getElementById('caseFormHeading').textContent='Neue Angelegenheit';
   document.getElementById('caseFormMode').textContent='Neu';
   document.getElementById('caseTitle').value='';
-  document.getElementById('caseCategory').value='Auto';
+  document.getElementById('caseCategory').value='Haus & Wohnung';
   document.getElementById('caseStatus').value='Zu erledigen';
-  document.getElementById('caseDate').value='';
-  document.getElementById('caseReminder').value='none';
+  document.getElementById('caseReminderDateTime').value='';
   document.getElementById('caseDescription').value='';
   document.getElementById('caseNextStep').value='';
+  setCaseCareType('reminder');
   clearMsg('caseFormMsg');
   updateCasePreview();
   go('de010');
@@ -1054,17 +1152,23 @@ function editCurrentCase(){
   document.getElementById('caseFormHeading').textContent='Angelegenheit bearbeiten';
   document.getElementById('caseFormMode').textContent='Bearbeiten';
   document.getElementById('caseTitle').value=currentCaseData.title || '';
-  document.getElementById('caseCategory').value=currentCaseData.category || 'Sonstiges';
+
+  let category=currentCaseData.category || 'Sonstiges';
+  if(currentCaseData.title==='Fenster – Isarwinkel') category='Haus & Wohnung';
+  if(category==='Auto') category='Auto & Mobilität';
+  if(category==='Gesundheit') category='Gesundheit & Ärzte';
+  if(category==='Versicherung') category='Versicherungen';
+  if(category==='Behörde') category='Behörden';
+  document.getElementById('caseCategory').value=category;
+
   document.getElementById('caseStatus').value=currentCaseData.status || 'Zu erledigen';
-  let d=currentCaseData.date || '';
-  if(/^\d{2}\.\d{2}\.\d{4}$/.test(d)){
-    const parts=d.split('.');
-    d=parts[2]+'-'+parts[1]+'-'+parts[0];
-  }
-  document.getElementById('caseDate').value=d;
-  document.getElementById('caseReminder').value='none';
+  document.getElementById('caseReminderDateTime').value=currentCaseData.reminderDateTime || '';
   document.getElementById('caseDescription').value=currentCaseData.desc || '';
   document.getElementById('caseNextStep').value=currentCaseData.nextStep || '';
+
+  const inferredType=currentCaseData.careType || (currentCaseData.title==='Fenster – Isarwinkel' ? 'ai' : 'reminder');
+  setCaseCareType(inferredType);
+
   clearMsg('caseFormMsg');
   updateCasePreview();
   go('de010');
@@ -1080,20 +1184,36 @@ function updateCasePreview(){
   const title=(document.getElementById('caseTitle')?.value || '').trim();
   const status=document.getElementById('caseStatus')?.value || '';
   const category=document.getElementById('caseCategory')?.value || '';
-  const date=formatDateDE(document.getElementById('caseDate')?.value || '');
+  const type=getCaseCareType();
   const preview=document.getElementById('casePreview');
   if(!preview) return;
-  preview.innerHTML=title
-    ? '<b>'+escapeHtml(title)+'</b><br>'+escapeHtml(category)+' · '+escapeHtml(status)+' · '+escapeHtml(date)
-    : 'Fülle den Titel aus, um die Vorschau zu sehen.';
+
+  if(!title){
+    preview.textContent='Fülle den Titel aus, um die Vorschau zu sehen.';
+    return;
+  }
+
+  const typeLabel=type==='ai' ? 'Mit KI betreuen' : 'Nur erinnern';
+  let extra='';
+
+  if(type==='reminder'){
+    const dt=document.getElementById('caseReminderDateTime')?.value || '';
+    extra=dt ? '<br>Erinnerung: '+escapeHtml(dt.replace('T',' ')) : '<br>Noch kein Erinnerungszeitpunkt gewählt.';
+  }else{
+    extra='<br>KI verfolgt Verlauf, fragt bei fehlenden Informationen nach und bereitet nächste Schritte vor.';
+  }
+
+  preview.innerHTML='<b>'+escapeHtml(title)+'</b><br>'+escapeHtml(category)+' · '+escapeHtml(status)+'<br><b>'+escapeHtml(typeLabel)+'</b>'+extra;
 }
 
 function saveCaseForm(){
   clearMsg('caseFormMsg');
+
   const title=document.getElementById('caseTitle').value.trim();
   const category=document.getElementById('caseCategory').value;
   const status=document.getElementById('caseStatus').value;
-  const dateRaw=document.getElementById('caseDate').value;
+  const careType=getCaseCareType();
+  const reminderDateTime=document.getElementById('caseReminderDateTime').value;
   const desc=document.getElementById('caseDescription').value.trim();
   const nextStep=document.getElementById('caseNextStep').value.trim();
 
@@ -1102,16 +1222,59 @@ function saveCaseForm(){
     return;
   }
 
-  const dateDisplay=formatDateDE(dateRaw);
+  if(careType==='reminder' && !reminderDateTime){
+    setMsg('caseFormMsg','error','Bitte einen Erinnerungszeitpunkt wählen.');
+    return;
+  }
+
+  if(careType==='ai' && !desc){
+    setMsg('caseFormMsg','error','Bitte kurz beschreiben, worum es bei dieser KI-Angelegenheit geht.');
+    return;
+  }
+
+  const sourceSettings={
+    email:!!document.getElementById('sourceEmail')?.checked,
+    docs:!!document.getElementById('sourceDocs')?.checked,
+    calls:!!document.getElementById('sourceCalls')?.checked,
+    web:!!document.getElementById('sourceWeb')?.checked
+  };
+
+  let dateDisplay='KI betreut';
+  let cardText=desc || 'KI-Angelegenheit unter Kontrolle des Sekretärs.';
+
+  if(careType==='reminder'){
+    dateDisplay=reminderDateTime.replace('T',' ');
+    cardText='Erinnerung mit bis zu 5 Versuchen im Abstand von 5 Minuten.';
+  }
+
+  const data={
+    title,status,category,careType,reminderDateTime,
+    desc:desc || cardText,
+    nextStep,
+    sourceSettings
+  };
+
   const el=document.createElement('button');
   el.className='case';
   el.style.cssText='text-align:left;width:100%';
-  el.onclick=()=>openCase(title,status,desc || 'Keine Beschreibung.',dateDisplay,category,nextStep);
-  el.innerHTML='<div class="case-top"><div><h3>'+escapeHtml(title)+'</h3><span class="tag">'+escapeHtml(status)+'</span></div><small>'+escapeHtml(dateDisplay)+'</small></div><p>'+escapeHtml(desc || 'Keine Beschreibung.')+'</p>';
+  el.onclick=()=>openCase(
+    data.title,
+    data.status,
+    data.desc,
+    dateDisplay,
+    data.category,
+    data.nextStep,
+    data.careType,
+    data.reminderDateTime,
+    data.sourceSettings
+  );
+
+  const modeTag=careType==='ai' ? 'KI betreut' : 'Erinnerung';
+  el.innerHTML='<div class="case-top"><div><h3>'+escapeHtml(title)+'</h3><span class="tag">'+escapeHtml(status)+'</span> <span class="tag">'+escapeHtml(modeTag)+'</span></div><small>'+escapeHtml(dateDisplay)+'</small></div><p>'+escapeHtml(cardText)+'</p>';
 
   document.getElementById('cases').prepend(el);
-  currentCaseData={title,status,desc:desc || 'Keine Beschreibung.',date:dateDisplay,category,nextStep};
-  setMsg('caseFormMsg','success','Angelegenheit gespeichert.');
+  currentCaseData=data;
+  setMsg('caseFormMsg','success',careType==='ai' ? 'KI-Angelegenheit gespeichert.' : 'Erinnerung gespeichert.');
 
   setTimeout(()=>{
     historyStack=['de001','de002','de008'];
@@ -1120,10 +1283,10 @@ function saveCaseForm(){
 }
 
 document.addEventListener('input',e=>{
-  if(['caseTitle','caseCategory','caseStatus','caseDate'].includes(e.target?.id)) updateCasePreview();
+  if(['caseTitle','caseCategory','caseStatus','caseReminderDateTime'].includes(e.target?.id)) updateCasePreview();
 });
 document.addEventListener('change',e=>{
-  if(['caseTitle','caseCategory','caseStatus','caseDate'].includes(e.target?.id)) updateCasePreview();
+  if(['caseTitle','caseCategory','caseStatus','caseReminderDateTime'].includes(e.target?.id)) updateCasePreview();
 });
 
 function openModal(){document.getElementById('modal').classList.remove('hidden')}

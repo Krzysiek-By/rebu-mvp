@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.3">
+<meta name="sekretarz-version" content="DE-v9.4">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1168,6 +1168,10 @@ let currentCaseData=null;
 
 function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null,contact=null,id=null){
   currentCaseData={id,title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact,dateDisplay:date};
+
+  try{
+    if(id) sessionStorage.setItem('sekretarzCurrentCaseId',id);
+  }catch(e){}
   document.getElementById('detailTitle').textContent=title;
   document.getElementById('detailStatus').textContent=status;
   document.getElementById('detailDesc').textContent=desc;
@@ -1600,6 +1604,27 @@ function addCase(){
   closeModal();
 }
 
+function restoreCaseById(id){
+  if(!id) return false;
+  const data=findStoredCaseById(id);
+  if(!data) return false;
+
+  openCase(
+    data.title || '',
+    data.status || '',
+    data.desc || '',
+    data.dateDisplay || data.reminderDateTime?.replace('T',' ') || '',
+    data.category || 'Sonstiges',
+    data.nextStep || '',
+    data.careType || '',
+    data.reminderDateTime || '',
+    data.sourceSettings || null,
+    data.contact || null,
+    data.id || null
+  );
+  return true;
+}
+
 function restoreAppState(){
   let target='de001';
   try{
@@ -1620,6 +1645,16 @@ function restoreAppState(){
     }
 
     loggedIn=persistedLogin;
+
+    if(target==='de009'){
+      const currentCaseId=sessionStorage.getItem('sekretarzCurrentCaseId');
+      if(currentCaseId && restoreCaseById(currentCaseId)){
+        historyStack=['de008','de009'];
+        return;
+      }
+      target='de008';
+    }
+
     historyStack=[target];
     showDirect(target);
   }catch(e){
@@ -1669,6 +1704,7 @@ window.addEventListener('pageshow',()=>setTimeout(renderDashboardCases,0));
 
 function resetDemoCases(){
   localStorage.removeItem(CASES_STORAGE_KEY);
+  try{ sessionStorage.removeItem('sekretarzCurrentCaseId'); }catch(e){}
   renderDashboardCases();
 }
 

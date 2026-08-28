@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.4">
+<meta name="sekretarz-version" content="DE-v9.5">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -856,7 +856,10 @@ function showDirect(id){
   if(!page) return;
   page.classList.remove('hidden');
   currentPage=id;
-  try{ sessionStorage.setItem('sekretarzCurrentPage',id); }catch(e){}
+  try{
+    sessionStorage.setItem('sekretarzCurrentPage',id);
+    localStorage.setItem('sekretarzLastPage',id);
+  }catch(e){}
   if(id==='de006') setTimeout(refreshRecognizedAccount,0);
   window.scrollTo(0,0);
 }
@@ -878,7 +881,10 @@ function back(){
 function goStart(){
   loggedIn=false;
   historyStack=['de001'];
-  try{ sessionStorage.setItem('sekretarzCurrentPage','de001'); }catch(e){}
+  try{
+    sessionStorage.setItem('sekretarzCurrentPage','de001');
+    localStorage.setItem('sekretarzLastPage','de001');
+  }catch(e){}
   showDirect('de001');
 }
 
@@ -1170,7 +1176,10 @@ function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careTy
   currentCaseData={id,title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact,dateDisplay:date};
 
   try{
-    if(id) sessionStorage.setItem('sekretarzCurrentCaseId',id);
+    if(id){
+      sessionStorage.setItem('sekretarzCurrentCaseId',id);
+      localStorage.setItem('sekretarzLastCaseId',id);
+    }
   }catch(e){}
   document.getElementById('detailTitle').textContent=title;
   document.getElementById('detailStatus').textContent=status;
@@ -1628,7 +1637,7 @@ function restoreCaseById(id){
 function restoreAppState(){
   let target='de001';
   try{
-    const saved=sessionStorage.getItem('sekretarzCurrentPage');
+    const saved=sessionStorage.getItem('sekretarzCurrentPage') || localStorage.getItem('sekretarzLastPage');
     const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
     const account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
 
@@ -1647,7 +1656,7 @@ function restoreAppState(){
     loggedIn=persistedLogin;
 
     if(target==='de009'){
-      const currentCaseId=sessionStorage.getItem('sekretarzCurrentCaseId');
+      const currentCaseId=sessionStorage.getItem('sekretarzCurrentCaseId') || localStorage.getItem('sekretarzLastCaseId');
       if(currentCaseId && restoreCaseById(currentCaseId)){
         historyStack=['de008','de009'];
         return;
@@ -1663,8 +1672,16 @@ function restoreAppState(){
 }
 
 window.addEventListener('pageshow',()=>{
-  renderDashboardCases();
-  restoreAppState();
+  try{
+    restoreAppState();
+  }catch(e){
+    const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
+    showDirect(persistedLogin ? 'de008' : 'de001');
+  }
+
+  setTimeout(()=>{
+    try{ renderDashboardCases(); }catch(e){}
+  },0);
 });
 
 if('serviceWorker' in navigator){
@@ -1699,12 +1716,15 @@ function colorizeDashboardCases(){
   });
 }
 
-window.addEventListener('pageshow',()=>setTimeout(renderDashboardCases,0));
+// Dashboard rendering is handled by the guarded pageshow boot above.
 
 
 function resetDemoCases(){
   localStorage.removeItem(CASES_STORAGE_KEY);
-  try{ sessionStorage.removeItem('sekretarzCurrentCaseId'); }catch(e){}
+  try{
+    sessionStorage.removeItem('sekretarzCurrentCaseId');
+    localStorage.removeItem('sekretarzLastCaseId');
+  }catch(e){}
   renderDashboardCases();
 }
 

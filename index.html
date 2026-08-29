@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v11.1">
+<meta name="sekretarz-version" content="DE-v11.2">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1580,8 +1580,20 @@ function getCalendarConnectState(){
   try{
     const raw=localStorage.getItem(CALENDAR_CONNECT_KEY);
     const obj=raw ? JSON.parse(raw) : {};
-    return obj && typeof obj==='object' ? obj : {};
-  }catch(e){ return {}; }
+    if(!obj || typeof obj!=='object') return {};
+
+    if(obj.flowSchemaVersion!==2){
+      return {
+        connectedProvider: obj.connectedProvider || '',
+        pendingProvider:'',
+        flowStep:0,
+        flowSchemaVersion:2
+      };
+    }
+    return obj;
+  }catch(e){
+    return {connectedProvider:'',pendingProvider:'',flowStep:0,flowSchemaVersion:2};
+  }
 }
 
 function saveCalendarConnectState(state){
@@ -1614,10 +1626,13 @@ function showCalendarHelp(provider, kind){
 }
 
 function selectCalendarProvider(provider){
-  const state=getCalendarConnectState();
-  state.pendingProvider=provider;
-  state.flowStep=1;
-  state.connectedProvider=state.connectedProvider || '';
+  const previous=getCalendarConnectState();
+  const state={
+    connectedProvider: previous.connectedProvider || '',
+    pendingProvider:String(provider||''),
+    flowStep:1,
+    flowSchemaVersion:2
+  };
   saveCalendarConnectState(state);
 
   const status=document.getElementById('calendarConnectStatus');
@@ -1673,6 +1688,7 @@ function startCalendarConnectFlow(provider,step){
 
   box.classList.remove('hidden');
   title.textContent=providerLabel(provider);
+  box.setAttribute('data-active-provider',String(provider||''));
   stepLabel.textContent='Schritt '+step+' von 3';
   progress.style.width=(step*33.333)+'%';
 
@@ -1752,6 +1768,7 @@ function bindCalendarConnectButtons(){
 
 function renderCalendarConnect(){
   const state=getCalendarConnectState();
+  saveCalendarConnectState(state);
   const connected=state.connectedProvider || '';
 
   document.querySelectorAll('[data-provider]').forEach(row=>{

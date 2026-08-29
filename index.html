@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v10.5">
+<meta name="sekretarz-version" content="DE-v10.6">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -351,6 +351,42 @@ button{cursor:pointer}
   @media(max-width:640px){
     .secretary-states{grid-template-columns:1fr 1fr}
     .state-card{padding:12px}
+  }
+
+
+  .calendar-wrap{max-width:820px;margin:0 auto;padding:18px 18px 100px}
+  .calendar-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:var(--shadow)}
+  .calendar-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+  .calendar-head h2{margin:0;font-size:28px}
+  .cal-nav{display:flex;gap:8px}
+  .cal-nav button{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 12px;font-weight:800}
+  .calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .calendar-weekdays div{text-align:center;font-size:12px;font-weight:800;color:var(--muted);padding:6px 0}
+  .cal-day{min-height:56px;border:1px solid #e5e9f2;border-radius:12px;padding:7px;background:#fbfcff;position:relative}
+  .cal-day.empty{border-color:transparent;background:transparent}
+  .cal-day.today{outline:2px solid #376cff;background:#f0f5ff}
+  .cal-day.has-event{background:#f6f3ff}
+  .cal-num{font-weight:800;font-size:13px}
+  .cal-dot{width:7px;height:7px;border-radius:50%;background:#6a55e8;position:absolute;bottom:7px;left:50%;transform:translateX(-50%)}
+  .calendar-list{display:grid;gap:10px;margin-top:18px}
+  .calendar-event{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff}
+  .calendar-event b{display:block;margin-bottom:4px}
+  .calendar-event small{color:var(--muted)}
+  .reminder-now{
+    margin:0 0 14px;background:#fff8e8;border:1px solid #e9c269;border-left:5px solid #d89b17;
+    border-radius:16px;padding:14px
+  }
+  .reminder-now.urgent{background:#fff0f0;border-color:#e19a9a;border-left-color:#cf4b4b}
+  .reminder-now h3{margin:0 0 5px;font-size:18px}
+  .reminder-now p{margin:0;color:var(--muted);line-height:1.4}
+  .reminder-actions{display:flex;gap:9px;margin-top:12px}
+  .reminder-actions button{flex:1;border-radius:12px;padding:11px;font-weight:800;border:1px solid var(--line);background:#fff}
+  .reminder-actions button.done{background:#eaf8ee;border-color:#b9dfc2;color:#2f7f45}
+  @media(max-width:640px){
+    .calendar-wrap{padding:14px 14px 96px}
+    .calendar-card{padding:14px}
+    .cal-day{min-height:48px;padding:5px}
+    .bottom button{font-size:12px}
   }
 
 </style>
@@ -708,6 +744,7 @@ button{cursor:pointer}
     <nav class="bottom">
       <button onclick="openToday()">☀<br>Heute</button>
       <button class="active" onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button onclick="openCalendar()">▣<br>Kalender</button>
       <button onclick="openInbox()">⌄<br>Inbox</button>
       <button onclick="openProfile()">◯<br>Profil</button>
     </nav>
@@ -997,6 +1034,7 @@ button{cursor:pointer}
       </div>
 
       
+      <div id="todayReminderNow"></div>
       <div class="secretary-states">
         <div class="state-card state-need">
           <div class="state-title">Ich brauche etwas von dir</div>
@@ -1027,6 +1065,7 @@ button{cursor:pointer}
     <nav class="bottom">
       <button class="active" onclick="openToday()">☀<br>Heute</button>
       <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button onclick="openCalendar()">▣<br>Kalender</button>
       <button onclick="openInbox()">⌄<br>Inbox</button>
       <button onclick="openProfile()">◯<br>Profil</button>
     </nav>
@@ -1094,6 +1133,47 @@ button{cursor:pointer}
     </div>
   </div>
   <div class="page-id">DE-012</div>
+</section>
+
+
+<!-- DE-014 -->
+<section id="de014" class="page hidden">
+  <div class="calendar-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+    </div>
+
+    <div class="calendar-card">
+      <div class="calendar-head">
+        <h2 id="calendarMonthTitle">Kalender</h2>
+        <div class="cal-nav">
+          <button onclick="changeCalendarMonth(-1)">‹</button>
+          <button onclick="calendarToday()">Heute</button>
+          <button onclick="changeCalendarMonth(1)">›</button>
+        </div>
+      </div>
+
+      <div class="calendar-weekdays">
+        <div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
+      </div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+
+      <div style="margin-top:20px">
+        <h3 style="margin:0 0 10px">Termine & Erinnerungen</h3>
+        <div id="calendarEventList" class="calendar-list"></div>
+      </div>
+    </div>
+
+    <nav class="bottom">
+      <button onclick="openToday()">☀<br>Heute</button>
+      <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button class="active" onclick="openCalendar()">▣<br>Kalender</button>
+      <button onclick="openInbox()">⌄<br>Inbox</button>
+      <button onclick="openProfile()">◯<br>Profil</button>
+    </nav>
+  </div>
+  <div class="page-id">DE-014</div>
 </section>
 
 <!-- DE-013 -->
@@ -1216,7 +1296,7 @@ let failedAttempts=0;
 const MAX_ATTEMPTS=3;
 
 function hideAll(){
-  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013'].forEach(id=>{
+  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014'].forEach(id=>{
     const page=document.getElementById(id);
     if(page) page.classList.add('hidden');
   });
@@ -1236,6 +1316,7 @@ function showDirect(id){
   if(id==='de011') setTimeout(renderToday,0);
   if(id==='de012') setTimeout(renderInbox,0);
   if(id==='de013') setTimeout(loadProfile,0);
+  if(id==='de014') setTimeout(renderCalendar,0);
   window.scrollTo(0,0);
 }
 
@@ -1251,6 +1332,7 @@ function back(){
     if(target==='de011') renderToday();
     if(target==='de012') renderInbox();
     if(target==='de013') loadProfile();
+    if(target==='de014') renderCalendar();
     showDirect(target);
   } else {
     const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
@@ -1293,6 +1375,197 @@ function togglePassword(inputId, button){
   input.type=showing?'password':'text';
   button.textContent=showing?'◉̸':'◉';
   button.setAttribute('aria-label',showing?'Passwort anzeigen':'Passwort ausblenden');
+}
+
+
+const REMINDER_RUNTIME_KEY='sekretarzReminderRuntimeV1';
+let calendarCursor=new Date();
+
+function parseReminderDateTime(value){
+  if(!value) return null;
+  const d=new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatReminderDE(value){
+  const d=parseReminderDateTime(value);
+  if(!d) return 'Kein Termin';
+  return d.toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function getReminderRuntime(){
+  try{
+    const raw=localStorage.getItem(REMINDER_RUNTIME_KEY);
+    const obj=raw ? JSON.parse(raw) : {};
+    return obj && typeof obj==='object' ? obj : {};
+  }catch(e){ return {}; }
+}
+
+function saveReminderRuntime(data){
+  try{
+    localStorage.setItem(REMINDER_RUNTIME_KEY,JSON.stringify(data));
+    return true;
+  }catch(e){ return false; }
+}
+
+function getDueReminder(){
+  const now=Date.now();
+  const cases=getStoredCases()
+    .filter(c=>c.careType==='reminder' && c.status!=='Erledigt' && c.reminderDateTime)
+    .map(c=>({...c,_time:parseReminderDateTime(c.reminderDateTime)?.getTime()||Infinity}))
+    .filter(c=>c._time<=now)
+    .sort((a,b)=>a._time-b._time);
+  return cases[0] || null;
+}
+
+function updateReminderAttempt(caseData){
+  if(!caseData || !caseData.id) return null;
+  const runtime=getReminderRuntime();
+  const key=String(caseData.id);
+  const now=Date.now();
+  const state=runtime[key] || {attempts:0,lastAttemptAt:0,done:false};
+
+  if(state.done) return state;
+
+  const fiveMin=5*60*1000;
+  if(state.attempts<5 && (!state.lastAttemptAt || now-state.lastAttemptAt>=fiveMin)){
+    state.attempts += 1;
+    state.lastAttemptAt = now;
+    runtime[key]=state;
+    saveReminderRuntime(runtime);
+  }
+
+  if(state.attempts>=5){
+    const cases=getStoredCases();
+    const idx=cases.findIndex(c=>String(c.id)===key);
+    if(idx>=0 && cases[idx].status!=='Erledigt'){
+      cases[idx].status='Nicht erledigt';
+      saveCasesToStorage(cases);
+    }
+  }
+  return state;
+}
+
+function markReminderDone(caseId){
+  const cases=getStoredCases();
+  const idx=cases.findIndex(c=>String(c.id)===String(caseId));
+  if(idx<0) return;
+  cases[idx].status='Erledigt';
+  saveCasesToStorage(cases);
+
+  const runtime=getReminderRuntime();
+  const key=String(caseId);
+  runtime[key]={...(runtime[key]||{}),done:true};
+  saveReminderRuntime(runtime);
+
+  renderDashboardCases();
+  renderToday();
+  renderCalendar();
+}
+
+function postponeReminder(caseId){
+  const runtime=getReminderRuntime();
+  const key=String(caseId);
+  const state=runtime[key] || {attempts:1,lastAttemptAt:Date.now(),done:false};
+  state.lastAttemptAt=Date.now();
+  runtime[key]=state;
+  saveReminderRuntime(runtime);
+  renderToday();
+}
+
+function renderTodayReminder(){
+  const box=document.getElementById('todayReminderNow');
+  if(!box) return;
+
+  const due=getDueReminder();
+  if(!due){
+    box.innerHTML='';
+    return;
+  }
+
+  const state=updateReminderAttempt(due) || {attempts:1};
+  const urgent=state.attempts>=5 || due.status==='Nicht erledigt';
+  box.innerHTML=
+    '<div class="reminder-now '+(urgent?'urgent':'')+'">'+
+      '<h3>'+(urgent?'Achtung – nicht erledigt':'Erinnerung jetzt')+'</h3>'+
+      '<p><b>'+escapeHtml(due.title)+'</b><br>'+escapeHtml(formatReminderDE(due.reminderDateTime))+
+      '<br>Versuch '+Math.min(state.attempts||1,5)+' von 5</p>'+
+      '<div class="reminder-actions">'+
+        '<button class="done" onclick="markReminderDone(\''+escapeHtml(String(due.id))+'\')">Erledigt</button>'+
+        '<button onclick="postponeReminder(\''+escapeHtml(String(due.id))+'\')">Später</button>'+
+      '</div>'+
+    '</div>';
+}
+
+function getReminderCases(){
+  return getStoredCases()
+    .filter(c=>c.careType==='reminder' && c.reminderDateTime)
+    .sort((a,b)=>(parseReminderDateTime(a.reminderDateTime)?.getTime()||0)-(parseReminderDateTime(b.reminderDateTime)?.getTime()||0));
+}
+
+function renderCalendar(){
+  const title=document.getElementById('calendarMonthTitle');
+  const grid=document.getElementById('calendarGrid');
+  const list=document.getElementById('calendarEventList');
+  if(!title || !grid || !list) return;
+
+  const year=calendarCursor.getFullYear();
+  const month=calendarCursor.getMonth();
+  title.textContent=new Date(year,month,1).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+
+  const events=getReminderCases();
+  const eventDays=new Set(events
+    .map(c=>parseReminderDateTime(c.reminderDateTime))
+    .filter(Boolean)
+    .filter(d=>d.getFullYear()===year && d.getMonth()===month)
+    .map(d=>d.getDate()));
+
+  const first=new Date(year,month,1);
+  const lastDay=new Date(year,month+1,0).getDate();
+  const start=(first.getDay()+6)%7;
+  const today=new Date();
+
+  let html='';
+  for(let i=0;i<start;i++) html+='<div class="cal-day empty"></div>';
+  for(let day=1;day<=lastDay;day++){
+    const isToday=day===today.getDate() && month===today.getMonth() && year===today.getFullYear();
+    const has=eventDays.has(day);
+    html+='<div class="cal-day '+(isToday?'today ':'')+(has?'has-event':'')+'">'+
+      '<span class="cal-num">'+day+'</span>'+(has?'<span class="cal-dot"></span>':'')+'</div>';
+  }
+  grid.innerHTML=html;
+
+  const visibleEvents=events.filter(c=>{
+    const d=parseReminderDateTime(c.reminderDateTime);
+    return d && d.getFullYear()===year && d.getMonth()===month;
+  });
+
+  list.innerHTML=visibleEvents.length
+    ? visibleEvents.map(c=>
+      '<div class="calendar-event"><b>'+escapeHtml(c.title)+'</b><small>'+escapeHtml(formatReminderDE(c.reminderDateTime))+
+      ' · '+escapeHtml(c.status||'Aktiv')+'</small></div>'
+    ).join('')
+    : '<div class="empty-state">Keine Erinnerungen in diesem Monat.</div>';
+}
+
+function changeCalendarMonth(delta){
+  calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()+delta,1);
+  renderCalendar();
+}
+
+function calendarToday(){
+  calendarCursor=new Date();
+  renderCalendar();
+}
+
+function openCalendar(){
+  calendarCursor=new Date();
+  renderCalendar();
+  if(currentPage==='de011') historyStack=['de011','de014'];
+  else if(currentPage==='de008') historyStack=['de011','de008','de014'];
+  else if(!historyStack.includes('de011')) historyStack=['de011','de014'];
+  else if(historyStack[historyStack.length-1]!=='de014') historyStack.push('de014');
+  showDirect('de014');
 }
 
 const INBOX_STORAGE_KEY='sekretarzInboxV1';
@@ -1587,6 +1860,7 @@ function renderToday(){
   const summary=document.getElementById('todaySummary');
   const list=document.getElementById('todayList');
   if(!greeting || !summary || !list) return;
+  renderTodayReminder();
 
   const profile=getUserProfile();
   greeting.textContent=getTodayGreeting()+(profile.firstName ? ' – '+profile.firstName : '');
@@ -2618,7 +2892,7 @@ function restoreAppState(){
       target='de006';
     }
 
-    if(['de008','de009','de010','de011','de012','de013'].includes(target) && !persistedLogin){
+    if(['de008','de009','de010','de011','de012','de013','de014'].includes(target) && !persistedLogin){
       target='de006';
     }
 
@@ -2637,16 +2911,24 @@ function restoreAppState(){
     else if(target==='de008') historyStack=['de011','de008'];
     else if(target==='de012') historyStack=['de011','de012'];
     else if(target==='de013') historyStack=['de011','de013'];
+    else if(target==='de014') historyStack=['de011','de014'];
     else historyStack=[target];
 
     if(target==='de011') renderToday();
     if(target==='de012') renderInbox();
     if(target==='de013') loadProfile();
+    if(target==='de014') renderCalendar();
     showDirect(target);
   }catch(e){
     showDirect('de001');
   }
 }
+
+setInterval(()=>{
+  try{
+    if(currentPage==='de011') renderToday();
+  }catch(e){}
+},30000);
 
 window.addEventListener('pageshow',()=>{
   try{
@@ -2662,6 +2944,7 @@ window.addEventListener('pageshow',()=>{
       if(currentPage==='de011') renderToday();
       if(currentPage==='de012') renderInbox();
       if(currentPage==='de013') loadProfile();
+      if(currentPage==='de014') renderCalendar();
     }catch(e){}
   },0);
 });

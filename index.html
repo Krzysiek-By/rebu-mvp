@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v10.2">
+<meta name="sekretarz-version" content="DE-v10.3">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1074,10 +1074,11 @@ button{cursor:pointer}
       <button class="btn primary full" onclick="saveInboxItem()">In Inbox speichern</button>
       <div id="inboxDecisionBox" class="inbox-action-box hidden">
         <h3>Was soll der Sekretär damit machen?</h3>
+        <div id="inboxDecisionPreview" class="inbox-item" style="margin-bottom:10px"></div>
         <div class="inbox-choice">
-          <button onclick="showInboxCaseSelect()">Zu bestehender Angelegenheit hinzufügen</button>
-          <button onclick="createCaseFromLastInbox()">Neue Angelegenheit erstellen</button>
-          <button onclick="leaveLastInboxUnassigned()">Vorerst in Inbox lassen</button>
+          <button onclick="showInboxCaseSelect()">Zu bestehender Angelegenheit</button>
+          <button onclick="createCaseFromLastInbox()">Neue Angelegenheit</button>
+          <button onclick="leaveLastInboxUnassigned()">In Inbox lassen</button>
         </div>
         <div id="inboxCaseSelectBox" class="inbox-case-select hidden">
           <div class="field">
@@ -1334,6 +1335,12 @@ function getInboxItemById(id){
   return getInboxItems().find(i=>i.id===id) || null;
 }
 
+function renderInboxDecisionPreview(item){
+  const box=document.getElementById('inboxDecisionPreview');
+  if(!box || !item) return;
+  box.innerHTML='<b>'+escapeHtml(item.type||'Inbox')+'</b><div>'+escapeHtml(item.text||'')+'</div><small>'+escapeHtml(item.date||'')+'</small>';
+}
+
 function updateInboxItem(id, updater){
   const items=getInboxItems();
   const idx=items.findIndex(i=>i.id===id);
@@ -1390,6 +1397,7 @@ function assignLastInboxToCase(){
     setMsg('inboxMsg','success','Zur Angelegenheit hinzugefügt.');
     document.getElementById('inboxDecisionBox').classList.add('hidden');
     document.getElementById('inboxCaseSelectBox').classList.add('hidden');
+    lastInboxItemId=null;
     renderInbox();
     renderToday();
   }else{
@@ -1423,6 +1431,7 @@ function createCaseFromLastInbox(){
   }));
   setMsg('inboxMsg','success','Neue Angelegenheit wurde erstellt.');
   document.getElementById('inboxDecisionBox').classList.add('hidden');
+  lastInboxItemId=null;
   renderInbox();
   renderDashboardCases();
   renderToday();
@@ -1434,7 +1443,8 @@ function leaveLastInboxUnassigned(){
   }
   const box=document.getElementById('inboxDecisionBox');
   if(box) box.classList.add('hidden');
-  setMsg('inboxMsg','success','Bleibt vorerst in der Inbox.');
+  setMsg('inboxMsg','success','Bleibt in der Inbox.');
+  lastInboxItemId=null;
   renderInbox();
   renderToday();
 }
@@ -1503,6 +1513,7 @@ function saveInboxItem(){
     lastInboxItemId=newItem.id;
     document.getElementById('inboxText').value='';
     setMsg('inboxMsg','success','Gespeichert.');
+    renderInboxDecisionPreview(newItem);
     const decisionBox=document.getElementById('inboxDecisionBox');
     if(decisionBox) decisionBox.classList.remove('hidden');
     const caseBox=document.getElementById('inboxCaseSelectBox');
@@ -1525,9 +1536,9 @@ function openInbox(){
 
 function getTodayGreeting(){
   const hour=new Date().getHours();
-  if(hour<11) return 'Guten Morgen.';
-  if(hour<18) return 'Guten Tag.';
-  return 'Guten Abend.';
+  if(hour<11) return 'Guten Morgen';
+  if(hour<18) return 'Guten Tag';
+  return 'Guten Abend';
 }
 
 function renderToday(){
@@ -1537,7 +1548,7 @@ function renderToday(){
   if(!greeting || !summary || !list) return;
 
   const profile=getUserProfile();
-  greeting.textContent=getTodayGreeting()+(profile.firstName ? ' '+profile.firstName+'.' : '');
+  greeting.textContent=getTodayGreeting()+(profile.firstName ? ' – '+profile.firstName : '');
 
   const cases=getStoredCases();
   const inbox=getInboxItems();

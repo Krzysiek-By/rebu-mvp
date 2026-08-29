@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v11.2">
+<meta name="sekretarz-version" content="DE-v11.3">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -480,6 +480,15 @@ button{cursor:pointer}
   }
   .flow-success{
     background:#f2fbf4;border:1px solid #b8dfc1;border-radius:14px;padding:13px;color:#2f7f45;font-weight:800
+  }
+
+
+  .provider.connected{
+    border-color:#e8c777;
+    background:#fffaf0;
+  }
+  .provider.connected button{
+    color:#8a6411;
   }
 
 </style>
@@ -1582,17 +1591,17 @@ function getCalendarConnectState(){
     const obj=raw ? JSON.parse(raw) : {};
     if(!obj || typeof obj!=='object') return {};
 
-    if(obj.flowSchemaVersion!==2){
+    if(obj.flowSchemaVersion!==3){
       return {
-        connectedProvider: obj.connectedProvider || '',
+        preparedProvider: obj.preparedProvider || obj.connectedProvider || '',
         pendingProvider:'',
         flowStep:0,
-        flowSchemaVersion:2
+        flowSchemaVersion:3
       };
     }
     return obj;
   }catch(e){
-    return {connectedProvider:'',pendingProvider:'',flowStep:0,flowSchemaVersion:2};
+    return {preparedProvider:'',pendingProvider:'',flowStep:0,flowSchemaVersion:3};
   }
 }
 
@@ -1628,10 +1637,10 @@ function showCalendarHelp(provider, kind){
 function selectCalendarProvider(provider){
   const previous=getCalendarConnectState();
   const state={
-    connectedProvider: previous.connectedProvider || '',
+    preparedProvider: previous.preparedProvider || '',
     pendingProvider:String(provider||''),
     flowStep:1,
-    flowSchemaVersion:2
+    flowSchemaVersion:3
   };
   saveCalendarConnectState(state);
 
@@ -1738,7 +1747,7 @@ function finishCalendarConnection(){
   const provider=state.pendingProvider;
   if(!provider) return;
 
-  state.connectedProvider=provider;
+  state.preparedProvider=provider;
   state.pendingProvider='';
   state.flowStep=0;
   saveCalendarConnectState(state);
@@ -1751,7 +1760,7 @@ function finishCalendarConnection(){
     const progress=document.getElementById('flowProgressBar');
     if(stepLabel) stepLabel.textContent='Fertig';
     if(progress) progress.style.width='100%';
-    if(body) body.innerHTML='<div class="flow-success">Verbunden. Dein Kalender kann später synchronisiert werden.</div>';
+    if(body) body.innerHTML='<div class="flow-success">Einrichtung vorbereitet. Die echte Verbindung wird erst nach der sicheren Anmeldung bei Google / Apple / Microsoft aktiv.</div>';
   }
   renderCalendarConnect();
 }
@@ -1769,15 +1778,15 @@ function bindCalendarConnectButtons(){
 function renderCalendarConnect(){
   const state=getCalendarConnectState();
   saveCalendarConnectState(state);
-  const connected=state.connectedProvider || '';
+  const prepared=state.preparedProvider || '';
 
   document.querySelectorAll('[data-provider]').forEach(row=>{
     const p=row.getAttribute('data-provider');
-    row.classList.toggle('connected',p===connected);
+    row.classList.toggle('connected',p===prepared);
     const btn=row.querySelector('.provider-actions button:first-child');
     if(btn){
-      if(p===connected){
-        btn.textContent='Verbunden';
+      if(p===prepared){
+        btn.textContent='Vorbereitet';
       }else{
         btn.textContent='Verbinden';
       }

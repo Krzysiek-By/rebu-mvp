@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v10.8">
+<meta name="sekretarz-version" content="DE-v10.9">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -457,6 +457,29 @@ button{cursor:pointer}
     .provider-actions{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;min-width:0;width:100%}
     .provider-actions button:first-child{grid-column:1 / -1}
     .provider-main{padding-top:2px}
+  }
+
+
+  .connect-flow{
+    margin-top:16px;border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px
+  }
+  .flow-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+  .flow-top b{font-size:18px}
+  .flow-step{font-size:13px;font-weight:800;color:#5e6b80;background:#f3f6fb;border-radius:999px;padding:7px 10px}
+  .flow-progress{height:8px;background:#edf0f6;border-radius:999px;overflow:hidden;margin-bottom:16px}
+  .flow-progress span{display:block;height:100%;background:linear-gradient(135deg,#3173f7,#6049f2);width:33.333%}
+  .flow-body h3{margin:0 0 7px;font-size:20px}
+  .flow-body p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+  .flow-actions{display:flex;gap:9px;flex-wrap:wrap}
+  .flow-actions button{
+    flex:1;min-width:150px;border-radius:12px;padding:11px 13px;font-weight:800;
+    border:1px solid var(--line);background:#fff
+  }
+  .flow-actions .primary{
+    background:linear-gradient(135deg,#3173f7,#6049f2);color:#fff;border:0
+  }
+  .flow-success{
+    background:#f2fbf4;border:1px solid #b8dfc1;border-radius:14px;padding:13px;color:#2f7f45;font-weight:800
   }
 
 </style>
@@ -1317,7 +1340,7 @@ button{cursor:pointer}
             <small>Für Termine, die direkt auf deinem Handy gespeichert sind.</small>
           </div>
           <div class="provider-actions">
-            <button onclick="selectCalendarProvider('device')">Auswählen</button>
+            <button onclick="selectCalendarProvider('device')">Verbinden</button>
             <button class="help-btn" onclick="showCalendarHelp('device','video')">Video-Anleitung</button>
             <button class="help-btn" onclick="showCalendarHelp('device','pdf')">PDF-Anleitung</button>
           </div>
@@ -1326,6 +1349,15 @@ button{cursor:pointer}
 
       <div id="calendarConnectStatus" class="connect-status hidden"></div>
       <div id="calendarHelpPanel" class="help-panel hidden"></div>
+      <div id="calendarConnectFlow" class="connect-flow hidden">
+        <div class="flow-top">
+          <b id="flowProviderTitle">Kalender verbinden</b>
+          <span id="flowStepLabel" class="flow-step">Schritt 1 von 3</span>
+        </div>
+        <div class="flow-progress"><span id="flowProgressBar"></span></div>
+        <div id="flowBody" class="flow-body"></div>
+      </div>
+
 
       <div class="sync-note">
         <b>Du kommst nicht weiter?</b><br>
@@ -1581,37 +1613,137 @@ function showCalendarHelp(provider, kind){
 }
 
 function selectCalendarProvider(provider){
-  const status=document.getElementById('calendarConnectStatus');
   const state=getCalendarConnectState();
-  state.selectedProvider=provider;
+  state.pendingProvider=provider;
+  state.flowStep=1;
+  state.connectedProvider=state.connectedProvider || '';
   saveCalendarConnectState(state);
 
-  if(status){
-    status.classList.remove('hidden');
-    if(provider==='device'){
-      status.innerHTML='<b>'+escapeHtml(providerLabel(provider))+'</b><br>Diese Verbindung wird später in der nativen iPhone-/Android-App aktiviert.';
-    }else{
-      status.innerHTML='<b>'+escapeHtml(providerLabel(provider))+'</b><br>Ausgewählt. Die echte Anmeldung wird später sicher über den Anbieter (OAuth) geöffnet.';
-    }
+  const status=document.getElementById('calendarConnectStatus');
+  if(status) status.classList.add('hidden');
+
+  startCalendarConnectFlow(provider,1);
+  renderCalendarConnect();
+}
+
+
+function flowText(provider,step){
+  const label=providerLabel(provider);
+  if(step===1){
+    return {
+      title:'Mit '+label+' anmelden',
+      text:'Du wirst später zur sicheren Anmeldung bei '+label+' weitergeleitet. Dein Passwort wird nicht in der Sekretär-App gespeichert.'
+    };
+  }
+  if(step===2){
+    return {
+      title:'Zugriff erlauben',
+      text:'Erlaube dem Sekretär nur den Zugriff auf deine Kalenderdaten, damit deine Termine angezeigt und berücksichtigt werden können.'
+    };
+  }
+  return {
+    title:'Verbindung prüfen',
+    text:'Der Sekretär prüft die Verbindung. Erst wenn alles funktioniert, wird der Kalender als verbunden angezeigt.'
+  };
+}
+
+function startCalendarConnectFlow(provider,step){
+  const box=document.getElementById('calendarConnectFlow');
+  const title=document.getElementById('flowProviderTitle');
+  const stepLabel=document.getElementById('flowStepLabel');
+  const progress=document.getElementById('flowProgressBar');
+  const body=document.getElementById('flowBody');
+  if(!box || !title || !stepLabel || !progress || !body) return;
+
+  box.classList.remove('hidden');
+  title.textContent=providerLabel(provider);
+  stepLabel.textContent='Schritt '+step+' von 3';
+  progress.style.width=(step*33.333)+'%';
+
+  const copy=flowText(provider,step);
+  let actions='';
+  if(step===1){
+    actions='<div class="flow-actions"><button onclick="cancelCalendarFlow()">Abbrechen</button><button class="primary" onclick="nextCalendarFlowStep()">Weiter</button></div>';
+  }else if(step===2){
+    actions='<div class="flow-actions"><button onclick="previousCalendarFlowStep()">Zurück</button><button class="primary" onclick="nextCalendarFlowStep()">Zugriff erlauben</button></div>';
+  }else{
+    actions='<div class="flow-actions"><button onclick="previousCalendarFlowStep()">Zurück</button><button class="primary" onclick="finishCalendarConnection()">Verbindung prüfen</button></div>';
+  }
+
+  body.innerHTML='<h3>'+escapeHtml(copy.title)+'</h3><p>'+escapeHtml(copy.text)+'</p>'+actions;
+}
+
+function nextCalendarFlowStep(){
+  const state=getCalendarConnectState();
+  const provider=state.pendingProvider;
+  if(!provider) return;
+  state.flowStep=Math.min((state.flowStep||1)+1,3);
+  saveCalendarConnectState(state);
+  startCalendarConnectFlow(provider,state.flowStep);
+}
+
+function previousCalendarFlowStep(){
+  const state=getCalendarConnectState();
+  const provider=state.pendingProvider;
+  if(!provider) return;
+  state.flowStep=Math.max((state.flowStep||1)-1,1);
+  saveCalendarConnectState(state);
+  startCalendarConnectFlow(provider,state.flowStep);
+}
+
+function cancelCalendarFlow(){
+  const state=getCalendarConnectState();
+  state.pendingProvider='';
+  state.flowStep=0;
+  saveCalendarConnectState(state);
+  const box=document.getElementById('calendarConnectFlow');
+  if(box) box.classList.add('hidden');
+  renderCalendarConnect();
+}
+
+function finishCalendarConnection(){
+  const state=getCalendarConnectState();
+  const provider=state.pendingProvider;
+  if(!provider) return;
+
+  state.connectedProvider=provider;
+  state.pendingProvider='';
+  state.flowStep=0;
+  saveCalendarConnectState(state);
+
+  const box=document.getElementById('calendarConnectFlow');
+  if(box){
+    box.classList.remove('hidden');
+    const body=document.getElementById('flowBody');
+    const stepLabel=document.getElementById('flowStepLabel');
+    const progress=document.getElementById('flowProgressBar');
+    if(stepLabel) stepLabel.textContent='Fertig';
+    if(progress) progress.style.width='100%';
+    if(body) body.innerHTML='<div class="flow-success">Verbunden. Dein Kalender kann später synchronisiert werden.</div>';
   }
   renderCalendarConnect();
 }
 
 function renderCalendarConnect(){
   const state=getCalendarConnectState();
-  const selected=state.selectedProvider || '';
+  const connected=state.connectedProvider || '';
+
   document.querySelectorAll('[data-provider]').forEach(row=>{
     const p=row.getAttribute('data-provider');
-    row.classList.toggle('connected',p===selected);
+    row.classList.toggle('connected',p===connected);
     const btn=row.querySelector('.provider-actions button:first-child');
     if(btn){
-      if(p===selected){
-        btn.textContent='Ausgewählt';
+      if(p===connected){
+        btn.textContent='Verbunden';
       }else{
-        btn.textContent=(p==='device'?'Auswählen':'Verbinden');
+        btn.textContent='Verbinden';
       }
     }
   });
+
+  if(state.pendingProvider && state.flowStep){
+    startCalendarConnectFlow(state.pendingProvider,state.flowStep);
+  }
 }
 
 function openCalendarConnect(){

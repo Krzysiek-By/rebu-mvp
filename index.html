@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v10.3">
+<meta name="sekretarz-version" content="DE-v10.4">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1477,6 +1477,22 @@ function renderInbox(){
   const box=document.getElementById('inboxList');
   if(!box) return;
   const items=getInboxItems();
+
+  const pending=items.find(item=>!item.assignment || item.assignment==='unassigned');
+  const decisionBox=document.getElementById('inboxDecisionBox');
+  const caseBox=document.getElementById('inboxCaseSelectBox');
+
+  if(pending){
+    lastInboxItemId=pending.id;
+    renderInboxDecisionPreview(pending);
+    if(decisionBox) decisionBox.classList.remove('hidden');
+    if(caseBox) caseBox.classList.add('hidden');
+  }else{
+    lastInboxItemId=null;
+    if(decisionBox) decisionBox.classList.add('hidden');
+    if(caseBox) caseBox.classList.add('hidden');
+  }
+
   if(!items.length){
     box.innerHTML='<div class="empty-state">Noch nichts Neues. Dein Sekretär wartet auf neue Informationen.</div>';
     return;
@@ -1484,11 +1500,11 @@ function renderInbox(){
   box.innerHTML=items.map(item=>{
     let state='';
     if(item.assignment==='case' || item.assignment==='newcase'){
-      state='<small>Zugeteilt: '+escapeHtml(item.assignedCaseTitle||'Angelegenheit')+'</small>';
+      state='<div><small>Zugeteilt: '+escapeHtml(item.assignedCaseTitle||'Angelegenheit')+'</small></div>';
     }else{
-      state='<small>Noch nicht zugeordnet</small>';
+      state='<div><small>Noch nicht zugeordnet</small></div>';
     }
-    return '<div class="inbox-item"><b>'+escapeHtml(item.type)+'</b><div>'+escapeHtml(item.text)+'</div><small>'+escapeHtml(item.date)+'</small>'+state+'</div>';
+    return '<div class="inbox-item"><b>'+escapeHtml(item.type)+'</b><div>'+escapeHtml(item.text)+'</div><div><small>'+escapeHtml(item.date)+'</small></div>'+state+'</div>';
   }).join('');
 }
 

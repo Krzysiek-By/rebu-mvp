@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v11.0">
+<meta name="sekretarz-version" content="DE-v11.1">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1293,6 +1293,15 @@ button{cursor:pointer}
         Wähle deinen Kalender. Den Rest erklären wir Schritt für Schritt.
       </p>
 
+      <div id="calendarConnectFlow" class="connect-flow hidden">
+        <div class="flow-top">
+          <b id="flowProviderTitle">Kalender verbinden</b>
+          <span id="flowStepLabel" class="flow-step">Schritt 1 von 3</span>
+        </div>
+        <div class="flow-progress"><span id="flowProgressBar"></span></div>
+        <div id="flowBody" class="flow-body"></div>
+      </div>
+
       <div class="provider-list">
         <div class="provider" data-provider="google">
           <div class="provider-icon">G</div>
@@ -1349,14 +1358,6 @@ button{cursor:pointer}
 
       <div id="calendarConnectStatus" class="connect-status hidden"></div>
       <div id="calendarHelpPanel" class="help-panel hidden"></div>
-      <div id="calendarConnectFlow" class="connect-flow hidden">
-        <div class="flow-top">
-          <b id="flowProviderTitle">Kalender verbinden</b>
-          <span id="flowStepLabel" class="flow-step">Schritt 1 von 3</span>
-        </div>
-        <div class="flow-progress"><span id="flowProgressBar"></span></div>
-        <div id="flowBody" class="flow-body"></div>
-      </div>
 
 
       <div class="sync-note">
@@ -1625,6 +1626,12 @@ function selectCalendarProvider(provider){
   startCalendarConnectFlow(provider,1);
 
   const flow=document.getElementById('calendarConnectFlow');
+  if(flow){
+    setTimeout(()=>{
+      try{ flow.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){ flow.scrollIntoView(); }
+    },50);
+  }
+
   if(!flow || flow.classList.contains('hidden')){
     if(status){
       status.classList.remove('hidden');

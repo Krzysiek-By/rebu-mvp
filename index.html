@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v10.9">
+<meta name="sekretarz-version" content="DE-v11.0">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1301,7 +1301,7 @@ button{cursor:pointer}
             <small>Für Google- und Gmail-Konten.</small>
           </div>
           <div class="provider-actions">
-            <button onclick="selectCalendarProvider('google')">Verbinden</button>
+            <button data-connect-provider="google" onclick="selectCalendarProvider('google')">Verbinden</button>
             <button class="help-btn" onclick="showCalendarHelp('google','video')">Video-Anleitung</button>
             <button class="help-btn" onclick="showCalendarHelp('google','pdf')">PDF-Anleitung</button>
           </div>
@@ -1314,7 +1314,7 @@ button{cursor:pointer}
             <small>Für Apple- und iCloud-Kalender.</small>
           </div>
           <div class="provider-actions">
-            <button onclick="selectCalendarProvider('icloud')">Verbinden</button>
+            <button data-connect-provider="icloud" onclick="selectCalendarProvider('icloud')">Verbinden</button>
             <button class="help-btn" onclick="showCalendarHelp('icloud','video')">Video-Anleitung</button>
             <button class="help-btn" onclick="showCalendarHelp('icloud','pdf')">PDF-Anleitung</button>
           </div>
@@ -1327,7 +1327,7 @@ button{cursor:pointer}
             <small>Für Outlook, Microsoft 365 und Exchange.</small>
           </div>
           <div class="provider-actions">
-            <button onclick="selectCalendarProvider('outlook')">Verbinden</button>
+            <button data-connect-provider="outlook" onclick="selectCalendarProvider('outlook')">Verbinden</button>
             <button class="help-btn" onclick="showCalendarHelp('outlook','video')">Video-Anleitung</button>
             <button class="help-btn" onclick="showCalendarHelp('outlook','pdf')">PDF-Anleitung</button>
           </div>
@@ -1340,7 +1340,7 @@ button{cursor:pointer}
             <small>Für Termine, die direkt auf deinem Handy gespeichert sind.</small>
           </div>
           <div class="provider-actions">
-            <button onclick="selectCalendarProvider('device')">Verbinden</button>
+            <button data-connect-provider="device" onclick="selectCalendarProvider('device')">Verbinden</button>
             <button class="help-btn" onclick="showCalendarHelp('device','video')">Video-Anleitung</button>
             <button class="help-btn" onclick="showCalendarHelp('device','pdf')">PDF-Anleitung</button>
           </div>
@@ -1509,7 +1509,7 @@ function showDirect(id){
   if(id==='de012') setTimeout(renderInbox,0);
   if(id==='de013') setTimeout(loadProfile,0);
   if(id==='de014') setTimeout(renderCalendar,0);
-  if(id==='de015') setTimeout(renderCalendarConnect,0);
+  if(id==='de015') setTimeout(()=>{ renderCalendarConnect(); bindCalendarConnectButtons(); },0);
   window.scrollTo(0,0);
 }
 
@@ -1623,6 +1623,15 @@ function selectCalendarProvider(provider){
   if(status) status.classList.add('hidden');
 
   startCalendarConnectFlow(provider,1);
+
+  const flow=document.getElementById('calendarConnectFlow');
+  if(!flow || flow.classList.contains('hidden')){
+    if(status){
+      status.classList.remove('hidden');
+      status.textContent='Verbindung konnte nicht gestartet werden.';
+    }
+  }
+
   renderCalendarConnect();
 }
 
@@ -1724,6 +1733,16 @@ function finishCalendarConnection(){
   renderCalendarConnect();
 }
 
+
+function bindCalendarConnectButtons(){
+  document.querySelectorAll('[data-connect-provider]').forEach(btn=>{
+    btn.onclick=function(){
+      const provider=this.getAttribute('data-connect-provider');
+      if(provider) selectCalendarProvider(provider);
+    };
+  });
+}
+
 function renderCalendarConnect(){
   const state=getCalendarConnectState();
   const connected=state.connectedProvider || '';
@@ -1744,6 +1763,8 @@ function renderCalendarConnect(){
   if(state.pendingProvider && state.flowStep){
     startCalendarConnectFlow(state.pendingProvider,state.flowStep);
   }
+
+  bindCalendarConnectButtons();
 }
 
 function openCalendarConnect(){

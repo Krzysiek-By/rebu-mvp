@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v10.7">
+<meta name="sekretarz-version" content="DE-v10.8">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -438,6 +438,25 @@ button{cursor:pointer}
     .connect-card{padding:16px}
     .provider{align-items:flex-start}
     .provider button{margin-left:auto}
+  }
+
+
+  .provider{align-items:center}
+  .provider-main small{font-size:14px}
+  .provider-actions{display:flex;flex-direction:column;gap:7px;min-width:138px}
+  .provider-actions button{width:100%}
+  .provider-actions .help-btn{
+    font-size:12px;padding:8px 10px;color:#58657a;background:#f8faff
+  }
+  .help-panel{
+    margin-top:16px;padding:14px;border-radius:14px;border:1px solid #d6deec;background:#f8faff
+  }
+  .help-panel b{display:block;margin-bottom:5px}
+  @media(max-width:640px){
+    .provider{display:grid;grid-template-columns:46px 1fr;align-items:start}
+    .provider-actions{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;min-width:0;width:100%}
+    .provider-actions button:first-child{grid-column:1 / -1}
+    .provider-main{padding-top:2px}
   }
 
 </style>
@@ -1248,8 +1267,7 @@ button{cursor:pointer}
     <div class="connect-card">
       <h1>Kalender verbinden</h1>
       <p class="connect-sub">
-        Wähle einfach aus, wo deine Termine heute gespeichert sind.
-        Dein Sekretär kann sie später gemeinsam in einem Kalender anzeigen.
+        Wähle deinen Kalender. Den Rest erklären wir Schritt für Schritt.
       </p>
 
       <div class="provider-list">
@@ -1257,45 +1275,61 @@ button{cursor:pointer}
           <div class="provider-icon">G</div>
           <div class="provider-main">
             <b>Google Kalender</b>
-            <small>Für Gmail- und Google-Konten. Besonders häufig auf Android und auch auf iPhone.</small>
+            <small>Für Google- und Gmail-Konten.</small>
           </div>
-          <button onclick="selectCalendarProvider('google')">Verbinden</button>
+          <div class="provider-actions">
+            <button onclick="selectCalendarProvider('google')">Verbinden</button>
+            <button class="help-btn" onclick="showCalendarHelp('google','video')">Video-Anleitung</button>
+            <button class="help-btn" onclick="showCalendarHelp('google','pdf')">PDF-Anleitung</button>
+          </div>
         </div>
 
         <div class="provider" data-provider="icloud">
           <div class="provider-icon">☁</div>
           <div class="provider-main">
             <b>Apple iCloud</b>
-            <small>Für iPhone, iPad und Apple-Kalender in iCloud.</small>
+            <small>Für Apple- und iCloud-Kalender.</small>
           </div>
-          <button onclick="selectCalendarProvider('icloud')">Verbinden</button>
+          <div class="provider-actions">
+            <button onclick="selectCalendarProvider('icloud')">Verbinden</button>
+            <button class="help-btn" onclick="showCalendarHelp('icloud','video')">Video-Anleitung</button>
+            <button class="help-btn" onclick="showCalendarHelp('icloud','pdf')">PDF-Anleitung</button>
+          </div>
         </div>
 
         <div class="provider" data-provider="outlook">
           <div class="provider-icon">O</div>
           <div class="provider-main">
             <b>Outlook / Microsoft</b>
-            <small>Für Outlook.com, Microsoft 365 und Exchange.</small>
+            <small>Für Outlook, Microsoft 365 und Exchange.</small>
           </div>
-          <button onclick="selectCalendarProvider('outlook')">Verbinden</button>
+          <div class="provider-actions">
+            <button onclick="selectCalendarProvider('outlook')">Verbinden</button>
+            <button class="help-btn" onclick="showCalendarHelp('outlook','video')">Video-Anleitung</button>
+            <button class="help-btn" onclick="showCalendarHelp('outlook','pdf')">PDF-Anleitung</button>
+          </div>
         </div>
 
         <div class="provider" data-provider="device">
           <div class="provider-icon">▣</div>
           <div class="provider-main">
             <b>Kalender vom Gerät</b>
-            <small>Für lokale Kalender auf iPhone oder Android. Später über die native App.</small>
+            <small>Für Termine, die direkt auf deinem Handy gespeichert sind.</small>
           </div>
-          <button onclick="selectCalendarProvider('device')">Auswählen</button>
+          <div class="provider-actions">
+            <button onclick="selectCalendarProvider('device')">Auswählen</button>
+            <button class="help-btn" onclick="showCalendarHelp('device','video')">Video-Anleitung</button>
+            <button class="help-btn" onclick="showCalendarHelp('device','pdf')">PDF-Anleitung</button>
+          </div>
         </div>
       </div>
 
       <div id="calendarConnectStatus" class="connect-status hidden"></div>
+      <div id="calendarHelpPanel" class="help-panel hidden"></div>
 
       <div class="sync-note">
-        <b>Einfach & sicher:</b><br>
-        Wir wollen Termine nicht unnötig kopieren. Ziel ist eine Synchronisation:
-        Der Sekretär zeigt die Termine gemeinsam an und merkt sich immer, aus welchem Kalender sie stammen.
+        <b>Du kommst nicht weiter?</b><br>
+        Nutze einfach die Video- oder PDF-Anleitung. Beides erklärt jeden Schritt ohne Fachbegriffe.
       </div>
     </div>
   </div>
@@ -1533,6 +1567,19 @@ function providerLabel(provider){
   }[provider] || provider;
 }
 
+
+function showCalendarHelp(provider, kind){
+  const panel=document.getElementById('calendarHelpPanel');
+  if(!panel) return;
+  const label=providerLabel(provider);
+  panel.classList.remove('hidden');
+  if(kind==='video'){
+    panel.innerHTML='<b>Video-Anleitung – '+escapeHtml(label)+'</b>Hier erscheint später ein kurzes Schritt-für-Schritt-Video. Du kannst es jederzeit anhalten, zurückspulen und erneut ansehen.';
+  }else{
+    panel.innerHTML='<b>PDF-Anleitung – '+escapeHtml(label)+'</b>Hier erscheint später eine einfache PDF-Anleitung mit Bildern und klaren Einzelschritten.';
+  }
+}
+
 function selectCalendarProvider(provider){
   const status=document.getElementById('calendarConnectStatus');
   const state=getCalendarConnectState();
@@ -1556,7 +1603,7 @@ function renderCalendarConnect(){
   document.querySelectorAll('[data-provider]').forEach(row=>{
     const p=row.getAttribute('data-provider');
     row.classList.toggle('connected',p===selected);
-    const btn=row.querySelector('button');
+    const btn=row.querySelector('.provider-actions button:first-child');
     if(btn){
       if(p===selected){
         btn.textContent='Ausgewählt';

@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.8">
+<meta name="sekretarz-version" content="DE-v9.9">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -290,6 +290,44 @@ button{cursor:pointer}
   @media(max-width:640px){
     .profile-wrap{padding:14px}.profile-card{padding:18px}
     .profile-grid{grid-template-columns:1fr}.profile-grid .wide{grid-column:auto}
+  }
+
+
+  .today-shell{max-width:900px;margin:auto;min-height:100vh;background:#f7f9fe;padding-bottom:92px}
+  .today-content{padding:18px}
+  .today-hero{
+    background:linear-gradient(135deg,#eef4ff,#f4edff);
+    border:1px solid #d9dcff;border-radius:22px;padding:20px;margin-bottom:16px
+  }
+  .today-hero h1{margin:0 0 6px;font-size:32px}
+  .today-hero p{margin:0;color:var(--muted);line-height:1.5}
+  .today-list{display:grid;gap:10px}
+  .today-item{
+    display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+    border-radius:16px;padding:14px
+  }
+  .today-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:#eef4ff}
+  .today-item b{display:block;margin-bottom:3px}
+  .today-item small{color:var(--muted);line-height:1.4}
+  .all-good{
+    margin-top:14px;background:#eefaf1;border:1px solid #b7dfc2;border-radius:16px;
+    padding:14px;font-weight:700;color:#2f7f45
+  }
+  .inbox-wrap{max-width:760px;margin:0 auto;padding:20px}
+  .inbox-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+  .inbox-card h2{margin:0 0 6px;font-size:30px}
+  .inbox-sub{margin:0 0 18px;color:var(--muted);line-height:1.5}
+  .inbox-quick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  .inbox-quick button{background:#f8faff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:left;font-weight:700}
+  .inbox-list{display:grid;gap:10px;margin-top:16px}
+  .inbox-item{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff}
+  .inbox-item b{display:block;margin-bottom:4px}
+  .inbox-item small{color:var(--muted)}
+  .empty-state{text-align:center;padding:22px;color:var(--muted);border:1px dashed #cfd7e8;border-radius:14px}
+  @media(max-width:640px){
+    .today-content,.inbox-wrap{padding:14px}
+    .inbox-card{padding:18px}
+    .inbox-quick{grid-template-columns:1fr}
   }
 
 </style>
@@ -645,9 +683,9 @@ button{cursor:pointer}
     <button class="btn primary fab" onclick="openNewCase()">＋ Angelegenheit</button>
 
     <nav class="bottom">
+      <button onclick="openToday()">☀<br>Heute</button>
       <button class="active" onclick="goDashboard()">☷<br>Angelegenheiten</button>
-      <button>▣<br>Kalender</button>
-      <button>✉<br>E-Mail</button>
+      <button onclick="openInbox()">⌄<br>Inbox</button>
       <button onclick="openProfile()">◯<br>Profil</button>
     </nav>
   </div>
@@ -915,6 +953,85 @@ button{cursor:pointer}
 </section>
 
 
+
+<!-- DE-011 -->
+<section id="de011" class="page hidden">
+  <div class="today-shell">
+    <header class="app-head">
+      <div class="app-brand">
+        <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+        <span>Sekretarz</span>
+      </div>
+      <div class="app-nav-right">
+        <button class="btn secondary" onclick="logout()">Abmelden</button>
+      </div>
+    </header>
+
+    <div class="today-content">
+      <div class="today-hero">
+        <h1 id="todayGreeting">Guten Abend.</h1>
+        <p id="todaySummary">Dein Sekretär prüft, was heute wichtig ist.</p>
+      </div>
+
+      <div class="today-list" id="todayList"></div>
+      <div class="all-good">Alles andere ist unter Kontrolle.</div>
+    </div>
+
+    <nav class="bottom">
+      <button class="active" onclick="openToday()">☀<br>Heute</button>
+      <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button onclick="openInbox()">⌄<br>Inbox</button>
+      <button onclick="openProfile()">◯<br>Profil</button>
+    </nav>
+  </div>
+  <div class="page-id">DE-011</div>
+</section>
+
+<!-- DE-012 -->
+<section id="de012" class="page hidden">
+  <div class="inbox-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+    </div>
+
+    <div class="inbox-card">
+      <h2>Inbox</h2>
+      <p class="inbox-sub">Alles Neue landet zuerst hier. Dein Sekretär kann später entscheiden, ob daraus eine neue Angelegenheit wird oder ob es zu einer bestehenden gehört.</p>
+
+      <div class="inbox-quick">
+        <button onclick="setInboxType('Notiz')">✎ Neue Notiz</button>
+        <button onclick="setInboxType('Telefonat')">☎ Telefonat festhalten</button>
+        <button onclick="setInboxType('Dokument')">▤ Dokument vormerken</button>
+        <button onclick="setInboxType('Nachricht')">✉ Nachricht erfassen</button>
+      </div>
+
+      <div class="field">
+        <label>Typ</label>
+        <select id="inboxType">
+          <option>Notiz</option>
+          <option>Telefonat</option>
+          <option>Dokument</option>
+          <option>Nachricht</option>
+          <option>E-Mail</option>
+          <option>Sonstiges</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Was ist neu?</label>
+        <textarea id="inboxText" rows="4" placeholder="z. B. Isarwinkel hat angerufen und einen Termin angekündigt."></textarea>
+      </div>
+
+      <div id="inboxMsg" class="hidden"></div>
+      <button class="btn primary full" onclick="saveInboxItem()">In Inbox speichern</button>
+
+      <div id="inboxList" class="inbox-list"></div>
+    </div>
+  </div>
+  <div class="page-id">DE-012</div>
+</section>
+
 <!-- DE-013 -->
 <section id="de013" class="page hidden">
   <div class="profile-wrap">
@@ -1035,7 +1152,7 @@ let failedAttempts=0;
 const MAX_ATTEMPTS=3;
 
 function hideAll(){
-  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de013'].forEach(id=>{
+  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013'].forEach(id=>{
     const page=document.getElementById(id);
     if(page) page.classList.add('hidden');
   });
@@ -1097,6 +1214,118 @@ function togglePassword(inputId, button){
   input.type=showing?'password':'text';
   button.textContent=showing?'◉̸':'◉';
   button.setAttribute('aria-label',showing?'Passwort anzeigen':'Passwort ausblenden');
+}
+
+const INBOX_STORAGE_KEY='sekretarzInboxV1';
+
+function getInboxItems(){
+  try{
+    const raw=localStorage.getItem(INBOX_STORAGE_KEY);
+    const parsed=raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){ return []; }
+}
+
+function saveInboxItems(items){
+  try{
+    localStorage.setItem(INBOX_STORAGE_KEY,JSON.stringify(items));
+    return true;
+  }catch(e){ return false; }
+}
+
+function setInboxType(type){
+  const el=document.getElementById('inboxType');
+  if(el) el.value=type;
+  const text=document.getElementById('inboxText');
+  if(text) text.focus();
+}
+
+function renderInbox(){
+  const box=document.getElementById('inboxList');
+  if(!box) return;
+  const items=getInboxItems();
+  if(!items.length){
+    box.innerHTML='<div class="empty-state">Noch nichts Neues. Dein Sekretär wartet auf neue Informationen.</div>';
+    return;
+  }
+  box.innerHTML=items.map(item=>
+    '<div class="inbox-item"><b>'+escapeHtml(item.type)+'</b><div>'+escapeHtml(item.text)+'</div><small>'+escapeHtml(item.date)+'</small></div>'
+  ).join('');
+}
+
+function saveInboxItem(){
+  clearMsg('inboxMsg');
+  const type=document.getElementById('inboxType').value;
+  const text=document.getElementById('inboxText').value.trim();
+  if(!text){
+    setMsg('inboxMsg','error','Bitte kurz eingeben, was neu ist.');
+    return;
+  }
+  const items=getInboxItems();
+  items.unshift({
+    id:'inbox-'+Date.now(),
+    type,
+    text,
+    date:new Date().toLocaleString('de-DE')
+  });
+  if(saveInboxItems(items)){
+    document.getElementById('inboxText').value='';
+    setMsg('inboxMsg','success','Gespeichert. Dein Sekretär kann diese Information später zuordnen.');
+    renderInbox();
+  }else{
+    setMsg('inboxMsg','error','Die Information konnte nicht gespeichert werden.');
+  }
+}
+
+function openInbox(){
+  renderInbox();
+  go('de012');
+}
+
+function getTodayGreeting(){
+  const hour=new Date().getHours();
+  if(hour<11) return 'Guten Morgen.';
+  if(hour<18) return 'Guten Tag.';
+  return 'Guten Abend.';
+}
+
+function renderToday(){
+  const greeting=document.getElementById('todayGreeting');
+  const summary=document.getElementById('todaySummary');
+  const list=document.getElementById('todayList');
+  if(!greeting || !summary || !list) return;
+
+  const profile=getUserProfile();
+  greeting.textContent=getTodayGreeting()+(profile.firstName ? ' '+profile.firstName+'.' : '');
+
+  const cases=getStoredCases();
+  const inbox=getInboxItems();
+  const items=[];
+
+  const urgent=cases.find(c=>c.status==='Dringend' || c.status==='Nicht erledigt');
+  if(urgent) items.push({icon:'!',title:urgent.title,text:'Diese Angelegenheit braucht deine Aufmerksamkeit.'});
+
+  const waiting=cases.find(c=>c.status==='Warte auf Antwort');
+  if(waiting) items.push({icon:'↻',title:waiting.title,text:'Noch keine Antwort. Dein Sekretär behält die Angelegenheit im Blick.'});
+
+  const reminder=cases.find(c=>c.careType==='reminder' && c.status!=='Erledigt');
+  if(reminder) items.push({icon:'◷',title:reminder.title,text:reminder.dateDisplay || 'Erinnerung ist aktiv.'});
+
+  if(inbox.length) items.push({icon:'⌄',title:'Inbox',text:inbox.length+' neue Information(en) warten auf Zuordnung.'});
+
+  if(!items.length){
+    items.push({icon:'✓',title:'Heute nichts Dringendes',text:'Dein Sekretär hat aktuell nichts, wofür du sofort aktiv werden musst.'});
+  }
+
+  summary.textContent='Ich habe heute '+items.length+' Punkt'+(items.length===1?'':'e')+' für dich im Blick.';
+  list.innerHTML=items.slice(0,4).map(item=>
+    '<div class="today-item"><div class="today-icon">'+escapeHtml(item.icon)+'</div><div><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml(item.text)+'</small></div></div>'
+  ).join('');
+}
+
+function openToday(){
+  renderToday();
+  go('de011');
 }
 
 const PROFILE_STORAGE_KEY='sekretarzUserProfileV1';
@@ -1390,7 +1619,7 @@ function attemptLogin(){
     loggedIn=true;
     try{ localStorage.setItem('sekretarzLoggedIn','1'); }catch(e){}
     historyStack.push('de008');
-    showDirect('de008');
+    showDirect('de011');
     return;
   }
 
@@ -2009,7 +2238,7 @@ function saveCaseForm(){
   );
 
   setTimeout(()=>{
-    historyStack=['de001','de002','de008'];
+    historyStack=['de001','de002','de011'];
     showDirect('de008');
   },450);
 }
@@ -2080,12 +2309,12 @@ function restoreAppState(){
     if(saved && document.getElementById(saved)){
       target=saved;
     }else if(persistedLogin){
-      target='de008';
+      target='de011';
     }else if(account && account.email){
       target='de006';
     }
 
-    if(['de008','de009','de010'].includes(target) && !persistedLogin){
+    if(['de008','de009','de010','de011','de012','de013'].includes(target) && !persistedLogin){
       target='de006';
     }
 
@@ -2101,6 +2330,8 @@ function restoreAppState(){
     }
 
     historyStack=[target];
+    if(target==='de011') renderToday();
+    if(target==='de012') renderInbox();
     if(target==='de013') loadProfile();
     showDirect(target);
   }catch(e){

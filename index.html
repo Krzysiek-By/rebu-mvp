@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.7">
+<meta name="sekretarz-version" content="DE-v9.8">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -265,6 +265,32 @@ button{cursor:pointer}
   .ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .ai-actions .btn{margin:0}
   @media(max-width:640px){.ai-actions{grid-template-columns:1fr}}
+
+
+  .collapse-card{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .collapse-card summary{
+    list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px;cursor:pointer;font-weight:800;font-size:17px
+  }
+  .collapse-card summary::-webkit-details-marker{display:none}
+  .collapse-card summary:after{content:"＋";color:var(--blue);font-size:20px;font-weight:700}
+  .collapse-card[open] summary:after{content:"−"}
+  .collapse-body{padding:0 16px 16px}
+  .collapse-kicker{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px}
+  .profile-wrap{max-width:760px;margin:0 auto;padding:20px}
+  .profile-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+  .profile-card h2{margin:0 0 6px;font-size:30px}
+  .profile-intro{color:var(--muted);line-height:1.5;margin:0 0 18px}
+  .profile-section{padding:16px 0;border-top:1px solid var(--line)}
+  .profile-section:first-of-type{border-top:0}
+  .profile-section h3{margin:0 0 10px}
+  .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .profile-grid .wide{grid-column:1/-1}
+  .profile-save{position:sticky;bottom:10px;padding-top:10px;background:linear-gradient(180deg,rgba(255,255,255,0),#fff 30%)}
+  @media(max-width:640px){
+    .profile-wrap{padding:14px}.profile-card{padding:18px}
+    .profile-grid{grid-template-columns:1fr}.profile-grid .wide{grid-column:auto}
+  }
 
 </style>
 </head>
@@ -619,10 +645,10 @@ button{cursor:pointer}
     <button class="btn primary fab" onclick="openNewCase()">＋ Angelegenheit</button>
 
     <nav class="bottom">
-      <button class="active">☷<br>Angelegenheiten</button>
+      <button class="active" onclick="goDashboard()">☷<br>Angelegenheiten</button>
       <button>▣<br>Kalender</button>
       <button>✉<br>E-Mail</button>
-      <button>◯<br>Profil</button>
+      <button onclick="openProfile()">◯<br>Profil</button>
     </nav>
   </div>
   <div class="page-id">DE-008</div>
@@ -672,23 +698,26 @@ button{cursor:pointer}
           </div>
         </div>
 
-        <div class="ai-block">
-          <div class="ai-kicker">Plan</div>
-          <h3>Plan für diese Angelegenheit</h3>
-          <div id="aiPlanList" class="ai-plan"></div>
-        </div>
+        <details class="collapse-card">
+          <summary><span><span class="collapse-kicker">Plan</span>Plan für diese Angelegenheit</span></summary>
+          <div class="collapse-body">
+            <div id="aiPlanList" class="ai-plan"></div>
+          </div>
+        </details>
 
-        <div id="caseLocationBox" class="ai-block hidden">
-          <div class="ai-kicker">Ort / Kontakt</div>
-          <h3>Kontakt zur Angelegenheit</h3>
-          <p id="caseLocationContent"></p>
-        </div>
+        <details id="caseLocationBox" class="collapse-card hidden">
+          <summary><span><span class="collapse-kicker">Ort / Kontakt</span>Kontakt zur Angelegenheit</span></summary>
+          <div class="collapse-body">
+            <p id="caseLocationContent" style="margin:0;color:var(--muted);line-height:1.5"></p>
+          </div>
+        </details>
 
-        <div class="ai-block">
-          <div class="ai-kicker">Historie</div>
-          <h3>Was ist bisher passiert?</h3>
-          <div id="caseTimeline" class="timeline"></div>
-        </div>
+        <details class="collapse-card">
+          <summary><span><span class="collapse-kicker">Historie</span>Was ist bisher passiert?</span></summary>
+          <div class="collapse-body">
+            <div id="caseTimeline" class="timeline"></div>
+          </div>
+        </details>
 
         <div class="ai-block green">
           <div class="ai-kicker">Sekretär-Aktionen</div>
@@ -885,6 +914,100 @@ button{cursor:pointer}
   <div class="page-id">DE-010</div>
 </section>
 
+
+<!-- DE-013 -->
+<section id="de013" class="page hidden">
+  <div class="profile-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
+    </div>
+
+    <div class="profile-card">
+      <h2>Mein Profil</h2>
+      <p class="profile-intro">Hier merkt sich dein Sekretär wichtige persönliche Daten, damit du sie nicht bei jeder Angelegenheit neu eingeben musst.</p>
+
+      <div class="profile-section">
+        <h3>Persönliche Daten</h3>
+        <div class="profile-grid">
+          <div class="field" style="margin:0">
+            <label>Vorname</label>
+            <input id="profileFirstName">
+          </div>
+          <div class="field" style="margin:0">
+            <label>Nachname</label>
+            <input id="profileLastName">
+          </div>
+          <div class="field wide" style="margin:0">
+            <label>E-Mail</label>
+            <input id="profileEmail" type="email">
+          </div>
+          <div class="field wide" style="margin:0">
+            <label>Telefon</label>
+            <input id="profilePhone" type="tel">
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <h3>Adresse</h3>
+        <div class="profile-grid">
+          <div class="field wide" style="margin:0">
+            <label>Straße und Hausnummer</label>
+            <input id="profileStreet">
+          </div>
+          <div class="field" style="margin:0">
+            <label>PLZ</label>
+            <input id="profileZip">
+          </div>
+          <div class="field" style="margin:0">
+            <label>Ort</label>
+            <input id="profileCity">
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <h3>Gesundheit / Krankenkasse</h3>
+        <div class="profile-grid">
+          <div class="field wide" style="margin:0">
+            <label>Krankenkasse</label>
+            <input id="profileHealthInsurer" placeholder="z. B. AOK Bayern">
+          </div>
+          <div class="field" style="margin:0">
+            <label>Ort / Geschäftsstelle</label>
+            <input id="profileHealthCity">
+          </div>
+          <div class="field" style="margin:0">
+            <label>E-Mail</label>
+            <input id="profileHealthEmail" type="email">
+          </div>
+        </div>
+        <div class="helper" style="margin-top:8px">Diese Angaben kann der Sekretär später z. B. für Anfragen zu Zuschüssen oder Kostenübernahmen verwenden.</div>
+      </div>
+
+      <div class="profile-section">
+        <h3>Meine Vorlieben</h3>
+        <div class="field" style="margin:0">
+          <label>Bevorzugte Navigation</label>
+          <select id="profileMaps">
+            <option value="ask">Immer fragen</option>
+            <option value="apple">Apple Karten</option>
+            <option value="google">Google Maps</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="profileMsg" class="hidden"></div>
+
+      <div class="profile-save">
+        <button class="btn primary full" onclick="saveProfile()">Profil speichern</button>
+      </div>
+    </div>
+  </div>
+  <div class="page-id">DE-013</div>
+</section>
+
 <div id="modal" class="modal hidden">
   <div class="modal-card">
     <h2>Neue Angelegenheit</h2>
@@ -912,7 +1035,7 @@ let failedAttempts=0;
 const MAX_ATTEMPTS=3;
 
 function hideAll(){
-  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010'].forEach(id=>{
+  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de013'].forEach(id=>{
     const page=document.getElementById(id);
     if(page) page.classList.add('hidden');
   });
@@ -974,6 +1097,86 @@ function togglePassword(inputId, button){
   input.type=showing?'password':'text';
   button.textContent=showing?'◉̸':'◉';
   button.setAttribute('aria-label',showing?'Passwort anzeigen':'Passwort ausblenden');
+}
+
+const PROFILE_STORAGE_KEY='sekretarzUserProfileV1';
+
+function buildProfileFromAccount(){
+  let account=null;
+  try{ account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null'); }catch(e){}
+  return {
+    firstName:account?.firstName || '',
+    lastName:account?.lastName || '',
+    email:account?.email || '',
+    phone:account?.phone || '',
+    street:account?.street || '',
+    zip:account?.zip || '',
+    city:account?.city || '',
+    healthInsurer:'',
+    healthCity:'',
+    healthEmail:'',
+    maps:'ask'
+  };
+}
+
+function getUserProfile(){
+  try{
+    const raw=localStorage.getItem(PROFILE_STORAGE_KEY);
+    if(raw){
+      const p=JSON.parse(raw);
+      if(p && typeof p==='object') return {...buildProfileFromAccount(),...p};
+    }
+  }catch(e){}
+  const initial=buildProfileFromAccount();
+  try{ localStorage.setItem(PROFILE_STORAGE_KEY,JSON.stringify(initial)); }catch(e){}
+  return initial;
+}
+
+function loadProfile(){
+  const p=getUserProfile();
+  const map={
+    profileFirstName:p.firstName, profileLastName:p.lastName, profileEmail:p.email,
+    profilePhone:p.phone, profileStreet:p.street, profileZip:p.zip, profileCity:p.city,
+    profileHealthInsurer:p.healthInsurer, profileHealthCity:p.healthCity,
+    profileHealthEmail:p.healthEmail, profileMaps:p.maps || 'ask'
+  };
+  Object.entries(map).forEach(([id,value])=>{
+    const el=document.getElementById(id);
+    if(el) el.value=value || '';
+  });
+  clearMsg('profileMsg');
+}
+
+function openProfile(){
+  loadProfile();
+  go('de013');
+}
+
+function saveProfile(){
+  const p={
+    firstName:document.getElementById('profileFirstName').value.trim(),
+    lastName:document.getElementById('profileLastName').value.trim(),
+    email:document.getElementById('profileEmail').value.trim().toLowerCase(),
+    phone:document.getElementById('profilePhone').value.trim(),
+    street:document.getElementById('profileStreet').value.trim(),
+    zip:document.getElementById('profileZip').value.trim(),
+    city:document.getElementById('profileCity').value.trim(),
+    healthInsurer:document.getElementById('profileHealthInsurer').value.trim(),
+    healthCity:document.getElementById('profileHealthCity').value.trim(),
+    healthEmail:document.getElementById('profileHealthEmail').value.trim(),
+    maps:document.getElementById('profileMaps').value
+  };
+
+  if(!p.firstName || !p.lastName || !p.email){
+    setMsg('profileMsg','error','Bitte mindestens Vorname, Nachname und E-Mail ausfüllen.');
+    return;
+  }
+  try{
+    localStorage.setItem(PROFILE_STORAGE_KEY,JSON.stringify(p));
+    setMsg('profileMsg','success','Profil gespeichert. Dein Sekretär kann diese Angaben künftig verwenden.');
+  }catch(e){
+    setMsg('profileMsg','error','Profil konnte nicht gespeichert werden.');
+  }
 }
 
 function registerUser(){
@@ -1042,6 +1245,17 @@ function registerUser(){
 
   try{
     localStorage.setItem('sekretarzDemoAccount',JSON.stringify(account));
+    const oldProfile=getUserProfile();
+    localStorage.setItem(PROFILE_STORAGE_KEY,JSON.stringify({
+      ...oldProfile,
+      firstName:account.firstName,
+      lastName:account.lastName,
+      email:account.email,
+      phone:account.phone,
+      street:account.street,
+      zip:account.zip,
+      city:account.city
+    }));
 
     const savedAccount=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
 
@@ -1887,6 +2101,7 @@ function restoreAppState(){
     }
 
     historyStack=[target];
+    if(target==='de013') loadProfile();
     showDirect(target);
   }catch(e){
     showDirect('de001');

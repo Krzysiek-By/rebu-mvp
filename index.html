@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v10.4">
+<meta name="sekretarz-version" content="DE-v10.5">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1353,8 +1353,18 @@ function populateInboxCaseSelect(){
   const select=document.getElementById('inboxCaseSelect');
   if(!select) return;
   const cases=getStoredCases();
+
+  let changed=false;
+  cases.forEach((c,index)=>{
+    if(c.id===undefined || c.id===null || c.id===''){
+      c.id='case-existing-'+index;
+      changed=true;
+    }
+  });
+  if(changed) saveCasesToStorage(cases);
+
   select.innerHTML=cases.length
-    ? cases.map(c=>'<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.title)+'</option>').join('')
+    ? cases.map(c=>'<option value="'+escapeHtml(String(c.id))+'">'+escapeHtml(c.title||'Ohne Titel')+'</option>').join('')
     : '<option value="">Keine Angelegenheit vorhanden</option>';
 }
 
@@ -1366,9 +1376,10 @@ function showInboxCaseSelect(){
 
 function assignInboxItemToCase(itemId, caseId){
   if(!itemId || !caseId) return false;
+
   const item=getInboxItemById(itemId);
   const cases=getStoredCases();
-  const c=cases.find(x=>x.id===caseId);
+  const c=cases.find(x=>String(x.id)===String(caseId));
   if(!item || !c) return false;
 
   const entry={
@@ -1379,26 +1390,40 @@ function assignInboxItemToCase(itemId, caseId){
 
   if(!Array.isArray(c.history)) c.history=[];
   c.history.unshift(entry);
-  saveStoredCases(cases);
 
-  updateInboxItem(itemId, old=>({
+  if(!saveCasesToStorage(cases)) return false;
+
+  return updateInboxItem(itemId, old=>({
     ...old,
     assignment:'case',
-    assignedCaseId:caseId,
-    assignedCaseTitle:c.title
+    assignedCaseId:String(caseId),
+    assignedCaseTitle:c.title || 'Angelegenheit'
   }));
-  return true;
 }
 
 function assignLastInboxToCase(){
   const select=document.getElementById('inboxCaseSelect');
-  const caseId=select ? select.value : '';
-  if(assignInboxItemToCase(lastInboxItemId,caseId)){
+  const caseId=select ? String(select.value||'') : '';
+  const itemId=lastInboxItemId;
+
+  if(!itemId){
+    setMsg('inboxMsg','error','Keine offene Inbox-Information gefunden.');
+    return;
+  }
+  if(!caseId){
+    setMsg('inboxMsg','error','Bitte eine Angelegenheit auswählen.');
+    return;
+  }
+
+  if(assignInboxItemToCase(itemId,caseId)){
     setMsg('inboxMsg','success','Zur Angelegenheit hinzugefügt.');
-    document.getElementById('inboxDecisionBox').classList.add('hidden');
-    document.getElementById('inboxCaseSelectBox').classList.add('hidden');
+    const decisionBox=document.getElementById('inboxDecisionBox');
+    const caseBox=document.getElementById('inboxCaseSelectBox');
+    if(decisionBox) decisionBox.classList.add('hidden');
+    if(caseBox) caseBox.classList.add('hidden');
     lastInboxItemId=null;
     renderInbox();
+    renderDashboardCases();
     renderToday();
   }else{
     setMsg('inboxMsg','error','Die Information konnte nicht zugeordnet werden.');
@@ -1422,7 +1447,7 @@ function createCaseFromLastInbox(){
     }]
   };
   cases.unshift(newCase);
-  saveStoredCases(cases);
+  saveCasesToStorage(cases);
   updateInboxItem(item.id, old=>({
     ...old,
     assignment:'newcase',

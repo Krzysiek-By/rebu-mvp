@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v9.9">
+<meta name="sekretarz-version" content="DE-v10.0">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1169,6 +1169,9 @@ function showDirect(id){
     localStorage.setItem('sekretarzLastPage',id);
   }catch(e){}
   if(id==='de006') setTimeout(refreshRecognizedAccount,0);
+  if(id==='de011') setTimeout(renderToday,0);
+  if(id==='de012') setTimeout(renderInbox,0);
+  if(id==='de013') setTimeout(loadProfile,0);
   window.scrollTo(0,0);
 }
 
@@ -1180,9 +1183,21 @@ function go(id){
 function back(){
   if(historyStack.length>1){
     historyStack.pop();
-    showDirect(historyStack[historyStack.length-1]);
+    const target=historyStack[historyStack.length-1];
+    if(target==='de011') renderToday();
+    if(target==='de012') renderInbox();
+    if(target==='de013') loadProfile();
+    showDirect(target);
   } else {
-    goStart();
+    const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
+    if(persistedLogin){
+      loggedIn=true;
+      historyStack=['de011'];
+      renderToday();
+      showDirect('de011');
+    }else{
+      goStart();
+    }
   }
 }
 
@@ -1279,7 +1294,11 @@ function saveInboxItem(){
 
 function openInbox(){
   renderInbox();
-  go('de012');
+  if(currentPage==='de011') historyStack=['de011','de012'];
+  else if(currentPage==='de008') historyStack=['de011','de008','de012'];
+  else if(!historyStack.includes('de011')) historyStack=['de011','de012'];
+  else if(historyStack[historyStack.length-1]!=='de012') historyStack.push('de012');
+  showDirect('de012');
 }
 
 function getTodayGreeting(){
@@ -1325,7 +1344,8 @@ function renderToday(){
 
 function openToday(){
   renderToday();
-  go('de011');
+  historyStack=['de011'];
+  showDirect('de011');
 }
 
 const PROFILE_STORAGE_KEY='sekretarzUserProfileV1';
@@ -1378,7 +1398,11 @@ function loadProfile(){
 
 function openProfile(){
   loadProfile();
-  go('de013');
+  if(currentPage==='de011') historyStack=['de011','de013'];
+  else if(currentPage==='de008') historyStack=['de011','de008','de013'];
+  else if(!historyStack.includes('de011')) historyStack=['de011','de013'];
+  else if(historyStack[historyStack.length-1]!=='de013') historyStack.push('de013');
+  showDirect('de013');
 }
 
 function saveProfile(){
@@ -1618,7 +1642,9 @@ function attemptLogin(){
     failedAttempts=0;
     loggedIn=true;
     try{ localStorage.setItem('sekretarzLoggedIn','1'); }catch(e){}
-    historyStack.push('de008');
+    renderDashboardCases();
+    renderToday();
+    historyStack=['de011'];
     showDirect('de011');
     return;
   }
@@ -1674,7 +1700,10 @@ function goDashboard(){
   const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
   if(loggedIn || persistedLogin){
     loggedIn=true;
-    if(currentPage!=='de008') historyStack.push('de008');
+    renderDashboardCases();
+    if(currentPage==='de011') historyStack=['de011','de008'];
+    else if(!historyStack.includes('de011')) historyStack=['de011','de008'];
+    else if(historyStack[historyStack.length-1]!=='de008') historyStack.push('de008');
     showDirect('de008');
   } else {
     goStart();
@@ -2329,7 +2358,12 @@ function restoreAppState(){
       target='de008';
     }
 
-    historyStack=[target];
+    if(target==='de011') historyStack=['de011'];
+    else if(target==='de008') historyStack=['de011','de008'];
+    else if(target==='de012') historyStack=['de011','de012'];
+    else if(target==='de013') historyStack=['de011','de013'];
+    else historyStack=[target];
+
     if(target==='de011') renderToday();
     if(target==='de012') renderInbox();
     if(target==='de013') loadProfile();
@@ -2344,11 +2378,16 @@ window.addEventListener('pageshow',()=>{
     restoreAppState();
   }catch(e){
     const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
-    showDirect(persistedLogin ? 'de008' : 'de001');
+    if(persistedLogin){ loggedIn=true; historyStack=['de011']; renderToday(); showDirect('de011'); } else { showDirect('de001'); }
   }
 
   setTimeout(()=>{
     try{ renderDashboardCases(); }catch(e){}
+    try{
+      if(currentPage==='de011') renderToday();
+      if(currentPage==='de012') renderInbox();
+      if(currentPage==='de013') loadProfile();
+    }catch(e){}
   },0);
 });
 

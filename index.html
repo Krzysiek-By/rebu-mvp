@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v10.1">
+<meta name="sekretarz-version" content="DE-v10.2">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -328,6 +328,29 @@ button{cursor:pointer}
     .today-content,.inbox-wrap{padding:14px}
     .inbox-card{padding:18px}
     .inbox-quick{grid-template-columns:1fr}
+  }
+
+
+  .secretary-states{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0 18px}
+  .state-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px}
+  .state-card .state-title{font-weight:800;font-size:14px;margin-bottom:4px}
+  .state-card .state-count{font-size:26px;font-weight:800;line-height:1}
+  .state-card .state-desc{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}
+  .state-need{border-left:5px solid #d89b17}
+  .state-care{border-left:5px solid #6f63d9}
+  .state-alert{border-left:5px solid #cf4b4b}
+  .state-done{border-left:5px solid #4d9f64}
+  .inbox-action-box{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .inbox-action-box h3{margin:0 0 10px;font-size:18px}
+  .inbox-choice{display:grid;gap:8px}
+  .inbox-choice button{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;font-weight:700}
+  .inbox-choice button:hover{background:#f7f9ff}
+  .inbox-case-select{margin-top:10px}
+  .inbox-item-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .inbox-item-actions button{border:1px solid var(--line);background:#f8faff;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:700}
+  @media(max-width:640px){
+    .secretary-states{grid-template-columns:1fr 1fr}
+    .state-card{padding:12px}
   }
 
 </style>
@@ -973,7 +996,31 @@ button{cursor:pointer}
         <p id="todaySummary">Dein Sekretär prüft, was heute wichtig ist.</p>
       </div>
 
-      <div class="today-list" id="todayList"></div>
+      
+      <div class="secretary-states">
+        <div class="state-card state-need">
+          <div class="state-title">Ich brauche etwas von dir</div>
+          <div class="state-count" id="stateNeedCount">0</div>
+          <div class="state-desc">Hier musst du selbst kurz entscheiden oder etwas ergänzen.</div>
+        </div>
+        <div class="state-card state-care">
+          <div class="state-title">Ich kümmere mich</div>
+          <div class="state-count" id="stateCareCount">0</div>
+          <div class="state-desc">Diese Dinge behält dein Sekretär für dich im Blick.</div>
+        </div>
+        <div class="state-card state-alert">
+          <div class="state-title">Achtung</div>
+          <div class="state-count" id="stateAlertCount">0</div>
+          <div class="state-desc">Hier wird etwas dringend oder ist bereits überfällig.</div>
+        </div>
+        <div class="state-card state-done">
+          <div class="state-title">Erledigt</div>
+          <div class="state-count" id="stateDoneCount">0</div>
+          <div class="state-desc">Heute abgeschlossene oder erledigte Dinge.</div>
+        </div>
+      </div>
+
+<div class="today-list" id="todayList"></div>
       <div class="all-good">Alles andere ist unter Kontrolle.</div>
     </div>
 
@@ -1025,6 +1072,22 @@ button{cursor:pointer}
 
       <div id="inboxMsg" class="hidden"></div>
       <button class="btn primary full" onclick="saveInboxItem()">In Inbox speichern</button>
+      <div id="inboxDecisionBox" class="inbox-action-box hidden">
+        <h3>Was soll der Sekretär damit machen?</h3>
+        <div class="inbox-choice">
+          <button onclick="showInboxCaseSelect()">Zu bestehender Angelegenheit hinzufügen</button>
+          <button onclick="createCaseFromLastInbox()">Neue Angelegenheit erstellen</button>
+          <button onclick="leaveLastInboxUnassigned()">Vorerst in Inbox lassen</button>
+        </div>
+        <div id="inboxCaseSelectBox" class="inbox-case-select hidden">
+          <div class="field">
+            <label>Bestehende Angelegenheit</label>
+            <select id="inboxCaseSelect"></select>
+          </div>
+          <button class="btn primary full" onclick="assignLastInboxToCase()">Zu Angelegenheit hinzufügen</button>
+        </div>
+      </div>
+
 
       <div id="inboxList" class="inbox-list"></div>
     </div>
@@ -1233,6 +1296,151 @@ function togglePassword(inputId, button){
 
 const INBOX_STORAGE_KEY='sekretarzInboxV1';
 
+let lastInboxItemId=null;
+
+function getSecretaryStateCounts(){
+  const cases=getStoredCases();
+  const inbox=getInboxItems();
+  let need=0, care=0, alert=0, done=0;
+
+  cases.forEach(c=>{
+    const status=(c.status||'').toLowerCase();
+    if(status.includes('erledigt')) done++;
+    else if(status.includes('dringend') || status.includes('nicht erledigt')) alert++;
+    else if(status.includes('warte') || c.careType==='ai') care++;
+    else need++;
+  });
+
+  need += inbox.filter(i=>!i.assignment || i.assignment==='unassigned').length;
+
+  return {need,care,alert,done};
+}
+
+function renderSecretaryStateCounts(){
+  const counts=getSecretaryStateCounts();
+  const map={
+    stateNeedCount:counts.need,
+    stateCareCount:counts.care,
+    stateAlertCount:counts.alert,
+    stateDoneCount:counts.done
+  };
+  Object.entries(map).forEach(([id,val])=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=String(val);
+  });
+}
+
+function getInboxItemById(id){
+  return getInboxItems().find(i=>i.id===id) || null;
+}
+
+function updateInboxItem(id, updater){
+  const items=getInboxItems();
+  const idx=items.findIndex(i=>i.id===id);
+  if(idx<0) return false;
+  items[idx]=updater({...items[idx]});
+  return saveInboxItems(items);
+}
+
+function populateInboxCaseSelect(){
+  const select=document.getElementById('inboxCaseSelect');
+  if(!select) return;
+  const cases=getStoredCases();
+  select.innerHTML=cases.length
+    ? cases.map(c=>'<option value="'+escapeHtml(c.id)+'">'+escapeHtml(c.title)+'</option>').join('')
+    : '<option value="">Keine Angelegenheit vorhanden</option>';
+}
+
+function showInboxCaseSelect(){
+  populateInboxCaseSelect();
+  const box=document.getElementById('inboxCaseSelectBox');
+  if(box) box.classList.remove('hidden');
+}
+
+function assignInboxItemToCase(itemId, caseId){
+  if(!itemId || !caseId) return false;
+  const item=getInboxItemById(itemId);
+  const cases=getStoredCases();
+  const c=cases.find(x=>x.id===caseId);
+  if(!item || !c) return false;
+
+  const entry={
+    type:item.type || 'Inbox',
+    text:item.text || '',
+    date:item.date || new Date().toLocaleString('de-DE')
+  };
+
+  if(!Array.isArray(c.history)) c.history=[];
+  c.history.unshift(entry);
+  saveStoredCases(cases);
+
+  updateInboxItem(itemId, old=>({
+    ...old,
+    assignment:'case',
+    assignedCaseId:caseId,
+    assignedCaseTitle:c.title
+  }));
+  return true;
+}
+
+function assignLastInboxToCase(){
+  const select=document.getElementById('inboxCaseSelect');
+  const caseId=select ? select.value : '';
+  if(assignInboxItemToCase(lastInboxItemId,caseId)){
+    setMsg('inboxMsg','success','Zur Angelegenheit hinzugefügt.');
+    document.getElementById('inboxDecisionBox').classList.add('hidden');
+    document.getElementById('inboxCaseSelectBox').classList.add('hidden');
+    renderInbox();
+    renderToday();
+  }else{
+    setMsg('inboxMsg','error','Die Information konnte nicht zugeordnet werden.');
+  }
+}
+
+function createCaseFromLastInbox(){
+  const item=getInboxItemById(lastInboxItemId);
+  if(!item) return;
+  const cases=getStoredCases();
+  const newCase={
+    id:'case-'+Date.now(),
+    title:item.text.length>52 ? item.text.slice(0,52)+'…' : item.text,
+    description:item.text,
+    careType:'ai',
+    status:'Aktiv',
+    history:[{
+      type:item.type || 'Inbox',
+      text:item.text,
+      date:item.date || new Date().toLocaleString('de-DE')
+    }]
+  };
+  cases.unshift(newCase);
+  saveStoredCases(cases);
+  updateInboxItem(item.id, old=>({
+    ...old,
+    assignment:'newcase',
+    assignedCaseId:newCase.id,
+    assignedCaseTitle:newCase.title
+  }));
+  setMsg('inboxMsg','success','Neue Angelegenheit wurde erstellt.');
+  document.getElementById('inboxDecisionBox').classList.add('hidden');
+  renderInbox();
+  renderDashboardCases();
+  renderToday();
+}
+
+function leaveLastInboxUnassigned(){
+  if(lastInboxItemId){
+    updateInboxItem(lastInboxItemId, old=>({...old,assignment:'unassigned'}));
+  }
+  const box=document.getElementById('inboxDecisionBox');
+  if(box) box.classList.add('hidden');
+  setMsg('inboxMsg','success','Bleibt vorerst in der Inbox.');
+  renderInbox();
+  renderToday();
+}
+
+
+
 function getInboxItems(){
   try{
     const raw=localStorage.getItem(INBOX_STORAGE_KEY);
@@ -1263,9 +1471,15 @@ function renderInbox(){
     box.innerHTML='<div class="empty-state">Noch nichts Neues. Dein Sekretär wartet auf neue Informationen.</div>';
     return;
   }
-  box.innerHTML=items.map(item=>
-    '<div class="inbox-item"><b>'+escapeHtml(item.type)+'</b><div>'+escapeHtml(item.text)+'</div><small>'+escapeHtml(item.date)+'</small></div>'
-  ).join('');
+  box.innerHTML=items.map(item=>{
+    let state='';
+    if(item.assignment==='case' || item.assignment==='newcase'){
+      state='<small>Zugeteilt: '+escapeHtml(item.assignedCaseTitle||'Angelegenheit')+'</small>';
+    }else{
+      state='<small>Noch nicht zugeordnet</small>';
+    }
+    return '<div class="inbox-item"><b>'+escapeHtml(item.type)+'</b><div>'+escapeHtml(item.text)+'</div><small>'+escapeHtml(item.date)+'</small>'+state+'</div>';
+  }).join('');
 }
 
 function saveInboxItem(){
@@ -1277,16 +1491,24 @@ function saveInboxItem(){
     return;
   }
   const items=getInboxItems();
-  items.unshift({
+  const newItem={
     id:'inbox-'+Date.now(),
     type,
     text,
-    date:new Date().toLocaleString('de-DE')
-  });
+    date:new Date().toLocaleString('de-DE'),
+    assignment:'unassigned'
+  };
+  items.unshift(newItem);
   if(saveInboxItems(items)){
+    lastInboxItemId=newItem.id;
     document.getElementById('inboxText').value='';
-    setMsg('inboxMsg','success','Gespeichert. Dein Sekretär kann diese Information später zuordnen.');
+    setMsg('inboxMsg','success','Gespeichert.');
+    const decisionBox=document.getElementById('inboxDecisionBox');
+    if(decisionBox) decisionBox.classList.remove('hidden');
+    const caseBox=document.getElementById('inboxCaseSelectBox');
+    if(caseBox) caseBox.classList.add('hidden');
     renderInbox();
+    renderToday();
   }else{
     setMsg('inboxMsg','error','Die Information konnte nicht gespeichert werden.');
   }
@@ -1337,6 +1559,7 @@ function renderToday(){
   }
 
   summary.textContent='Ich habe heute '+items.length+' Punkt'+(items.length===1?'':'e')+' für dich im Blick.';
+  renderSecretaryStateCounts();
   list.innerHTML=items.slice(0,4).map(item=>
     '<div class="today-item"><div class="today-icon">'+escapeHtml(item.icon)+'</div><div><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml(item.text)+'</small></div></div>'
   ).join('');

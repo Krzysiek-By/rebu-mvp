@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v11.3">
+<meta name="sekretarz-version" content="DE-v11.4">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1760,7 +1760,7 @@ function finishCalendarConnection(){
     const progress=document.getElementById('flowProgressBar');
     if(stepLabel) stepLabel.textContent='Fertig';
     if(progress) progress.style.width='100%';
-    if(body) body.innerHTML='<div class="flow-success">Einrichtung vorbereitet. Die echte Verbindung wird erst nach der sicheren Anmeldung bei Google / Apple / Microsoft aktiv.</div>';
+    if(body) body.innerHTML='<div class="flow-success">Einrichtung vorbereitet. Die echte Verbindung zu '+escapeHtml(providerLabel(provider))+' wird erst nach der sicheren Anmeldung beim Anbieter aktiv.</div>';
   }
   renderCalendarConnect();
 }
@@ -1782,10 +1782,13 @@ function renderCalendarConnect(){
 
   document.querySelectorAll('[data-provider]').forEach(row=>{
     const p=row.getAttribute('data-provider');
-    row.classList.toggle('connected',p===prepared);
+    const isPending=(state.pendingProvider===p && state.flowStep);
+    row.classList.toggle('connected',p===prepared || isPending);
     const btn=row.querySelector('.provider-actions button:first-child');
     if(btn){
-      if(p===prepared){
+      if(isPending){
+        btn.textContent='Einrichtung läuft…';
+      }else if(p===prepared){
         btn.textContent='Vorbereitet';
       }else{
         btn.textContent='Verbinden';

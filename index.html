@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v11.8">
+<meta name="sekretarz-version" content="DE-v11.9">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -618,6 +618,28 @@ button{cursor:pointer}
   color:#69758c;
   font-size:12px;
   line-height:1.45;
+}
+
+
+.event-source.source-sekretarz{background:#f2edff;color:#6547c8}
+.event-source.source-google{background:#edf4ff;color:#2d65c8}
+.event-source.source-icloud{background:#eef7fb;color:#35718c}
+.event-source.source-outlook{background:#eef3ff;color:#385eb0}
+.event-source.source-device{background:#f3f4f7;color:#5e6572}
+.event-source.source-sekretarz .src-dot{background:#7c4dff}
+.event-source.source-google .src-dot{background:#3b82f6}
+.event-source.source-icloud .src-dot{background:#49a6c8}
+.event-source.source-outlook .src-dot{background:#4b68c5}
+.event-source.source-device .src-dot{background:#7b8495}
+.calendar-dedupe-note{
+  margin:-2px 0 12px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:#f8faff;
+  border:1px solid var(--line);
+  color:#66748e;
+  font-size:12px;
+  line-height:1.4;
 }
 
 </style>
@@ -1402,6 +1424,10 @@ button{cursor:pointer}
       <button data-source-filter="device" onclick="setCalendarSourceFilter('device')">Gerät</button>
     </div>
 
+    <div class="calendar-dedupe-note">
+      Gleiche Termine aus mehreren Kalendern werden automatisch zusammengeführt.
+    </div>
+
     <div class="calendar-card">
       <div class="calendar-head">
         <h2 id="calendarMonthTitle">Kalender</h2>
@@ -2108,16 +2134,54 @@ function normalizeCalendarEventFromCase(c){
   };
 }
 
+function normalizeEventTitle(value){
+  return String(value||'')
+    .toLocaleLowerCase('de-DE')
+    .replace(/[–—-]+/g,' ')
+    .replace(/[^\p{L}\p{N}\s]/gu,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function calendarMinuteKey(dateTime){
+  const d=parseReminderDateTime(dateTime);
+  if(!d) return '';
+  d.setSeconds(0,0);
+  return d.toISOString().slice(0,16);
+}
+
+function eventDuplicateKey(ev){
+  if(ev.externalId){
+    return 'external:'+String(ev.source||'')+':'+String(ev.externalId);
+  }
+  return 'content:'+normalizeEventTitle(ev.title)+':'+calendarMinuteKey(ev.dateTime);
+}
+
 function dedupeCalendarEvents(events){
-  const seen=new Set();
-  return events.filter(ev=>{
-    const key=ev.externalId
-      ? String(ev.source||'')+':'+String(ev.externalId)
-      : String(ev.source||'')+':'+String(ev.title||'')+':'+String(ev.dateTime||'');
-    if(seen.has(key)) return false;
-    seen.add(key);
-    return true;
+  const sorted=[...events].sort((a,b)=>{
+    // Sekretarz ma pierwszeństwo przy tym samym terminie,
+    // bo może mieć dodatkową logikę przypomnień i spraw.
+    if(a.source==='sekretarz' && b.source!=='sekretarz') return -1;
+    if(b.source==='sekretarz' && a.source!=='sekretarz') return 1;
+    return 0;
   });
+
+  const seenExternal=new Set();
+  const seenContent=new Set();
+  const result=[];
+
+  for(const ev of sorted){
+    const contentKey='content:'+normalizeEventTitle(ev.title)+':'+calendarMinuteKey(ev.dateTime);
+    const extKey=ev.externalId ? 'external:'+String(ev.source||'')+':'+String(ev.externalId) : '';
+
+    if(extKey && seenExternal.has(extKey)) continue;
+    if(seenContent.has(contentKey)) continue;
+
+    if(extKey) seenExternal.add(extKey);
+    seenContent.add(contentKey);
+    result.push(ev);
+  }
+  return result;
 }
 
 
@@ -2292,7 +2356,7 @@ function renderCalendar(){
   list.innerHTML=visibleEvents.length
     ? visibleEvents.map(c=>
       '<div class="calendar-event"><b>'+escapeHtml(c.title)+'</b><small>'+escapeHtml(formatReminderDE(c.dateTime))+
-      ' · '+escapeHtml(c.status||'Aktiv')+'</small><div class="event-source"><span class="src-dot"></span>'+
+      ' · '+escapeHtml(c.status||'Aktiv')+'</small><div class="event-source source-'+escapeHtml(c.source||'sekretarz')+'"><span class="src-dot"></span>'+
       escapeHtml(calendarSourceLabel(c.source))+'</div></div>'
     ).join('')
     : '<div class="empty-state">'+(

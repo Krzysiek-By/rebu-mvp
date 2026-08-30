@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v11.4">
+<meta name="sekretarz-version" content="DE-v11.5">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -135,7 +135,7 @@ button{cursor:pointer}
 .bottom{
   position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(900px,100%);
   background:rgba(255,255,255,.97);border-top:1px solid var(--line);
-  display:grid;grid-template-columns:repeat(4,1fr);padding:10px 6px calc(10px + env(safe-area-inset-bottom))
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:10px 4px calc(10px + env(safe-area-inset-bottom))
 }
 .bottom button{background:none;border:0;color:#778198}
 .bottom button.active{color:var(--blue);font-weight:800}
@@ -313,7 +313,7 @@ button{cursor:pointer}
     margin-top:14px;background:#eefaf1;border:1px solid #b7dfc2;border-radius:16px;
     padding:14px;font-weight:700;color:#2f7f45
   }
-  .inbox-wrap{max-width:760px;margin:0 auto;padding:20px}
+  .inbox-wrap{max-width:760px;margin:0 auto;padding:20px 20px 105px}
   .inbox-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
   .inbox-card h2{margin:0 0 6px;font-size:30px}
   .inbox-sub{margin:0 0 18px;color:var(--muted);line-height:1.5}
@@ -490,6 +490,43 @@ button{cursor:pointer}
   .provider.connected button{
     color:#8a6411;
   }
+
+
+.bottom button{
+  min-width:0;
+  padding:4px 2px;
+  font-size:12px;
+  line-height:1.2;
+  white-space:nowrap;
+}
+@media(max-width:390px){
+  .bottom button{font-size:11px}
+}
+
+
+.more-wrap{max-width:760px;margin:0 auto;padding:18px 18px 105px}
+.more-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+.more-card h1{margin:0 0 6px;font-size:32px}
+.more-sub{margin:0 0 20px;color:var(--muted);line-height:1.45}
+.more-section{margin-top:20px}
+.more-section h3{margin:0 0 9px;font-size:15px;color:#657188;text-transform:uppercase;letter-spacing:.04em}
+.more-list{display:grid;gap:9px}
+.more-item{
+  width:100%;display:flex;align-items:center;gap:12px;text-align:left;
+  border:1px solid var(--line);border-radius:15px;padding:14px;background:#fff
+}
+.more-item-icon{
+  width:40px;height:40px;flex:0 0 40px;border-radius:12px;background:#f3f6fb;
+  display:grid;place-items:center;font-size:20px
+}
+.more-item-main{flex:1;min-width:0}
+.more-item-main b{display:block;margin-bottom:2px}
+.more-item-main small{display:block;color:var(--muted);line-height:1.35}
+.more-arrow{color:#97a1b4;font-size:22px}
+.more-badge{
+  font-size:11px;font-weight:800;color:#8a6411;background:#fff7dc;
+  border:1px solid #ead28b;border-radius:999px;padding:5px 8px
+}
 
 </style>
 </head>
@@ -848,7 +885,7 @@ button{cursor:pointer}
       <button class="active" onclick="goDashboard()">☷<br>Angelegenheiten</button>
       <button onclick="openCalendar()">▣<br>Kalender</button>
       <button onclick="openInbox()">⌄<br>Inbox</button>
-      <button onclick="openProfile()">◯<br>Profil</button>
+      <button onclick="openMore()">•••<br>Mehr</button>
     </nav>
   </div>
   <div class="page-id">DE-008</div>
@@ -1169,7 +1206,7 @@ button{cursor:pointer}
       <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
       <button onclick="openCalendar()">▣<br>Kalender</button>
       <button onclick="openInbox()">⌄<br>Inbox</button>
-      <button onclick="openProfile()">◯<br>Profil</button>
+      <button onclick="openMore()">•••<br>Mehr</button>
     </nav>
   </div>
   <div class="page-id">DE-011</div>
@@ -1233,6 +1270,14 @@ button{cursor:pointer}
 
       <div id="inboxList" class="inbox-list"></div>
     </div>
+
+    <nav class="bottom">
+      <button onclick="openToday()">☀<br>Heute</button>
+      <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button onclick="openCalendar()">▣<br>Kalender</button>
+      <button class="active" onclick="openInbox()">⌄<br>Inbox</button>
+      <button onclick="openMore()">•••<br>Mehr</button>
+    </nav>
   </div>
   <div class="page-id">DE-012</div>
 </section>
@@ -1281,7 +1326,7 @@ button{cursor:pointer}
       <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
       <button class="active" onclick="openCalendar()">▣<br>Kalender</button>
       <button onclick="openInbox()">⌄<br>Inbox</button>
-      <button onclick="openProfile()">◯<br>Profil</button>
+      <button onclick="openMore()">•••<br>Mehr</button>
     </nav>
   </div>
   <div class="page-id">DE-014</div>
@@ -1376,6 +1421,100 @@ button{cursor:pointer}
     </div>
   </div>
   <div class="page-id">DE-015</div>
+</section>
+
+
+<!-- DE-016 -->
+<section id="de016" class="page hidden">
+  <div class="more-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+    </div>
+
+    <div class="more-card">
+      <h1>Mehr</h1>
+      <p class="more-sub">Profil, Verbindungen und weitere Einstellungen an einem Ort.</p>
+
+      <div class="more-section">
+        <h3>Konto</h3>
+        <div class="more-list">
+          <button class="more-item" onclick="openProfile()">
+            <span class="more-item-icon">◯</span>
+            <span class="more-item-main">
+              <b>Mein Profil</b>
+              <small>Persönliche Daten, Krankenkasse und Vorlieben.</small>
+            </span>
+            <span class="more-arrow">›</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="more-section">
+        <h3>Verbindungen</h3>
+        <div class="more-list">
+          <button class="more-item" onclick="openCalendarConnect()">
+            <span class="more-item-icon">▣</span>
+            <span class="more-item-main">
+              <b>Kalender verbinden</b>
+              <small>Google, Apple iCloud, Outlook oder Gerätekalender.</small>
+            </span>
+            <span class="more-arrow">›</span>
+          </button>
+
+          <button class="more-item" type="button" disabled>
+            <span class="more-item-icon">✉</span>
+            <span class="more-item-main">
+              <b>E-Mail verbinden</b>
+              <small>Kommt als nächster Integrationsbereich.</small>
+            </span>
+            <span class="more-badge">Später</span>
+          </button>
+
+          <button class="more-item" type="button" disabled>
+            <span class="more-item-icon">◉</span>
+            <span class="more-item-main">
+              <b>WhatsApp verbinden</b>
+              <small>Wird später genauso einfach eingerichtet.</small>
+            </span>
+            <span class="more-badge">Später</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="more-section">
+        <h3>Hilfe & Einstellungen</h3>
+        <div class="more-list">
+          <button class="more-item" type="button" disabled>
+            <span class="more-item-icon">▶</span>
+            <span class="more-item-main">
+              <b>Anleitungen</b>
+              <small>Video- und PDF-Hilfen für die Einrichtung.</small>
+            </span>
+            <span class="more-badge">Später</span>
+          </button>
+
+          <button class="more-item" type="button" disabled>
+            <span class="more-item-icon">⚙</span>
+            <span class="more-item-main">
+              <b>Einstellungen</b>
+              <small>Allgemeine Einstellungen der App.</small>
+            </span>
+            <span class="more-badge">Später</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom">
+      <button onclick="openToday()">☀<br>Heute</button>
+      <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button onclick="openCalendar()">▣<br>Kalender</button>
+      <button onclick="openInbox()">⌄<br>Inbox</button>
+      <button class="active" onclick="openMore()">•••<br>Mehr</button>
+    </nav>
+  </div>
+  <div class="page-id">DE-016</div>
 </section>
 
 <!-- DE-013 -->
@@ -1498,7 +1637,7 @@ let failedAttempts=0;
 const MAX_ATTEMPTS=3;
 
 function hideAll(){
-  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015'].forEach(id=>{
+  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015','de016'].forEach(id=>{
     const page=document.getElementById(id);
     if(page) page.classList.add('hidden');
   });
@@ -1805,7 +1944,8 @@ function renderCalendarConnect(){
 
 function openCalendarConnect(){
   renderCalendarConnect();
-  if(currentPage==='de014') historyStack=['de011','de014','de015'];
+  if(currentPage==='de016') historyStack=['de011','de016','de015'];
+  else if(currentPage==='de014') historyStack=['de011','de014','de015'];
   else if(!historyStack.includes('de011')) historyStack=['de011','de014','de015'];
   else if(historyStack[historyStack.length-1]!=='de015') historyStack.push('de015');
   showDirect('de015');
@@ -2378,9 +2518,21 @@ function loadProfile(){
   clearMsg('profileMsg');
 }
 
+
+function openMore(){
+  if(currentPage==='de011') historyStack=['de011','de016'];
+  else if(currentPage==='de008') historyStack=['de011','de008','de016'];
+  else if(currentPage==='de012') historyStack=['de011','de012','de016'];
+  else if(currentPage==='de014') historyStack=['de011','de014','de016'];
+  else if(!historyStack.includes('de011')) historyStack=['de011','de016'];
+  else if(historyStack[historyStack.length-1]!=='de016') historyStack.push('de016');
+  showDirect('de016');
+}
+
 function openProfile(){
   loadProfile();
-  if(currentPage==='de011') historyStack=['de011','de013'];
+  if(currentPage==='de016') historyStack=['de011','de016','de013'];
+  else if(currentPage==='de011') historyStack=['de011','de013'];
   else if(currentPage==='de008') historyStack=['de011','de008','de013'];
   else if(!historyStack.includes('de011')) historyStack=['de011','de013'];
   else if(historyStack[historyStack.length-1]!=='de013') historyStack.push('de013');
@@ -3325,7 +3477,7 @@ function restoreAppState(){
       target='de006';
     }
 
-    if(['de008','de009','de010','de011','de012','de013','de014','de015'].includes(target) && !persistedLogin){
+    if(['de008','de009','de010','de011','de012','de013','de014','de015','de016'].includes(target) && !persistedLogin){
       target='de006';
     }
 
@@ -3346,6 +3498,7 @@ function restoreAppState(){
     else if(target==='de013') historyStack=['de011','de013'];
     else if(target==='de014') historyStack=['de011','de014'];
     else if(target==='de015') historyStack=['de011','de014','de015'];
+    else if(target==='de016') historyStack=['de011','de016'];
     else historyStack=[target];
 
     if(target==='de011') renderToday();

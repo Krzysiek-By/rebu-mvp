@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v12.0">
+<meta name="sekretarz-version" content="DE-v12.1">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -640,6 +640,32 @@ button{cursor:pointer}
   color:#66748e;
   font-size:12px;
   line-height:1.4;
+}
+
+
+.cal-day{
+  text-align:left;
+  color:var(--navy);
+  font:inherit;
+}
+.cal-day.selected{
+  outline:2px solid #7c4dff;
+  background:#f5f1ff;
+}
+.calendar-day-summary{
+  margin:10px 0 4px;
+  padding:11px 12px;
+  border-radius:13px;
+  background:#f8faff;
+  border:1px solid var(--line);
+  color:#5f6c83;
+  font-size:12px;
+  font-weight:700;
+}
+.calendar-event.clickable{cursor:pointer}
+.calendar-event.clickable:hover{
+  border-color:#b8c8ff;
+  background:#fafbff;
 }
 
 </style>
@@ -1445,6 +1471,7 @@ button{cursor:pointer}
 
       <div style="margin-top:20px">
         <h3 style="margin:0 0 10px">Termine & Erinnerungen</h3>
+        <div id="calendarDaySummary" class="calendar-day-summary hidden"></div>
         <div id="calendarEventList" class="calendar-list"></div>
         <div class="external-calendar-note">
           Externe Termine werden hier später nach echter Verbindung angezeigt. Bis dahin zeigt der Kalender nur Termine aus Sekretarz.
@@ -2106,6 +2133,33 @@ function saveCalendarCursor(){
 
 let calendarCursor=loadCalendarCursor();
 
+const CALENDAR_SELECTED_DAY_KEY='sekretarzCalendarSelectedDayV1';
+
+function loadCalendarSelectedDay(){
+  try{
+    const saved=localStorage.getItem(CALENDAR_SELECTED_DAY_KEY);
+    return /^\d{4}-\d{2}-\d{2}$/.test(saved||'') ? saved : '';
+  }catch(e){ return ''; }
+}
+let calendarSelectedDay=loadCalendarSelectedDay();
+
+function saveCalendarSelectedDay(){
+  try{
+    if(calendarSelectedDay) localStorage.setItem(CALENDAR_SELECTED_DAY_KEY,calendarSelectedDay);
+    else localStorage.removeItem(CALENDAR_SELECTED_DAY_KEY);
+  }catch(e){}
+}
+function formatCalendarDayKey(y,m,d){
+  return String(y)+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+function selectCalendarDay(y,m,d){
+  const key=formatCalendarDayKey(y,m,d);
+  calendarSelectedDay=(calendarSelectedDay===key?'':key);
+  saveCalendarSelectedDay();
+  renderCalendar();
+}
+
+
 const CALENDAR_SOURCE_FILTER_KEY='sekretarzCalendarSourceFilterV1';
 
 function loadCalendarSourceFilter(){
@@ -2147,6 +2201,7 @@ function syncCalendarSourceFilterUI(){
 function normalizeCalendarEventFromCase(c){
   return {
     id:'case:'+String(c.id||c.title||Math.random()),
+    caseId:c.id||'',
     title:c.title||'Erinnerung',
     dateTime:c.reminderDateTime || c.dateDisplay || '',
     hasExactTime:Boolean(c.reminderDateTime),
@@ -2349,11 +2404,43 @@ function getReminderCases(){
     .sort((a,b)=>(parseReminderDateTime(a.dateTime)?.getTime()||0)-(parseReminderDateTime(b.dateTime)?.getTime()||0));
 }
 
+
+function eventDayKey(ev){
+  const d=parseReminderDateTime(ev.dateTime);
+  if(!d) return '';
+  return formatCalendarDayKey(d.getFullYear(),d.getMonth(),d.getDate());
+}
+
+function openCalendarEvent(eventId){
+  const events=getReminderCases();
+  const ev=events.find(x=>String(x.id)===String(eventId));
+  if(!ev || ev.source!=='sekretarz') return;
+
+  const cases=getStoredCases();
+  const c=cases.find(x=>String(x.id||'')===String(ev.caseId||''))
+    || cases.find(x=>String(x.title||'')===String(ev.title||''));
+  if(!c) return;
+
+  openCase(
+    c.title||'Angelegenheit',
+    c.status||'Aktiv',
+    c.description||'',
+    c.dateDisplay||'',
+    c.careType==='ai'?'KI betreut':'Nur erinnern',
+    c.category||'Sonstiges',
+    c.nextStep||'',
+    c.careType||'reminder',
+    c.locationName||'',
+    c.locationAddress||''
+  );
+}
+
 function renderCalendar(){
   syncCalendarSourceFilterUI();
   const title=document.getElementById('calendarMonthTitle');
   const grid=document.getElementById('calendarGrid');
   const list=document.getElementById('calendarEventList');
+  const daySummary=document.getElementById('calendarDaySummary');
   if(!title || !grid || !list) return;
 
   const year=calendarCursor.getFullYear();
@@ -2377,37 +2464,59 @@ function renderCalendar(){
   for(let day=1;day<=lastDay;day++){
     const isToday=day===today.getDate() && month===today.getMonth() && year===today.getFullYear();
     const has=eventDays.has(day);
-    html+='<div class="cal-day '+(isToday?'today ':'')+(has?'has-event':'')+'">'+
-      '<span class="cal-num">'+day+'</span>'+(has?'<span class="cal-dot"></span>':'')+'</div>';
+    const dayKey=formatCalendarDayKey(year,month,day);
+    const selected=(calendarSelectedDay===dayKey);
+    html+='<button type="button" class="cal-day '+(isToday?'today ':'')+(has?'has-event ':'')+(selected?'selected':'')+
+      '" onclick="selectCalendarDay('+year+','+month+','+day+')">'+
+      '<span class="cal-num">'+day+'</span>'+(has?'<span class="cal-dot"></span>':'')+'</button>';
   }
   grid.innerHTML=html;
 
-  const visibleEvents=events.filter(c=>{
+  let visibleEvents=events.filter(c=>{
     const d=parseReminderDateTime(c.dateTime);
     return d && d.getFullYear()===year && d.getMonth()===month;
   });
 
+  if(calendarSelectedDay){
+    visibleEvents=visibleEvents.filter(c=>eventDayKey(c)===calendarSelectedDay);
+    if(daySummary){
+      const [sy,sm,sd]=calendarSelectedDay.split('-').map(Number);
+      daySummary.textContent='Ausgewählter Tag: '+String(sd).padStart(2,'0')+'.'+String(sm).padStart(2,'0')+'.'+sy;
+      daySummary.classList.remove('hidden');
+    }
+  }else if(daySummary){
+    daySummary.classList.add('hidden');
+    daySummary.textContent='';
+  }
+
   list.innerHTML=visibleEvents.length
     ? visibleEvents.map(c=>
-      '<div class="calendar-event"><b>'+escapeHtml(c.title)+'</b><small>'+escapeHtml(formatReminderDE(c.dateTime))+
+      '<div class="calendar-event '+(c.source==='sekretarz'?'clickable':'')+'" '+(c.source==='sekretarz'?'data-calendar-event-id="'+encodeURIComponent(String(c.id||''))+'" onclick="openCalendarEvent(decodeURIComponent(this.dataset.calendarEventId))"':'')+'>'+
+      '<b>'+escapeHtml(c.title)+'</b><small>'+escapeHtml(formatReminderDE(c.dateTime))+
       ' · '+escapeHtml(c.status||'Aktiv')+'</small><div class="event-source source-'+escapeHtml(c.source||'sekretarz')+'"><span class="src-dot"></span>'+
       escapeHtml(calendarSourceLabel(c.source))+'</div></div>'
     ).join('')
     : '<div class="empty-state">'+(
-        calendarSourceFilter==='all'
-          ? 'Keine Erinnerungen in diesem Monat.'
-          : 'Keine Termine aus '+escapeHtml(calendarSourceLabel(calendarSourceFilter))+' in diesem Monat.'
+        calendarSelectedDay
+          ? 'Keine Termine an diesem Tag.'
+          : (calendarSourceFilter==='all'
+              ? 'Keine Erinnerungen in diesem Monat.'
+              : 'Keine Termine aus '+escapeHtml(calendarSourceLabel(calendarSourceFilter))+' in diesem Monat.')
       )+'</div>';
 }
 
 function changeCalendarMonth(delta){
   calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()+delta,1);
+  calendarSelectedDay='';
+  saveCalendarSelectedDay();
   saveCalendarCursor();
   renderCalendar();
 }
 
 function calendarToday(){
   calendarCursor=new Date();
+  calendarSelectedDay='';
+  saveCalendarSelectedDay();
   saveCalendarCursor();
   renderCalendar();
 }

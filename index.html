@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v11.5">
+<meta name="sekretarz-version" content="DE-v11.6">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -24,7 +24,7 @@ button{cursor:pointer}
 .page{min-height:100vh}
 .container{width:min(1160px,100%);margin:0 auto;padding:0 22px}
 .page-id{
-  position:fixed;right:10px;bottom:10px;z-index:50;font-size:11px;font-weight:800;color:#7b86a0;
+  position:fixed;right:10px;bottom:82px;z-index:50;font-size:11px;font-weight:800;color:#7b86a0;
   background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:999px;padding:5px 9px;
   backdrop-filter:blur(8px)
 }
@@ -528,6 +528,25 @@ button{cursor:pointer}
   border:1px solid #ead28b;border-radius:999px;padding:5px 8px
 }
 
+
+.bottom button{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.bottom .nav-short{
+  display:block;
+  margin-top:2px;
+}
+@media(max-width:430px){
+  .bottom{
+    grid-template-columns:0.95fr 1.35fr 1fr 0.85fr 0.85fr;
+  }
+  .bottom button{
+    font-size:10px!important;
+    letter-spacing:-0.15px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -882,7 +901,7 @@ button{cursor:pointer}
 
     <nav class="bottom">
       <button onclick="openToday()">☀<br>Heute</button>
-      <button class="active" onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button class="active" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
       <button onclick="openCalendar()">▣<br>Kalender</button>
       <button onclick="openInbox()">⌄<br>Inbox</button>
       <button onclick="openMore()">•••<br>Mehr</button>
@@ -1203,7 +1222,7 @@ button{cursor:pointer}
 
     <nav class="bottom">
       <button class="active" onclick="openToday()">☀<br>Heute</button>
-      <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
       <button onclick="openCalendar()">▣<br>Kalender</button>
       <button onclick="openInbox()">⌄<br>Inbox</button>
       <button onclick="openMore()">•••<br>Mehr</button>
@@ -1273,7 +1292,7 @@ button{cursor:pointer}
 
     <nav class="bottom">
       <button onclick="openToday()">☀<br>Heute</button>
-      <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
       <button onclick="openCalendar()">▣<br>Kalender</button>
       <button class="active" onclick="openInbox()">⌄<br>Inbox</button>
       <button onclick="openMore()">•••<br>Mehr</button>
@@ -1323,7 +1342,7 @@ button{cursor:pointer}
 
     <nav class="bottom">
       <button onclick="openToday()">☀<br>Heute</button>
-      <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
       <button class="active" onclick="openCalendar()">▣<br>Kalender</button>
       <button onclick="openInbox()">⌄<br>Inbox</button>
       <button onclick="openMore()">•••<br>Mehr</button>
@@ -1508,7 +1527,7 @@ button{cursor:pointer}
 
     <nav class="bottom">
       <button onclick="openToday()">☀<br>Heute</button>
-      <button onclick="goDashboard()">☷<br>Angelegenheiten</button>
+      <button onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
       <button onclick="openCalendar()">▣<br>Kalender</button>
       <button onclick="openInbox()">⌄<br>Inbox</button>
       <button class="active" onclick="openMore()">•••<br>Mehr</button>

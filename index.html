@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v12.2">
+<meta name="sekretarz-version" content="DE-v12.3">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -668,6 +668,20 @@ button{cursor:pointer}
   background:#fafbff;
 }
 
+
+.bottom{
+  z-index:1000!important;
+  pointer-events:auto!important;
+}
+.bottom button{
+  pointer-events:auto!important;
+  position:relative;
+  z-index:1001;
+}
+.page-id{
+  pointer-events:none;
+}
+
 </style>
 </head>
 <body>
@@ -1021,11 +1035,11 @@ button{cursor:pointer}
     <button class="btn primary fab" onclick="openNewCase()">＋ Angelegenheit</button>
 
     <nav class="bottom">
-      <button onclick="openToday()">☀<br>Heute</button>
-      <button class="active" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
-      <button onclick="openCalendar()">▣<br>Kalender</button>
-      <button onclick="openInbox()">⌄<br>Inbox</button>
-      <button onclick="openMore()">•••<br>Mehr</button>
+      <button data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button class="active" data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button data-nav="more" onclick="openMore()">•••<br>Mehr</button>
     </nav>
   </div>
   <div class="page-id">DE-008</div>
@@ -1342,11 +1356,11 @@ button{cursor:pointer}
     </div>
 
     <nav class="bottom">
-      <button class="active" onclick="openToday()">☀<br>Heute</button>
-      <button onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
-      <button onclick="openCalendar()">▣<br>Kalender</button>
-      <button onclick="openInbox()">⌄<br>Inbox</button>
-      <button onclick="openMore()">•••<br>Mehr</button>
+      <button class="active" data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button data-nav="more" onclick="openMore()">•••<br>Mehr</button>
     </nav>
   </div>
   <div class="page-id">DE-011</div>
@@ -1412,11 +1426,11 @@ button{cursor:pointer}
     </div>
 
     <nav class="bottom">
-      <button onclick="openToday()">☀<br>Heute</button>
-      <button onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
-      <button onclick="openCalendar()">▣<br>Kalender</button>
-      <button class="active" onclick="openInbox()">⌄<br>Inbox</button>
-      <button onclick="openMore()">•••<br>Mehr</button>
+      <button data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button class="active" data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button data-nav="more" onclick="openMore()">•••<br>Mehr</button>
     </nav>
   </div>
   <div class="page-id">DE-012</div>
@@ -1480,11 +1494,11 @@ button{cursor:pointer}
     </div>
 
     <nav class="bottom">
-      <button onclick="openToday()">☀<br>Heute</button>
-      <button onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
-      <button class="active" onclick="openCalendar()">▣<br>Kalender</button>
-      <button onclick="openInbox()">⌄<br>Inbox</button>
-      <button onclick="openMore()">•••<br>Mehr</button>
+      <button data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button class="active" data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button data-nav="more" onclick="openMore()">•••<br>Mehr</button>
     </nav>
   </div>
   <div class="page-id">DE-014</div>
@@ -1665,11 +1679,11 @@ button{cursor:pointer}
     </div>
 
     <nav class="bottom">
-      <button onclick="openToday()">☀<br>Heute</button>
-      <button onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
-      <button onclick="openCalendar()">▣<br>Kalender</button>
-      <button onclick="openInbox()">⌄<br>Inbox</button>
-      <button class="active" onclick="openMore()">•••<br>Mehr</button>
+      <button data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button class="active" data-nav="more" onclick="openMore()">•••<br>Mehr</button>
     </nav>
   </div>
   <div class="page-id">DE-016</div>
@@ -1802,6 +1816,11 @@ function hideAll(){
 }
 
 function showDirect(id){
+  const modal=document.getElementById('modal');
+  if(modal) modal.classList.add('hidden');
+
+  document.body.style.pointerEvents='auto';
+
   hideAll();
   const page=document.getElementById(id);
   if(!page) return;
@@ -1824,6 +1843,24 @@ function go(id){
   if(currentPage!==id) historyStack.push(id);
   showDirect(id);
 }
+
+
+function hardNavigate(target){
+  if(target==='today') return openToday();
+  if(target==='cases') return goDashboard();
+  if(target==='calendar') return openCalendar();
+  if(target==='inbox') return openInbox();
+  if(target==='more') return openMore();
+}
+
+document.addEventListener('click',function(e){
+  const btn=e.target.closest && e.target.closest('.bottom [data-nav]');
+  if(!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  hardNavigate(btn.getAttribute('data-nav'));
+},true);
+
 
 function back(){
   if(currentPage==='de009'){
@@ -3882,6 +3919,18 @@ function restoreCaseById(id){
   return true;
 }
 
+
+function sanitizeNavigationState(){
+  try{
+    const saved=sessionStorage.getItem('sekretarzCurrentPage') || localStorage.getItem('sekretarzLastPage');
+    if(saved==='de011'){
+      sessionStorage.removeItem('sekretarzCaseReturnPage');
+      localStorage.removeItem('sekretarzCaseReturnPage');
+      historyStack=['de011'];
+    }
+  }catch(e){}
+}
+
 function restoreAppState(){
   let target='de001';
   try{
@@ -3942,6 +3991,13 @@ setInterval(()=>{
 
 window.addEventListener('pageshow',()=>{
   try{
+    const modal=document.getElementById('modal');
+    if(modal) modal.classList.add('hidden');
+    document.body.style.pointerEvents='auto';
+  }catch(e){}
+
+  try{
+    sanitizeNavigationState();
     restoreAppState();
   }catch(e){
     const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';

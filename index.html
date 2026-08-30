@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v11.7">
+<meta name="sekretarz-version" content="DE-v11.8">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -568,24 +568,23 @@ button{cursor:pointer}
 
 
 .calendar-source-filter{
-  display:flex;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:8px;
-  overflow-x:auto;
   padding:2px 0 12px;
   margin-bottom:6px;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
 }
-.calendar-source-filter::-webkit-scrollbar{display:none}
 .calendar-source-filter button{
-  flex:0 0 auto;
+  width:100%;
+  min-width:0;
   border:1px solid var(--line);
   background:#fff;
   border-radius:999px;
-  padding:8px 11px;
+  padding:9px 7px;
   font-size:12px;
   font-weight:800;
   color:#647089;
+  white-space:nowrap;
 }
 .calendar-source-filter button.active{
   color:#fff;
@@ -2060,7 +2059,19 @@ function openCalendarConnect(){
 const REMINDER_RUNTIME_KEY='sekretarzReminderRuntimeV1';
 let calendarCursor=new Date();
 
-let calendarSourceFilter='all';
+const CALENDAR_SOURCE_FILTER_KEY='sekretarzCalendarSourceFilterV1';
+
+function loadCalendarSourceFilter(){
+  try{
+    const saved=localStorage.getItem(CALENDAR_SOURCE_FILTER_KEY);
+    const allowed=['all','sekretarz','google','icloud','outlook','device'];
+    return allowed.includes(saved) ? saved : 'all';
+  }catch(e){
+    return 'all';
+  }
+}
+
+let calendarSourceFilter=loadCalendarSourceFilter();
 
 function calendarSourceLabel(source){
   return {
@@ -2073,11 +2084,17 @@ function calendarSourceLabel(source){
 }
 
 function setCalendarSourceFilter(source){
-  calendarSourceFilter=source || 'all';
+  const allowed=['all','sekretarz','google','icloud','outlook','device'];
+  calendarSourceFilter=allowed.includes(source) ? source : 'all';
+  try{ localStorage.setItem(CALENDAR_SOURCE_FILTER_KEY,calendarSourceFilter); }catch(e){}
+  syncCalendarSourceFilterUI();
+  renderCalendar();
+}
+
+function syncCalendarSourceFilterUI(){
   document.querySelectorAll('[data-source-filter]').forEach(btn=>{
     btn.classList.toggle('active',btn.getAttribute('data-source-filter')===calendarSourceFilter);
   });
-  renderCalendar();
 }
 
 function normalizeCalendarEventFromCase(c){
@@ -2235,6 +2252,7 @@ function getReminderCases(){
 }
 
 function renderCalendar(){
+  syncCalendarSourceFilterUI();
   const title=document.getElementById('calendarMonthTitle');
   const grid=document.getElementById('calendarGrid');
   const list=document.getElementById('calendarEventList');

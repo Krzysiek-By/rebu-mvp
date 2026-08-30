@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v11.6">
+<meta name="sekretarz-version" content="DE-v11.7">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -545,6 +545,80 @@ button{cursor:pointer}
     font-size:10px!important;
     letter-spacing:-0.15px;
   }
+}
+
+
+.more-item-main b{
+  color:#1a2b4f;
+  font-weight:800;
+}
+.more-item-main small{
+  color:#66748e;
+  font-weight:560;
+}
+.more-item:disabled{
+  opacity:.68;
+}
+.more-item:disabled .more-item-main b{
+  color:#7b8495;
+}
+.more-item:disabled .more-item-main small{
+  color:#7f899b;
+}
+
+
+.calendar-source-filter{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:2px 0 12px;
+  margin-bottom:6px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.calendar-source-filter::-webkit-scrollbar{display:none}
+.calendar-source-filter button{
+  flex:0 0 auto;
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:999px;
+  padding:8px 11px;
+  font-size:12px;
+  font-weight:800;
+  color:#647089;
+}
+.calendar-source-filter button.active{
+  color:#fff;
+  border-color:transparent;
+  background:linear-gradient(135deg,#3173f7,#6049f2);
+}
+.event-source{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:6px;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  background:#f3f6fb;
+  color:#61708b;
+}
+.event-source .src-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#6a55e8;
+}
+.external-calendar-note{
+  margin:12px 0 0;
+  padding:11px 12px;
+  border-radius:13px;
+  background:#f8faff;
+  border:1px solid var(--line);
+  color:#69758c;
+  font-size:12px;
+  line-height:1.45;
 }
 
 </style>
@@ -1319,6 +1393,16 @@ button{cursor:pointer}
       <button onclick="openCalendarConnect()">Kalender verbinden</button>
     </div>
 
+
+    <div class="calendar-source-filter" id="calendarSourceFilter">
+      <button class="active" data-source-filter="all" onclick="setCalendarSourceFilter('all')">Alle</button>
+      <button data-source-filter="sekretarz" onclick="setCalendarSourceFilter('sekretarz')">Sekretarz</button>
+      <button data-source-filter="google" onclick="setCalendarSourceFilter('google')">Google</button>
+      <button data-source-filter="icloud" onclick="setCalendarSourceFilter('icloud')">iCloud</button>
+      <button data-source-filter="outlook" onclick="setCalendarSourceFilter('outlook')">Outlook</button>
+      <button data-source-filter="device" onclick="setCalendarSourceFilter('device')">Gerät</button>
+    </div>
+
     <div class="calendar-card">
       <div class="calendar-head">
         <h2 id="calendarMonthTitle">Kalender</h2>
@@ -1337,6 +1421,9 @@ button{cursor:pointer}
       <div style="margin-top:20px">
         <h3 style="margin:0 0 10px">Termine & Erinnerungen</h3>
         <div id="calendarEventList" class="calendar-list"></div>
+        <div class="external-calendar-note">
+          Externe Termine werden hier später nach echter Verbindung angezeigt. Bis dahin zeigt der Kalender nur Termine aus Sekretarz.
+        </div>
       </div>
     </div>
 
@@ -1973,6 +2060,51 @@ function openCalendarConnect(){
 const REMINDER_RUNTIME_KEY='sekretarzReminderRuntimeV1';
 let calendarCursor=new Date();
 
+let calendarSourceFilter='all';
+
+function calendarSourceLabel(source){
+  return {
+    sekretarz:'Sekretarz',
+    google:'Google Kalender',
+    icloud:'Apple iCloud',
+    outlook:'Outlook / Microsoft',
+    device:'Kalender vom Gerät'
+  }[source] || 'Sekretarz';
+}
+
+function setCalendarSourceFilter(source){
+  calendarSourceFilter=source || 'all';
+  document.querySelectorAll('[data-source-filter]').forEach(btn=>{
+    btn.classList.toggle('active',btn.getAttribute('data-source-filter')===calendarSourceFilter);
+  });
+  renderCalendar();
+}
+
+function normalizeCalendarEventFromCase(c){
+  return {
+    id:'case:'+String(c.id||c.title||Math.random()),
+    title:c.title||'Erinnerung',
+    dateTime:c.reminderDateTime,
+    status:c.status||'Aktiv',
+    source:'sekretarz',
+    externalId:null
+  };
+}
+
+function dedupeCalendarEvents(events){
+  const seen=new Set();
+  return events.filter(ev=>{
+    const key=ev.externalId
+      ? String(ev.source||'')+':'+String(ev.externalId)
+      : String(ev.source||'')+':'+String(ev.title||'')+':'+String(ev.dateTime||'');
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+
+
 function parseReminderDateTime(value){
   if(!value) return null;
   const d=new Date(value);
@@ -2004,7 +2136,7 @@ function getDueReminder(){
   const now=Date.now();
   const cases=getStoredCases()
     .filter(c=>c.careType==='reminder' && c.status!=='Erledigt' && c.reminderDateTime)
-    .map(c=>({...c,_time:parseReminderDateTime(c.reminderDateTime)?.getTime()||Infinity}))
+    .map(c=>({...c,_time:parseReminderDateTime(c.dateTime)?.getTime()||Infinity}))
     .filter(c=>c._time<=now)
     .sort((a,b)=>a._time-b._time);
   return cases[0] || null;
@@ -2090,9 +2222,16 @@ function renderTodayReminder(){
 }
 
 function getReminderCases(){
-  return getStoredCases()
+  const ownEvents=getStoredCases()
     .filter(c=>c.careType==='reminder' && c.reminderDateTime)
-    .sort((a,b)=>(parseReminderDateTime(a.reminderDateTime)?.getTime()||0)-(parseReminderDateTime(b.reminderDateTime)?.getTime()||0));
+    .map(normalizeCalendarEventFromCase);
+
+  // Prawdziwe wydarzenia Google/iCloud/Outlook/Gerät dojdą tu dopiero po realnej synchronizacji.
+  const externalEvents=[];
+
+  return dedupeCalendarEvents([...ownEvents,...externalEvents])
+    .filter(ev=>calendarSourceFilter==='all' || ev.source===calendarSourceFilter)
+    .sort((a,b)=>(parseReminderDateTime(a.dateTime)?.getTime()||0)-(parseReminderDateTime(b.dateTime)?.getTime()||0));
 }
 
 function renderCalendar(){
@@ -2107,7 +2246,7 @@ function renderCalendar(){
 
   const events=getReminderCases();
   const eventDays=new Set(events
-    .map(c=>parseReminderDateTime(c.reminderDateTime))
+    .map(c=>parseReminderDateTime(c.dateTime))
     .filter(Boolean)
     .filter(d=>d.getFullYear()===year && d.getMonth()===month)
     .map(d=>d.getDate()));
@@ -2128,16 +2267,21 @@ function renderCalendar(){
   grid.innerHTML=html;
 
   const visibleEvents=events.filter(c=>{
-    const d=parseReminderDateTime(c.reminderDateTime);
+    const d=parseReminderDateTime(c.dateTime);
     return d && d.getFullYear()===year && d.getMonth()===month;
   });
 
   list.innerHTML=visibleEvents.length
     ? visibleEvents.map(c=>
-      '<div class="calendar-event"><b>'+escapeHtml(c.title)+'</b><small>'+escapeHtml(formatReminderDE(c.reminderDateTime))+
-      ' · '+escapeHtml(c.status||'Aktiv')+'</small></div>'
+      '<div class="calendar-event"><b>'+escapeHtml(c.title)+'</b><small>'+escapeHtml(formatReminderDE(c.dateTime))+
+      ' · '+escapeHtml(c.status||'Aktiv')+'</small><div class="event-source"><span class="src-dot"></span>'+
+      escapeHtml(calendarSourceLabel(c.source))+'</div></div>'
     ).join('')
-    : '<div class="empty-state">Keine Erinnerungen in diesem Monat.</div>';
+    : '<div class="empty-state">'+(
+        calendarSourceFilter==='all'
+          ? 'Keine Erinnerungen in diesem Monat.'
+          : 'Keine Termine aus '+escapeHtml(calendarSourceLabel(calendarSourceFilter))+' in diesem Monat.'
+      )+'</div>';
 }
 
 function changeCalendarMonth(delta){

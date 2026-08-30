@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v12.1">
+<meta name="sekretarz-version" content="DE-v12.2">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1826,6 +1826,20 @@ function go(id){
 }
 
 function back(){
+  if(currentPage==='de009'){
+    try{
+      const returnPage=sessionStorage.getItem('sekretarzCaseReturnPage') || localStorage.getItem('sekretarzCaseReturnPage');
+      if(returnPage==='de014'){
+        historyStack=['de011','de014'];
+        sessionStorage.removeItem('sekretarzCaseReturnPage');
+        localStorage.removeItem('sekretarzCaseReturnPage');
+        renderCalendar();
+        showDirect('de014');
+        return;
+      }
+    }catch(e){}
+  }
+
   if(historyStack.length>1){
     historyStack.pop();
     const target=historyStack[historyStack.length-1];
@@ -2421,17 +2435,25 @@ function openCalendarEvent(eventId){
     || cases.find(x=>String(x.title||'')===String(ev.title||''));
   if(!c) return;
 
+  try{
+    sessionStorage.setItem('sekretarzCaseReturnPage','de014');
+    localStorage.setItem('sekretarzCaseReturnPage','de014');
+  }catch(e){}
+
+  historyStack=['de011','de014'];
+
   openCase(
     c.title||'Angelegenheit',
     c.status||'Aktiv',
-    c.description||'',
+    c.desc||'',
     c.dateDisplay||'',
-    c.careType==='ai'?'KI betreut':'Nur erinnern',
     c.category||'Sonstiges',
     c.nextStep||'',
     c.careType||'reminder',
-    c.locationName||'',
-    c.locationAddress||''
+    c.reminderDateTime||'',
+    c.sourceSettings||null,
+    c.contact||null,
+    c.id||null
   );
 }
 
@@ -3375,6 +3397,14 @@ function markCaseDone(){
 }
 
 function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null,contact=null,id=null){
+  try{
+    const origin=sessionStorage.getItem('sekretarzCaseReturnPage') || localStorage.getItem('sekretarzCaseReturnPage');
+    if(currentPage!=='de014' && origin!=='de014'){
+      sessionStorage.removeItem('sekretarzCaseReturnPage');
+      localStorage.removeItem('sekretarzCaseReturnPage');
+    }
+  }catch(e){}
+
   currentCaseData={id,title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact,dateDisplay:date};
 
   try{
@@ -3875,11 +3905,13 @@ function restoreAppState(){
 
     if(target==='de009'){
       const currentCaseId=sessionStorage.getItem('sekretarzCurrentCaseId') || localStorage.getItem('sekretarzLastCaseId');
+      const returnPage=sessionStorage.getItem('sekretarzCaseReturnPage') || localStorage.getItem('sekretarzCaseReturnPage');
       if(currentCaseId && restoreCaseById(currentCaseId)){
-        historyStack=['de008','de009'];
+        if(returnPage==='de014') historyStack=['de011','de014','de009'];
+        else historyStack=['de011','de008','de009'];
         return;
       }
-      target='de008';
+      target=(returnPage==='de014' ? 'de014' : 'de008');
     }
 
     if(target==='de011') historyStack=['de011'];

@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v13.3">
+<meta name="sekretarz-version" content="DE-v13.4">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -4032,27 +4032,46 @@ function toTimeInputValue(reminderDateTime){
 function editCurrentCase(){
   if(!currentCaseData) return;
 
+  editingCaseOriginalTitle=currentCaseData.title || null;
   editingCaseId=currentCaseData.id || null;
 
   try{
     localStorage.setItem('sekretarzEditCaseDraftV1',JSON.stringify(currentCaseData));
   }catch(e){}
 
+  const heading=document.getElementById('caseFormHeading');
+  const mode=document.getElementById('caseFormMode');
+
+  if(heading) heading.textContent='Angelegenheit bearbeiten';
+  if(mode) mode.textContent='Bearbeiten';
+
+  document.getElementById('caseTitle').value=currentCaseData.title || '';
+  document.getElementById('caseCategory').value=currentCaseData.category || 'Sonstiges';
+  document.getElementById('caseStatus').value=currentCaseData.status || 'Zu erledigen';
+
+  const careType=currentCaseData.careType || 'reminder';
+  setCaseCareType(careType);
+
+  document.getElementById('caseReminderDateTime').value=currentCaseData.reminderDateTime || '';
+  document.getElementById('caseDescription').value=currentCaseData.desc || '';
+  document.getElementById('caseNextStep').value=currentCaseData.nextStep || '';
+
+  fillContactData(currentCaseData.contact || null);
+
+  const srcSettings=currentCaseData.sourceSettings || {};
+  const sourceEmail=document.getElementById('sourceEmail');
+  const sourceDocs=document.getElementById('sourceDocs');
+  const sourceCalls=document.getElementById('sourceCalls');
+  const sourceWeb=document.getElementById('sourceWeb');
+
+  if(sourceEmail) sourceEmail.checked=srcSettings.email !== false;
+  if(sourceDocs) sourceDocs.checked=srcSettings.docs !== false;
+  if(sourceCalls) sourceCalls.checked=srcSettings.calls !== false;
+  if(sourceWeb) sourceWeb.checked=srcSettings.web !== false;
+
+  clearMsg('caseFormMsg');
+  updateCasePreview();
   go('de010');
-
-  setTimeout(()=>{
-    try{
-      const title=document.getElementById('caseTitle');
-      const desc=document.getElementById('caseDescription');
-      const date=null;
-      const time=null;
-
-      if(title) title.value=currentCaseData.title||'';
-      if(desc) desc.value=currentCaseData.desc||'';
-      if(date) date.value=toDateInputValue(currentCaseData.dateDisplay);
-      if(time) time.value=toTimeInputValue(currentCaseData.reminderDateTime);
-    }catch(e){}
-  },0);
 }
 
 function formatDateDE(value){

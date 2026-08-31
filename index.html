@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v13.2">
+<meta name="sekretarz-version" content="DE-v13.3">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -4016,34 +4016,43 @@ function openNewCase(){
   go('de010');
 }
 
+
+function toDateInputValue(dateDisplay){
+  const m=String(dateDisplay||'').match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  return m ? m[3]+'-'+m[2]+'-'+m[1] : '';
+}
+
+function toTimeInputValue(reminderDateTime){
+  if(!reminderDateTime) return '';
+  const d=new Date(reminderDateTime);
+  if(Number.isNaN(d.getTime())) return '';
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
 function editCurrentCase(){
   if(!currentCaseData) return;
-  editingCaseOriginalTitle=currentCaseData.title || null;
+
   editingCaseId=currentCaseData.id || null;
-  document.getElementById('caseFormHeading').textContent='Angelegenheit bearbeiten';
-  document.getElementById('caseFormMode').textContent='Bearbeiten';
-  document.getElementById('caseTitle').value=currentCaseData.title || '';
 
-  let category=currentCaseData.category || 'Sonstiges';
-  if(currentCaseData.title==='Fenster – Isarwinkel') category='Haus & Wohnung';
-  if(category==='Auto') category='Auto & Mobilität';
-  if(category==='Gesundheit') category='Gesundheit & Ärzte';
-  if(category==='Versicherung') category='Versicherungen';
-  if(category==='Behörde') category='Behörden';
-  document.getElementById('caseCategory').value=category;
+  try{
+    localStorage.setItem('sekretarzEditCaseDraftV1',JSON.stringify(currentCaseData));
+  }catch(e){}
 
-  document.getElementById('caseStatus').value=currentCaseData.status || 'Zu erledigen';
-  document.getElementById('caseReminderDateTime').value=currentCaseData.reminderDateTime || '';
-  document.getElementById('caseDescription').value=currentCaseData.desc || '';
-  document.getElementById('caseNextStep').value=currentCaseData.nextStep || '';
-  fillContactData(currentCaseData.contact || null);
-
-  const inferredType=currentCaseData.careType || (currentCaseData.title==='Fenster – Isarwinkel' ? 'ai' : 'reminder');
-  setCaseCareType(inferredType);
-
-  clearMsg('caseFormMsg');
-  updateCasePreview();
   go('de010');
+
+  setTimeout(()=>{
+    try{
+      const title=document.getElementById('caseTitle');
+      const desc=document.getElementById('caseDescription');
+      const date=null;
+      const time=null;
+
+      if(title) title.value=currentCaseData.title||'';
+      if(desc) desc.value=currentCaseData.desc||'';
+      if(date) date.value=toDateInputValue(currentCaseData.dateDisplay);
+      if(time) time.value=toTimeInputValue(currentCaseData.reminderDateTime);
+    }catch(e){}
+  },0);
 }
 
 function formatDateDE(value){

@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v12.4">
+<meta name="sekretarz-version" content="DE-v12.5">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1887,6 +1887,19 @@ document.addEventListener('click',function(e){
 
 
 function back(){
+  if(currentPage==='de013'){
+    try{
+      const profileReturnPage=sessionStorage.getItem('sekretarzProfileReturnPage') || localStorage.getItem('sekretarzProfileReturnPage');
+      if(profileReturnPage==='de016'){
+        historyStack=['de011','de016'];
+        sessionStorage.removeItem('sekretarzProfileReturnPage');
+        localStorage.removeItem('sekretarzProfileReturnPage');
+        showDirect('de016');
+        return;
+      }
+    }catch(e){}
+  }
+
   if(currentPage==='de009'){
     try{
       const returnPage=sessionStorage.getItem('sekretarzCaseReturnPage') || localStorage.getItem('sekretarzCaseReturnPage');
@@ -3048,6 +3061,17 @@ function openMore(){
 
 function openProfile(){
   loadProfile();
+
+  try{
+    if(currentPage==='de016'){
+      sessionStorage.setItem('sekretarzProfileReturnPage','de016');
+      localStorage.setItem('sekretarzProfileReturnPage','de016');
+    }else{
+      sessionStorage.removeItem('sekretarzProfileReturnPage');
+      localStorage.removeItem('sekretarzProfileReturnPage');
+    }
+  }catch(e){}
+
   if(currentPage==='de016') historyStack=['de011','de016','de013'];
   else if(currentPage==='de011') historyStack=['de011','de013'];
   else if(currentPage==='de008') historyStack=['de011','de008','de013'];
@@ -4034,7 +4058,10 @@ function restoreAppState(){
     if(target==='de011') historyStack=['de011'];
     else if(target==='de008') historyStack=['de011','de008'];
     else if(target==='de012') historyStack=['de011','de012'];
-    else if(target==='de013') historyStack=['de011','de013'];
+    else if(target==='de013'){
+      const profileReturnPage=sessionStorage.getItem('sekretarzProfileReturnPage') || localStorage.getItem('sekretarzProfileReturnPage');
+      historyStack=(profileReturnPage==='de016' ? ['de011','de016','de013'] : ['de011','de013']);
+    }
     else if(target==='de014') historyStack=['de011','de014'];
     else if(target==='de015') historyStack=['de011','de014','de015'];
     else if(target==='de016') historyStack=['de011','de016'];

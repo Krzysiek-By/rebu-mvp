@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v12.8">
+<meta name="sekretarz-version" content="DE-v12.9">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -3673,7 +3673,9 @@ function markCaseDone(){
 
   if(idx>=0){
     cases[idx]={...cases[idx],status:'Erledigt'};
-    saveStoredCases(cases);
+    saveCasesToStorage(cases);
+  }else{
+    currentCaseData=upsertStoredCase(currentCaseData);
   }
 
   const statusEl=document.getElementById('caseStatus');

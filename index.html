@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v12.6">
+<meta name="sekretarz-version" content="DE-v12.7">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -702,6 +702,47 @@ button{cursor:pointer}
   font-weight:700;
 }
 
+
+/* v12.7 — lekki DE-009 dla prostych przypomnień */
+.reminder-center{
+  margin-top:16px;
+}
+.reminder-simple-card{
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px;
+  background:#fff;
+}
+.reminder-simple-kicker{
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.02em;
+  color:var(--muted);
+  margin-bottom:7px;
+}
+.reminder-simple-card h3{
+  margin:0 0 8px;
+  font-size:18px;
+}
+.reminder-simple-card p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.5;
+}
+.reminder-simple-info{
+  margin-top:14px;
+  padding:12px;
+  border-radius:14px;
+  background:var(--soft);
+  font-size:13px;
+  line-height:1.45;
+}
+.reminder-simple-actions{
+  display:grid;
+  gap:10px;
+  margin-top:16px;
+}
+
 </style>
 </head>
 <body>
@@ -1080,6 +1121,22 @@ button{cursor:pointer}
           <span id="detailStatus" class="tag">Status</span>
         </div>
         <small id="detailDate"></small>
+      </div>
+
+
+      <div id="reminderCaseCenter" class="reminder-center hidden">
+        <div class="reminder-simple-card">
+          <div class="reminder-simple-kicker">Erinnerung</div>
+          <h3 id="reminderSimpleHeading">Einfache Erinnerung</h3>
+          <p id="reminderSimpleText">Diese Aufgabe wird zur gespeicherten Zeit erinnert.</p>
+
+          <div id="reminderSimpleInfo" class="reminder-simple-info"></div>
+
+          <div class="reminder-simple-actions">
+            <button class="btn primary" onclick="editCurrentCase()">Bearbeiten</button>
+            <button class="btn secondary" onclick="markCaseDone()">Als erledigt markieren</button>
+          </div>
+        </div>
       </div>
 
       <div id="aiCaseCenter" class="ai-center" style="margin-top:16px">
@@ -3489,6 +3546,44 @@ function renderTimeline(data){
   ).join('');
 }
 
+
+function renderReminderCenter(data){
+  const box=document.getElementById('reminderCaseCenter');
+  const aiBox=document.getElementById('aiCaseCenter');
+  const heading=document.getElementById('reminderSimpleHeading');
+  const text=document.getElementById('reminderSimpleText');
+  const info=document.getElementById('reminderSimpleInfo');
+
+  const isAI=data?.careType==='ai';
+
+  if(box) box.classList.toggle('hidden',isAI);
+  if(aiBox) aiBox.classList.toggle('hidden',!isAI);
+
+  if(isAI) return;
+
+  const done=String(data?.status||'').toLowerCase().includes('erledigt');
+
+  if(heading) heading.textContent=done ? 'Erledigt' : 'Erinnerung aktiv';
+
+  if(text){
+    text.textContent=done
+      ? 'Diese Erinnerung ist abgeschlossen.'
+      : (data?.desc || 'Der Sekretär erinnert dich an diese Aufgabe.');
+  }
+
+  if(info){
+    const parts=[];
+    if(data?.dateDisplay) parts.push('Termin: '+data.dateDisplay);
+    if(data?.reminderDateTime){
+      const parsed=new Date(data.reminderDateTime);
+      if(!Number.isNaN(parsed.getTime())){
+        parts.push('Erinnerung: '+parsed.toLocaleString('de-DE'));
+      }
+    }
+    info.textContent=parts.length ? parts.join(' · ') : 'Keine zusätzliche Zeitangabe gespeichert.';
+  }
+}
+
 function renderAICenter(data){
   const situation=document.getElementById('aiSituationText');
   const nextText=document.getElementById('aiNextStepText');
@@ -3610,7 +3705,10 @@ function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careTy
   }
 
   renderCurrentCaseLocation();
-  renderAICenter(currentCaseData);
+  renderReminderCenter(currentCaseData);
+  if(currentCaseData.careType==='ai'){
+    renderAICenter(currentCaseData);
+  }
   go('de009');
 }
 

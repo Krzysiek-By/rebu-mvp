@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v13.1">
+<meta name="sekretarz-version" content="DE-v13.2">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -3128,8 +3128,8 @@ function renderToday(){
   }
 
   list.innerHTML=items.slice(0,4).map(item=>{
-    const isClickableDone=(todayFilter==='done' && item.caseId);
-    const attrs=isClickableDone
+    const isClickableCase=((todayFilter==='done' || todayFilter==='need') && item.caseId);
+    const attrs=isClickableCase
       ? ' role="button" tabindex="0" onclick="openTodayCase(\''+escapeHtml(item.caseId)+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openTodayCase(\''+escapeHtml(item.caseId)+'\');}" style="cursor:pointer"'
       : '';
     return '<div class="today-item"'+attrs+'><div class="today-icon">'+escapeHtml(item.icon)+'</div><div><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml(item.text)+'</small></div></div>';

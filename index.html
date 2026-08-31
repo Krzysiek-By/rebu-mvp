@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v12.5">
+<meta name="sekretarz-version" content="DE-v12.6">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -683,14 +683,13 @@ button{cursor:pointer}
 }
 
 
-.state-card.state-need.clickable{
+.state-card.clickable{
   cursor:pointer;
   transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
-.state-card.state-need.clickable:active{transform:scale(.985)}
-.state-card.state-need.selected{
-  background:#fffaf0;
-  box-shadow:0 0 0 3px rgba(216,155,23,.16);
+.state-card.clickable:active{transform:scale(.985)}
+.state-card.clickable.selected{
+  box-shadow:0 0 0 3px rgba(70,90,120,.18);
 }
 .today-filter-note{
   margin:-4px 0 12px;
@@ -1351,23 +1350,29 @@ button{cursor:pointer}
       <div id="todayReminderNow"></div>
       <div class="secretary-states">
         <div id="stateNeedTile" class="state-card state-need clickable" role="button" tabindex="0"
-             onclick="toggleTodayNeedFilter()"
-             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTodayNeedFilter();}">
+             onclick="toggleTodayFilter('need')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTodayFilter('need');}">
           <div class="state-title">Ich brauche etwas von dir</div>
           <div class="state-count" id="stateNeedCount">0</div>
           <div class="state-desc">Hier musst du selbst kurz entscheiden oder etwas ergänzen.</div>
         </div>
-        <div class="state-card state-care">
+        <div id="stateCareTile" class="state-card state-care clickable" role="button" tabindex="0"
+             onclick="toggleTodayFilter('care')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTodayFilter('care');}">
           <div class="state-title">Ich kümmere mich</div>
           <div class="state-count" id="stateCareCount">0</div>
           <div class="state-desc">Diese Dinge behält dein Sekretär für dich im Blick.</div>
         </div>
-        <div class="state-card state-alert">
+        <div id="stateAlertTile" class="state-card state-alert clickable" role="button" tabindex="0"
+             onclick="toggleTodayFilter('alert')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTodayFilter('alert');}">
           <div class="state-title">Achtung</div>
           <div class="state-count" id="stateAlertCount">0</div>
           <div class="state-desc">Hier wird etwas dringend oder ist bereits überfällig.</div>
         </div>
-        <div class="state-card state-done">
+        <div id="stateDoneTile" class="state-card state-done clickable" role="button" tabindex="0"
+             onclick="toggleTodayFilter('done')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTodayFilter('done');}">
           <div class="state-title">Erledigt</div>
           <div class="state-count" id="stateDoneCount">0</div>
           <div class="state-desc">Heute abgeschlossene oder erledigte Dinge.</div>
@@ -2915,18 +2920,22 @@ function getTodayGreeting(){
 }
 
 
-let todayNeedFilter=false;
+let todayFilter=null;
 
-function isNeedUserCase(c){
+function getTodayCaseState(c){
   const status=String(c.status||'').toLowerCase();
-  if(status.includes('erledigt')) return false;
-  if(status.includes('dringend') || status.includes('nicht erledigt')) return false;
-  if(status.includes('warte') || c.careType==='ai') return false;
-  return true;
+  if(status.includes('erledigt')) return 'done';
+  if(status.includes('dringend') || status.includes('nicht erledigt')) return 'alert';
+  if(status.includes('warte') || c.careType==='ai') return 'care';
+  return 'need';
 }
 
-function toggleTodayNeedFilter(){
-  todayNeedFilter=!todayNeedFilter;
+function isNeedUserCase(c){
+  return getTodayCaseState(c)==='need';
+}
+
+function toggleTodayFilter(filterName){
+  todayFilter=(todayFilter===filterName ? null : filterName);
   renderToday();
 }
 
@@ -2944,22 +2953,38 @@ function renderToday(){
   const inbox=getInboxItems();
   const items=[];
 
-  if(todayNeedFilter){
-    cases.filter(isNeedUserCase).forEach(c=>{
+  if(todayFilter){
+    cases.filter(c=>getTodayCaseState(c)===todayFilter).forEach(c=>{
+      const state=getTodayCaseState(c);
+      const defaults={
+        need:'Deine Entscheidung oder Ergänzung wird benötigt.',
+        care:'Dein Sekretär behält diese Angelegenheit für dich im Blick.',
+        alert:'Diese Angelegenheit braucht dringend Aufmerksamkeit.',
+        done:'Diese Angelegenheit ist erledigt.'
+      };
+      const icons={need:'?',care:'↻',alert:'!',done:'✓'};
       items.push({
-        icon:'?',
+        icon:icons[state],
         title:c.title||'Angelegenheit',
-        text:c.dateDisplay || c.nextStep || 'Deine Entscheidung oder Ergänzung wird benötigt.'
+        text:c.dateDisplay || c.nextStep || defaults[state]
       });
     });
 
-    const unassignedInbox=inbox.filter(i=>!i.assignment || i.assignment==='unassigned');
-    if(unassignedInbox.length){
-      items.push({icon:'⌄',title:'Inbox',text:unassignedInbox.length+' neue Information(en) warten auf deine Zuordnung.'});
+    if(todayFilter==='need'){
+      const unassignedInbox=inbox.filter(i=>!i.assignment || i.assignment==='unassigned');
+      if(unassignedInbox.length){
+        items.push({icon:'⌄',title:'Inbox',text:unassignedInbox.length+' neue Information(en) warten auf deine Zuordnung.'});
+      }
     }
 
     if(!items.length){
-      items.push({icon:'✓',title:'Nichts für dich offen',text:'Aktuell brauchst du nichts zu entscheiden oder zu ergänzen.'});
+      const emptyText={
+        need:'Aktuell brauchst du nichts zu entscheiden oder zu ergänzen.',
+        care:'Aktuell gibt es nichts, das dein Sekretär selbst für dich verfolgt.',
+        alert:'Aktuell gibt es nichts Dringendes oder Überfälliges.',
+        done:'Aktuell gibt es keine erledigten Angelegenheiten.'
+      };
+      items.push({icon:'✓',title:'Keine Einträge',text:emptyText[todayFilter]});
     }
   }else{
     const urgent=cases.find(c=>c.status==='Dringend' || c.status==='Nicht erledigt');
@@ -2978,22 +3003,44 @@ function renderToday(){
     }
   }
 
-  summary.textContent=todayNeedFilter
-    ? 'Hier sind die Dinge, bei denen du etwas tun oder entscheiden musst.'
+  const summaries={
+    need:'Hier sind die Dinge, bei denen du etwas tun oder entscheiden musst.',
+    care:'Diese Dinge behält dein Sekretär selbst für dich im Blick.',
+    alert:'Diese Dinge sind dringend oder bereits überfällig.',
+    done:'Hier siehst du die erledigten Angelegenheiten.'
+  };
+  summary.textContent=todayFilter
+    ? summaries[todayFilter]
     : 'Ich habe heute '+items.length+' Punkt'+(items.length===1?'':'e')+' für dich im Blick.';
 
   renderSecretaryStateCounts();
 
-  const needTile=document.getElementById('stateNeedTile');
+  const tiles={
+    need:document.getElementById('stateNeedTile'),
+    care:document.getElementById('stateCareTile'),
+    alert:document.getElementById('stateAlertTile'),
+    done:document.getElementById('stateDoneTile')
+  };
+  Object.entries(tiles).forEach(([name,tile])=>{
+    if(tile) tile.classList.toggle('selected',todayFilter===name);
+  });
+
   const filterNote=document.getElementById('todayNeedFilterNote');
-  if(needTile) needTile.classList.toggle('selected',todayNeedFilter);
-  if(filterNote) filterNote.classList.toggle('hidden',!todayNeedFilter);
+  if(filterNote){
+    const notes={
+      need:'Nur Dinge, bei denen du etwas tun oder entscheiden musst.',
+      care:'Nur Dinge, die dein Sekretär selbst für dich im Blick behält.',
+      alert:'Nur dringende oder überfällige Dinge.',
+      done:'Nur erledigte Angelegenheiten.'
+    };
+    filterNote.textContent=todayFilter ? notes[todayFilter] : '';
+    filterNote.classList.toggle('hidden',!todayFilter);
+  }
 
   list.innerHTML=items.slice(0,4).map(item=>
     '<div class="today-item"><div class="today-icon">'+escapeHtml(item.icon)+'</div><div><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml(item.text)+'</small></div></div>'
   ).join('');
 }
-
 function openToday(){
   renderToday();
   historyStack=['de011'];

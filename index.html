@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v12.9">
+<meta name="sekretarz-version" content="DE-v13.0">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1139,7 +1139,8 @@ button{cursor:pointer}
           <div id="reminderSimpleInfo" class="reminder-simple-info"></div>
 
           <div class="reminder-simple-actions">
-            <button class="btn primary" onclick="editCurrentCase()">Bearbeiten</button>
+            <button id="reminderEditBtn" class="btn primary" onclick="editCurrentCase()">Bearbeiten</button>
+            <button id="reminderReplanBtn" class="btn primary hidden" onclick="replanCurrentCase()">Erneut planen</button>
             <button id="reminderDoneBtn" class="btn secondary" onclick="markCaseDone()">Als erledigt markieren</button>
           </div>
         </div>
@@ -3569,6 +3570,8 @@ function renderReminderCenter(data){
 
   const done=String(data?.status||'').toLowerCase().includes('erledigt');
   const doneBtn=document.getElementById('reminderDoneBtn');
+  const editBtn=document.getElementById('reminderEditBtn');
+  const replanBtn=document.getElementById('reminderReplanBtn');
 
   if(heading) heading.textContent=done ? 'Erledigt ✓' : 'Erinnerung aktiv';
 
@@ -3579,6 +3582,8 @@ function renderReminderCenter(data){
   }
 
   if(doneBtn) doneBtn.classList.toggle('hidden',done);
+  if(editBtn) editBtn.classList.toggle('hidden',done);
+  if(replanBtn) replanBtn.classList.toggle('hidden',!done);
 
   if(info){
     const parts=[];
@@ -3661,6 +3666,43 @@ function prepareNextStep(){
   }else{
     box.textContent='Der Sekretär prüft den aktuellen Stand und schlägt den nächsten konkreten Schritt vor.';
   }
+}
+
+
+function replanCurrentCase(){
+  if(!currentCaseData) return;
+
+  const source={...currentCaseData};
+
+  currentCaseData={
+    ...source,
+    id:'case-'+Date.now(),
+    status:'Zu bestätigen',
+    dateDisplay:'',
+    reminderDateTime:'',
+    createdAt:new Date().toISOString()
+  };
+
+  try{
+    localStorage.setItem('sekretarzEditCaseDraftV1',JSON.stringify(currentCaseData));
+  }catch(e){}
+
+  editingCaseId=null;
+  go('de010');
+
+  setTimeout(()=>{
+    try{
+      const title=document.getElementById('caseTitleInput');
+      const desc=document.getElementById('caseDescInput');
+      const date=document.getElementById('caseDateInput');
+      const time=document.getElementById('caseTimeInput');
+
+      if(title) title.value=source.title||'';
+      if(desc) desc.value=source.desc||'';
+      if(date) date.value='';
+      if(time) time.value='';
+    }catch(e){}
+  },0);
 }
 
 function markCaseDone(){

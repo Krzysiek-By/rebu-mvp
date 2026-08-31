@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v12.7">
+<meta name="sekretarz-version" content="DE-v12.8">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -743,6 +743,12 @@ button{cursor:pointer}
   margin-top:16px;
 }
 
+
+.status-done{
+  background:#edf8ef;
+  color:#2f7a43;
+  border-color:#b9dfc2;
+}
 </style>
 </head>
 <body>
@@ -1134,7 +1140,7 @@ button{cursor:pointer}
 
           <div class="reminder-simple-actions">
             <button class="btn primary" onclick="editCurrentCase()">Bearbeiten</button>
-            <button class="btn secondary" onclick="markCaseDone()">Als erledigt markieren</button>
+            <button id="reminderDoneBtn" class="btn secondary" onclick="markCaseDone()">Als erledigt markieren</button>
           </div>
         </div>
       </div>
@@ -3562,14 +3568,17 @@ function renderReminderCenter(data){
   if(isAI) return;
 
   const done=String(data?.status||'').toLowerCase().includes('erledigt');
+  const doneBtn=document.getElementById('reminderDoneBtn');
 
-  if(heading) heading.textContent=done ? 'Erledigt' : 'Erinnerung aktiv';
+  if(heading) heading.textContent=done ? 'Erledigt ✓' : 'Erinnerung aktiv';
 
   if(text){
     text.textContent=done
       ? 'Diese Erinnerung ist abgeschlossen.'
       : (data?.desc || 'Der Sekretär erinnert dich an diese Aufgabe.');
   }
+
+  if(doneBtn) doneBtn.classList.toggle('hidden',done);
 
   if(info){
     const parts=[];
@@ -3656,17 +3665,29 @@ function prepareNextStep(){
 
 function markCaseDone(){
   if(!currentCaseData) return;
-  currentCaseData.status='Erledigt';
-  const saved=upsertStoredCase(currentCaseData);
-  currentCaseData=saved;
-  renderDashboardCases();
-  openCase(
-    saved.title,saved.status,saved.desc,saved.dateDisplay || '',saved.category,
-    saved.nextStep,saved.careType,saved.reminderDateTime,saved.sourceSettings,
-    saved.contact,saved.id
-  );
-}
 
+  const cases=getStoredCases();
+  const idx=cases.findIndex(c=>c.id===currentCaseData.id);
+
+  currentCaseData.status='Erledigt';
+
+  if(idx>=0){
+    cases[idx]={...cases[idx],status:'Erledigt'};
+    saveStoredCases(cases);
+  }
+
+  const statusEl=document.getElementById('caseStatus');
+  if(statusEl){
+    statusEl.textContent='Erledigt';
+    statusEl.className='badge status-done';
+  }
+
+  renderReminderCenter(currentCaseData);
+
+  if(currentCaseData.careType==='ai'){
+    renderAICenter(currentCaseData);
+  }
+}
 function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null,contact=null,id=null){
   try{
     const origin=sessionStorage.getItem('sekretarzCaseReturnPage') || localStorage.getItem('sekretarzCaseReturnPage');

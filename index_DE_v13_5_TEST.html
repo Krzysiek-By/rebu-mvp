@@ -1,0 +1,4441 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#356df3">
+<meta name="sekretarz-version" content="DE-v13.5 TEST">
+<title>Sekretarz — Dein persönlicher Sekretär</title>
+<style>
+:root{
+  --blue:#356df3;--blue2:#5d4ef7;--navy:#0c1b3b;--muted:#74809a;
+  --bg:#f7f9fe;--card:#fff;--line:#e7ebf3;--shadow:0 14px 40px rgba(28,58,128,.10);
+  --danger:#d84545;--ok:#238a57
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;min-height:100%;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(180deg,#fff,#f6f9ff);color:var(--navy)}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.page{min-height:100vh}
+.container{width:min(1160px,100%);margin:0 auto;padding:0 22px}
+.page-id{
+  position:fixed;right:10px;bottom:82px;z-index:50;font-size:11px;font-weight:800;color:#7b86a0;
+  background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:999px;padding:5px 9px;
+  backdrop-filter:blur(8px)
+}
+.logo{
+  width:42px;height:42px;flex:0 0 42px;border:0;border-radius:13px;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));position:relative;
+  box-shadow:0 8px 20px rgba(53,109,243,.25);padding:0
+}
+.logo:before{
+  content:"✓";position:absolute;inset:7px;background:#fff;border-radius:9px;color:var(--blue);
+  display:grid;place-items:center;font-size:24px;font-weight:900
+}
+.logo:after{
+  content:"";position:absolute;left:7px;bottom:-6px;border:7px solid transparent;
+  border-top-color:var(--blue2);transform:rotate(18deg)
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;font-weight:800;font-size:24px}
+.brand-text{min-width:0}
+.brand small{display:block;font-weight:500;font-size:11px;color:var(--muted);line-height:1.25;margin-top:2px}
+.btn{border:0;border-radius:13px;padding:13px 18px;font-weight:750}
+.primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 10px 26px rgba(53,109,243,.22)}
+.secondary{background:#fff;border:1px solid var(--line);color:var(--navy)}
+.danger{background:#fff1f1;border:1px solid #ffd2d2;color:var(--danger)}
+.backbar{display:flex;align-items:center;gap:10px}
+.backbtn{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;color:var(--blue);padding:8px 0;font-weight:800}
+.full{width:100%}
+.helper{font-size:12px;color:var(--muted);line-height:1.45}
+.error{background:#fff2f2;border:1px solid #ffd0d0;color:var(--danger);padding:11px 12px;border-radius:12px;font-size:13px;margin:12px 0}
+.success{background:#eefaf4;border:1px solid #cbeedb;color:var(--ok);padding:11px 12px;border-radius:12px;font-size:13px;margin:12px 0}
+
+/* DE-001 */
+.lang-page{
+  min-height:100vh;display:grid;place-items:center;padding:28px 18px;
+  background:radial-gradient(circle at 50% 20%,#eef4ff 0,#fff 46%,#f7f9fe 100%)
+}
+.lang-card{width:min(540px,100%);text-align:center}
+.lang-logo{display:flex;justify-content:center;align-items:center;gap:14px;margin-bottom:22px}
+.lang-logo .logo{width:68px;height:68px;flex-basis:68px;border-radius:20px}
+.lang-logo .logo:before{font-size:36px;inset:11px;border-radius:13px}
+.lang-logo .logo:after{left:12px;bottom:-9px;border-width:10px}
+.lang-logo h1{font-size:46px;letter-spacing:-1.5px;margin:0}
+.tagline{font-size:18px;line-height:1.5;color:var(--muted);margin:0 auto 36px;max-width:430px}
+.choose-title{font-size:18px;font-weight:800;margin-bottom:14px}
+.langs{display:grid;grid-template-columns:1fr;gap:10px}
+.lang-btn{
+  background:#fff;border:1px solid var(--line);border-radius:18px;padding:17px 14px;font-weight:800;
+  color:var(--navy);box-shadow:0 8px 24px rgba(28,58,128,.06);
+  display:flex;align-items:center;justify-content:center;gap:12px
+}
+.lang-btn span{font-size:25px}
+.lang-btn.active{border-color:#b8c8ff;background:#f7f9ff}
+.lang-btn.disabled{opacity:.45;cursor:not-allowed}
+.note{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.45}
+
+/* DE-002 */
+.choice-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+.choice-card{width:min(560px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:var(--shadow)}
+.choice-top{display:flex;justify-content:space-between;align-items:center}
+.choice-title{text-align:center;margin:18px 0 6px;font-size:31px}
+.choice-sub{text-align:center;color:var(--muted);margin:0 0 22px}
+.choice-grid{display:grid;gap:12px}
+.choice-option{width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
+.choice-option:hover{border-color:#b8c8ff;background:#f8faff}
+.choice-option b{display:block;font-size:18px;margin-bottom:6px}
+.choice-option span{color:var(--muted);font-size:14px;line-height:1.4}
+
+/* Auth DE-003/004/005 */
+.center-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+.auth{width:min(500px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:var(--shadow)}
+.auth-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.auth h2{text-align:center;font-size:31px;margin:16px 0 8px}
+.auth>p{text-align:center;color:var(--muted);margin-bottom:25px}
+.field{margin:14px 0}
+.field label{display:block;font-weight:700;margin-bottom:8px}
+.field input,.field textarea,.field select{
+  width:100%;padding:15px;border:1px solid #d9dfeb;border-radius:12px;outline:none;background:#fff
+}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#9bb1ff;box-shadow:0 0 0 3px rgba(53,109,243,.08)}
+.checkrow{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--muted);margin:14px 0}
+.checkrow input{margin-top:3px}
+.linkbtn{border:0;background:none;color:var(--blue);font-weight:750;padding:0}
+.divider{text-align:center;color:#a1a8b7;margin:18px 0}
+.social{width:100%;background:white;border:1px solid var(--line);padding:14px;border-radius:12px;margin-top:10px;font-weight:700}
+.tiny{font-size:12px;color:var(--muted);text-align:center;margin-top:16px}
+
+/* DE-006 */
+.app-shell{max-width:900px;margin:auto;min-height:100vh;background:#f7f9fe;padding-bottom:92px}
+.app-head{
+  display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.94);position:sticky;top:0;z-index:8;backdrop-filter:blur(12px)
+}
+.app-brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800}
+.app-nav-right{display:flex;align-items:center;gap:12px}
+.app-content{padding:18px}
+.app-content h1{font-size:34px;margin:8px 0 18px}
+.search{background:white;border:1px solid var(--line);border-radius:15px;padding:14px 16px;color:#8b94a8}
+.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.sum{background:white;border:1px solid var(--line);border-radius:16px;padding:15px}
+.sum span{display:block;color:var(--muted);font-size:13px}
+.sum b{font-size:28px}
+.cases{display:grid;gap:12px}
+.case{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(28,58,128,.04)}
+.case-top{display:flex;justify-content:space-between;gap:12px}
+.case h3{margin:0 0 8px}
+.tag{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;background:#edf3ff;color:var(--blue)}
+.case p{color:var(--muted);margin:10px 0 0}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:76px;z-index:5}
+.bottom{
+  position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(900px,100%);
+  background:rgba(255,255,255,.97);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding:10px 4px calc(10px + env(safe-area-inset-bottom))
+}
+.bottom button{background:none;border:0;color:#778198}
+.bottom button.active{color:var(--blue);font-weight:800}
+
+/* DE-007 */
+.detail-wrap{max-width:760px;margin:0 auto;padding:20px}
+.detail-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+.detail-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.detail-head h2{margin:0 0 8px}
+.detail-meta{display:grid;gap:12px;margin-top:20px}
+.meta{padding:14px;border-radius:14px;background:#f8faff}
+.detail-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(7,16,39,.45);display:grid;place-items:center;padding:20px;z-index:20}
+.modal-card{width:min(520px,100%);background:white;border-radius:22px;padding:24px}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+
+@media(max-width:700px){
+  .container{padding:0 14px}
+  .logo{width:36px;height:36px;flex-basis:36px}.logo:before{font-size:20px}
+  .choice-wrap,.center-wrap{padding:14px}
+  .choice-card,.auth{padding:20px 17px}
+  .auth-top .brand-text{display:none}
+  .choice-title,.auth h2{font-size:28px}
+  .lang-page{padding:22px 16px}
+  .lang-logo{flex-direction:column;gap:10px}.lang-logo h1{font-size:40px}
+  .tagline{font-size:16px;margin-bottom:30px}
+  .app-shell{width:100%;max-width:100%}
+  .app-head{padding:13px 14px}
+  .app-brand{font-size:18px}
+  .app-nav-right{gap:7px}
+  .app-nav-right .secondary{font-size:11px;padding:8px 8px}
+  .app-content{padding:14px}.app-content h1{font-size:30px}
+  .summary{gap:7px}.sum{padding:13px 9px}.case{padding:15px}
+  .bottom{width:100%;max-width:none}
+  .detail-wrap{padding:14px}.detail-card{padding:18px}
+}
+
+.password-wrap{position:relative}
+.password-wrap input{padding-right:48px}
+.eye-btn{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  width:38px;height:38px;border:0;background:transparent;border-radius:10px;
+  display:grid;place-items:center;color:#78839a;font-size:20px
+}
+.eye-btn:hover{background:#f3f6fb}
+.phone-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px}
+.phone-row select,.phone-row input{width:100%}
+@media(max-width:430px){.phone-row{grid-template-columns:135px minmax(0,1fr)}}
+
+
+/* DE-010 */
+.form-wrap{max-width:760px;margin:0 auto;padding:20px}
+.form-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+.form-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+.form-head h2{margin:0;font-size:30px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .wide{grid-column:1/-1}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.form-actions .btn{flex:1 1 180px}
+.preview-box{margin-top:18px;padding:16px;background:#f8faff;border:1px solid var(--line);border-radius:16px}
+.preview-box h3{margin:0 0 10px}
+@media(max-width:620px){
+  .form-wrap{padding:14px}.form-card{padding:18px}.form-grid{grid-template-columns:1fr}
+  .form-grid .wide{grid-column:auto}.form-head h2{font-size:26px}
+}
+
+  .care-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 6px}
+  .care-card{border:1.5px solid var(--line);border-radius:16px;padding:14px;background:#fff;cursor:pointer;text-align:left}
+  .care-card.active{border-color:#356df3;box-shadow:0 0 0 2px rgba(53,109,243,.08)}
+  .care-card input{margin-right:7px}
+  .care-card b{display:block;margin-bottom:5px}
+  .care-card small{display:block;color:var(--muted);line-height:1.35}
+  .mode-panel{grid-column:1/-1;border:1px solid var(--line);border-radius:16px;padding:14px;background:#fafbff}
+  .mode-panel h3{margin:0 0 8px;font-size:16px}
+  .mode-panel p{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.45}
+  .ai-note{background:#eef4ff;border:1px solid #cbdcff;border-radius:12px;padding:11px 12px;font-size:13px;line-height:1.4}
+  .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .check-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .check-item{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;font-size:13px}
+  .check-item input{margin-top:2px}
+  .hidden-mode{display:none!important}
+  @media(max-width:640px){
+    .care-choice,.mini-grid,.check-grid{grid-template-columns:1fr}
+  }
+
+
+  .status-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .status-blue{background:#eaf2ff;border-color:#bdd2ff!important}
+  .status-yellow{background:#fff9df;border-color:#f0dc84!important}
+  .status-orange{background:#fff0df;border-color:#f1b66f!important}
+  .status-red{background:#ffe8e8;border-color:#ef9b9b!important}
+  .status-green{background:#e9f8ed;border-color:#9bd0a7!important}
+  .status-purple{background:#f1eaff;border-color:#c8afff!important}
+  .dot-blue{background:#3b82f6}.dot-yellow{background:#e6b800}.dot-orange{background:#f28c28}
+  .dot-red{background:#dc3545}.dot-green{background:#35a853}.dot-purple{background:#7c4dff}
+  .contact-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+  .contact-card h3{margin:0 0 10px;font-size:16px}
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .nav-preview{margin-top:10px;border:1px dashed #b9c8e8;border-radius:12px;padding:11px;background:#f7faff;font-size:13px;line-height:1.45}
+  .status-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .status-legend span{font-size:12px;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:#fff}
+  @media(max-width:640px){.contact-grid{grid-template-columns:1fr}}
+
+
+  .ai-center{display:grid;gap:14px}
+  .ai-block{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px}
+  .ai-block h3{margin:0 0 10px;font-size:18px}
+  .ai-block p{margin:0;color:var(--muted);line-height:1.5}
+  .ai-block.purple{background:#f6f1ff;border-color:#d4c3ff}
+  .ai-block.blue{background:#eef5ff;border-color:#c7d9ff}
+  .ai-block.yellow{background:#fff9e6;border-color:#f1dc8c}
+  .ai-block.green{background:#eefaf1;border-color:#b8dfc2}
+  .ai-kicker{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .ai-plan{display:grid;gap:8px}
+  .ai-plan-item{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .ai-plan-num{min-width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#ece7ff;color:#6847e8;font-weight:700}
+  .ai-question-box{display:grid;gap:10px}
+  .ai-answer-row{display:flex;gap:8px;flex-wrap:wrap}
+  .ai-answer-row button{flex:1;min-width:120px}
+  .timeline{display:grid;gap:10px}
+  .timeline-item{display:grid;grid-template-columns:14px 1fr;gap:10px}
+  .timeline-dot{width:10px;height:10px;border-radius:50%;background:#7c4dff;margin-top:6px}
+  .timeline-item b{display:block;margin-bottom:3px}
+  .timeline-item small{color:var(--muted)}
+  .ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ai-actions .btn{margin:0}
+  @media(max-width:640px){.ai-actions{grid-template-columns:1fr}}
+
+
+  .collapse-card{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .collapse-card summary{
+    list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px;cursor:pointer;font-weight:800;font-size:17px
+  }
+  .collapse-card summary::-webkit-details-marker{display:none}
+  .collapse-card summary:after{content:"＋";color:var(--blue);font-size:20px;font-weight:700}
+  .collapse-card[open] summary:after{content:"−"}
+  .collapse-body{padding:0 16px 16px}
+  .collapse-kicker{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px}
+  .profile-wrap{max-width:760px;margin:0 auto;padding:20px}
+  .profile-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+  .profile-card h2{margin:0 0 6px;font-size:30px}
+  .profile-intro{color:var(--muted);line-height:1.5;margin:0 0 18px}
+  .profile-section{padding:16px 0;border-top:1px solid var(--line)}
+  .profile-section:first-of-type{border-top:0}
+  .profile-section h3{margin:0 0 10px}
+  .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .profile-grid .wide{grid-column:1/-1}
+  .profile-save{position:sticky;bottom:10px;padding-top:10px;background:linear-gradient(180deg,rgba(255,255,255,0),#fff 30%)}
+  @media(max-width:640px){
+    .profile-wrap{padding:14px}.profile-card{padding:18px}
+    .profile-grid{grid-template-columns:1fr}.profile-grid .wide{grid-column:auto}
+  }
+
+
+  .today-shell{max-width:900px;margin:auto;min-height:100vh;background:#f7f9fe;padding-bottom:92px}
+  .today-content{padding:18px}
+  .today-hero{
+    background:linear-gradient(135deg,#eef4ff,#f4edff);
+    border:1px solid #d9dcff;border-radius:22px;padding:20px;margin-bottom:16px
+  }
+  .today-hero h1{margin:0 0 6px;font-size:32px}
+  .today-hero p{margin:0;color:var(--muted);line-height:1.5}
+  .today-list{display:grid;gap:10px}
+  .today-item{
+    display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+    border-radius:16px;padding:14px
+  }
+  .today-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:#eef4ff}
+  .today-item b{display:block;margin-bottom:3px}
+  .today-item small{color:var(--muted);line-height:1.4}
+  .all-good{
+    margin-top:14px;background:#eefaf1;border:1px solid #b7dfc2;border-radius:16px;
+    padding:14px;font-weight:700;color:#2f7f45
+  }
+  .inbox-wrap{max-width:760px;margin:0 auto;padding:20px 20px 105px}
+  .inbox-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+  .inbox-card h2{margin:0 0 6px;font-size:30px}
+  .inbox-sub{margin:0 0 18px;color:var(--muted);line-height:1.5}
+  .inbox-quick{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  .inbox-quick button{background:#f8faff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:left;font-weight:700}
+  .inbox-list{display:grid;gap:10px;margin-top:16px}
+  .inbox-item{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff}
+  .inbox-item b{display:block;margin-bottom:4px}
+  .inbox-item small{color:var(--muted)}
+  .empty-state{text-align:center;padding:22px;color:var(--muted);border:1px dashed #cfd7e8;border-radius:14px}
+  @media(max-width:640px){
+    .today-content,.inbox-wrap{padding:14px}
+    .inbox-card{padding:18px}
+    .inbox-quick{grid-template-columns:1fr}
+  }
+
+
+  .secretary-states{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0 18px}
+  .state-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px}
+  .state-card .state-title{font-weight:800;font-size:14px;margin-bottom:4px}
+  .state-card .state-count{font-size:26px;font-weight:800;line-height:1}
+  .state-card .state-desc{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}
+  .state-need{border-left:5px solid #d89b17}
+  .state-care{border-left:5px solid #6f63d9}
+  .state-alert{border-left:5px solid #cf4b4b}
+  .state-done{border-left:5px solid #4d9f64}
+  .inbox-action-box{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .inbox-action-box h3{margin:0 0 10px;font-size:18px}
+  .inbox-choice{display:grid;gap:8px}
+  .inbox-choice button{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;font-weight:700}
+  .inbox-choice button:hover{background:#f7f9ff}
+  .inbox-case-select{margin-top:10px}
+  .inbox-item-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .inbox-item-actions button{border:1px solid var(--line);background:#f8faff;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:700}
+  @media(max-width:640px){
+    .secretary-states{grid-template-columns:1fr 1fr}
+    .state-card{padding:12px}
+  }
+
+
+  .calendar-wrap{max-width:820px;margin:0 auto;padding:18px 18px 100px}
+  .calendar-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:var(--shadow)}
+  .calendar-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+  .calendar-head h2{margin:0;font-size:28px}
+  .cal-nav{display:flex;gap:8px}
+  .cal-nav button{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 12px;font-weight:800}
+  .calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .calendar-weekdays div{text-align:center;font-size:12px;font-weight:800;color:var(--muted);padding:6px 0}
+  .cal-day{min-height:56px;border:1px solid #e5e9f2;border-radius:12px;padding:7px;background:#fbfcff;position:relative}
+  .cal-day.empty{border-color:transparent;background:transparent}
+  .cal-day.today{outline:2px solid #376cff;background:#f0f5ff}
+  .cal-day.has-event{background:#f6f3ff}
+  .cal-num{font-weight:800;font-size:13px}
+  .cal-dot{width:7px;height:7px;border-radius:50%;background:#6a55e8;position:absolute;bottom:7px;left:50%;transform:translateX(-50%)}
+  .calendar-list{display:grid;gap:10px;margin-top:18px}
+  .calendar-event{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff}
+  .calendar-event b{display:block;margin-bottom:4px}
+  .calendar-event small{color:var(--muted)}
+  .reminder-now{
+    margin:0 0 14px;background:#fff8e8;border:1px solid #e9c269;border-left:5px solid #d89b17;
+    border-radius:16px;padding:14px
+  }
+  .reminder-now.urgent{background:#fff0f0;border-color:#e19a9a;border-left-color:#cf4b4b}
+  .reminder-now h3{margin:0 0 5px;font-size:18px}
+  .reminder-now p{margin:0;color:var(--muted);line-height:1.4}
+  .reminder-actions{display:flex;gap:9px;margin-top:12px}
+  .reminder-actions button{flex:1;border-radius:12px;padding:11px;font-weight:800;border:1px solid var(--line);background:#fff}
+  .reminder-actions button.done{background:#eaf8ee;border-color:#b9dfc2;color:#2f7f45}
+  @media(max-width:640px){
+    .calendar-wrap{padding:14px 14px 96px}
+    .calendar-card{padding:14px}
+    .cal-day{min-height:48px;padding:5px}
+    .bottom button{font-size:12px}
+  }
+
+
+  .calendar-connect-bar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    margin-bottom:16px;padding:14px 16px;border:1px solid var(--line);
+    background:#f8faff;border-radius:16px
+  }
+  .calendar-connect-bar b{display:block;margin-bottom:3px}
+  .calendar-connect-bar small{color:var(--muted);line-height:1.35}
+  .calendar-connect-bar button{
+    white-space:nowrap;border:0;border-radius:12px;padding:11px 14px;
+    background:linear-gradient(135deg,#3173f7,#6049f2);color:#fff;font-weight:800
+  }
+  .connect-wrap{max-width:760px;margin:0 auto;padding:18px 18px 100px}
+  .connect-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+  .connect-card h1{margin:0 0 8px;font-size:32px}
+  .connect-sub{margin:0 0 18px;color:var(--muted);line-height:1.5}
+  .provider-list{display:grid;gap:12px}
+  .provider{
+    display:flex;align-items:center;gap:14px;border:1px solid var(--line);
+    border-radius:16px;padding:15px;background:#fff
+  }
+  .provider-icon{
+    width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+    background:#f4f6fb;font-size:24px;flex:0 0 auto
+  }
+  .provider-main{flex:1;min-width:0}
+  .provider-main b{display:block;font-size:17px;margin-bottom:3px}
+  .provider-main small{display:block;color:var(--muted);line-height:1.35}
+  .provider button{
+    border:1px solid #cfd7e8;background:#fff;border-radius:11px;padding:10px 12px;
+    font-weight:800;color:#1d6fe8
+  }
+  .provider.connected{border-color:#b9dfc2;background:#f6fcf8}
+  .provider.connected button{color:#2f7f45}
+  .sync-note{
+    margin-top:18px;background:#f8faff;border:1px solid var(--line);border-radius:16px;
+    padding:14px;color:var(--muted);line-height:1.45
+  }
+  .connect-status{
+    margin-top:16px;padding:12px 14px;border-radius:14px;background:#fff8e8;
+    border:1px solid #e8c777;color:#8a6411
+  }
+  @media(max-width:640px){
+    .calendar-connect-bar{align-items:flex-start;flex-direction:column}
+    .calendar-connect-bar button{width:100%}
+    .connect-wrap{padding:14px 14px 96px}
+    .connect-card{padding:16px}
+    .provider{align-items:flex-start}
+    .provider button{margin-left:auto}
+  }
+
+
+  .provider{align-items:center}
+  .provider-main small{font-size:14px}
+  .provider-actions{display:flex;flex-direction:column;gap:7px;min-width:138px}
+  .provider-actions button{width:100%}
+  .provider-actions .help-btn{
+    font-size:12px;padding:8px 10px;color:#58657a;background:#f8faff
+  }
+  .help-panel{
+    margin-top:16px;padding:14px;border-radius:14px;border:1px solid #d6deec;background:#f8faff
+  }
+  .help-panel b{display:block;margin-bottom:5px}
+  @media(max-width:640px){
+    .provider{display:grid;grid-template-columns:46px 1fr;align-items:start}
+    .provider-actions{grid-column:1 / -1;display:grid;grid-template-columns:1fr 1fr;min-width:0;width:100%}
+    .provider-actions button:first-child{grid-column:1 / -1}
+    .provider-main{padding-top:2px}
+  }
+
+
+  .connect-flow{
+    margin-top:16px;border:1px solid var(--line);border-radius:18px;background:#fff;padding:16px
+  }
+  .flow-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+  .flow-top b{font-size:18px}
+  .flow-step{font-size:13px;font-weight:800;color:#5e6b80;background:#f3f6fb;border-radius:999px;padding:7px 10px}
+  .flow-progress{height:8px;background:#edf0f6;border-radius:999px;overflow:hidden;margin-bottom:16px}
+  .flow-progress span{display:block;height:100%;background:linear-gradient(135deg,#3173f7,#6049f2);width:33.333%}
+  .flow-body h3{margin:0 0 7px;font-size:20px}
+  .flow-body p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+  .flow-actions{display:flex;gap:9px;flex-wrap:wrap}
+  .flow-actions button{
+    flex:1;min-width:150px;border-radius:12px;padding:11px 13px;font-weight:800;
+    border:1px solid var(--line);background:#fff
+  }
+  .flow-actions .primary{
+    background:linear-gradient(135deg,#3173f7,#6049f2);color:#fff;border:0
+  }
+  .flow-success{
+    background:#f2fbf4;border:1px solid #b8dfc1;border-radius:14px;padding:13px;color:#2f7f45;font-weight:800
+  }
+
+
+  .provider.connected{
+    border-color:#e8c777;
+    background:#fffaf0;
+  }
+  .provider.connected button{
+    color:#8a6411;
+  }
+
+
+.bottom button{
+  min-width:0;
+  padding:4px 2px;
+  font-size:12px;
+  line-height:1.2;
+  white-space:nowrap;
+}
+@media(max-width:390px){
+  .bottom button{font-size:11px}
+}
+
+
+.more-wrap{max-width:760px;margin:0 auto;padding:18px 18px 105px}
+.more-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+.more-card h1{margin:0 0 6px;font-size:32px}
+.more-sub{margin:0 0 20px;color:var(--muted);line-height:1.45}
+.more-section{margin-top:20px}
+.more-section h3{margin:0 0 9px;font-size:15px;color:#657188;text-transform:uppercase;letter-spacing:.04em}
+.more-list{display:grid;gap:9px}
+.more-item{
+  width:100%;display:flex;align-items:center;gap:12px;text-align:left;
+  border:1px solid var(--line);border-radius:15px;padding:14px;background:#fff
+}
+.more-item-icon{
+  width:40px;height:40px;flex:0 0 40px;border-radius:12px;background:#f3f6fb;
+  display:grid;place-items:center;font-size:20px
+}
+.more-item-main{flex:1;min-width:0}
+.more-item-main b{display:block;margin-bottom:2px}
+.more-item-main small{display:block;color:var(--muted);line-height:1.35}
+.more-arrow{color:#97a1b4;font-size:22px}
+.more-badge{
+  font-size:11px;font-weight:800;color:#8a6411;background:#fff7dc;
+  border:1px solid #ead28b;border-radius:999px;padding:5px 8px
+}
+
+
+.bottom button{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.bottom .nav-short{
+  display:block;
+  margin-top:2px;
+}
+@media(max-width:430px){
+  .bottom{
+    grid-template-columns:0.95fr 1.35fr 1fr 0.85fr 0.85fr;
+  }
+  .bottom button{
+    font-size:10px!important;
+    letter-spacing:-0.15px;
+  }
+}
+
+
+.more-item-main b{
+  color:#1a2b4f;
+  font-weight:800;
+}
+.more-item-main small{
+  color:#66748e;
+  font-weight:560;
+}
+.more-item:disabled{
+  opacity:.68;
+}
+.more-item:disabled .more-item-main b{
+  color:#7b8495;
+}
+.more-item:disabled .more-item-main small{
+  color:#7f899b;
+}
+
+
+.calendar-source-filter{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  padding:2px 0 12px;
+  margin-bottom:6px;
+}
+.calendar-source-filter button{
+  width:100%;
+  min-width:0;
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:999px;
+  padding:9px 7px;
+  font-size:12px;
+  font-weight:800;
+  color:#647089;
+  white-space:nowrap;
+}
+.calendar-source-filter button.active{
+  color:#fff;
+  border-color:transparent;
+  background:linear-gradient(135deg,#3173f7,#6049f2);
+}
+.event-source{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:6px;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  background:#f3f6fb;
+  color:#61708b;
+}
+.event-source .src-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#6a55e8;
+}
+.external-calendar-note{
+  margin:12px 0 0;
+  padding:11px 12px;
+  border-radius:13px;
+  background:#f8faff;
+  border:1px solid var(--line);
+  color:#69758c;
+  font-size:12px;
+  line-height:1.45;
+}
+
+
+.event-source.source-sekretarz{background:#f2edff;color:#6547c8}
+.event-source.source-google{background:#edf4ff;color:#2d65c8}
+.event-source.source-icloud{background:#eef7fb;color:#35718c}
+.event-source.source-outlook{background:#eef3ff;color:#385eb0}
+.event-source.source-device{background:#f3f4f7;color:#5e6572}
+.event-source.source-sekretarz .src-dot{background:#7c4dff}
+.event-source.source-google .src-dot{background:#3b82f6}
+.event-source.source-icloud .src-dot{background:#49a6c8}
+.event-source.source-outlook .src-dot{background:#4b68c5}
+.event-source.source-device .src-dot{background:#7b8495}
+.calendar-dedupe-note{
+  margin:-2px 0 12px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:#f8faff;
+  border:1px solid var(--line);
+  color:#66748e;
+  font-size:12px;
+  line-height:1.4;
+}
+
+
+.cal-day{
+  text-align:left;
+  color:var(--navy);
+  font:inherit;
+}
+.cal-day.selected{
+  outline:2px solid #7c4dff;
+  background:#f5f1ff;
+}
+.calendar-day-summary{
+  margin:10px 0 4px;
+  padding:11px 12px;
+  border-radius:13px;
+  background:#f8faff;
+  border:1px solid var(--line);
+  color:#5f6c83;
+  font-size:12px;
+  font-weight:700;
+}
+.calendar-event.clickable{cursor:pointer}
+.calendar-event.clickable:hover{
+  border-color:#b8c8ff;
+  background:#fafbff;
+}
+
+
+.bottom{
+  z-index:1000!important;
+  pointer-events:auto!important;
+}
+.bottom button{
+  pointer-events:auto!important;
+  position:relative;
+  z-index:1001;
+}
+.page-id{
+  pointer-events:none;
+}
+
+
+.state-card.clickable{
+  cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.state-card.clickable:active{transform:scale(.985)}
+.state-card.clickable.selected{
+  box-shadow:0 0 0 3px rgba(70,90,120,.18);
+}
+.today-filter-note{
+  margin:-4px 0 12px;
+  padding:10px 12px;
+  border:1px solid #e7c66f;
+  border-radius:13px;
+  background:#fffaf0;
+  color:#765f22;
+  font-size:12px;
+  font-weight:700;
+}
+
+
+/* v12.7 — lekki DE-009 dla prostych przypomnień */
+.reminder-center{
+  margin-top:16px;
+}
+.reminder-simple-card{
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px;
+  background:#fff;
+}
+.reminder-simple-kicker{
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.02em;
+  color:var(--muted);
+  margin-bottom:7px;
+}
+.reminder-simple-card h3{
+  margin:0 0 8px;
+  font-size:18px;
+}
+.reminder-simple-card p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.5;
+}
+.reminder-simple-info{
+  margin-top:14px;
+  padding:12px;
+  border-radius:14px;
+  background:var(--soft);
+  font-size:13px;
+  line-height:1.45;
+}
+.reminder-simple-actions{
+  display:grid;
+  gap:10px;
+  margin-top:16px;
+}
+
+
+.status-done{
+  background:#edf8ef;
+  color:#2f7a43;
+  border-color:#b9dfc2;
+}
+</style>
+</head>
+<body>
+
+<!-- DE-001 -->
+<section id="de001" class="page">
+  <div class="lang-page">
+    <div class="lang-card">
+      <div class="lang-logo">
+        <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+        <h1>Sekretarz</h1>
+      </div>
+      <p class="tagline">Dein persönlicher Sekretär für den Alltag.</p>
+      <div class="choose-title">Sprache wählen</div>
+      <div class="langs">
+        <button class="lang-btn active" onclick="go('de002')"><span>🇩🇪</span>Deutsch</button>
+        <button class="lang-btn disabled" disabled><span>🇵🇱</span>Polski — später</button>
+        <button class="lang-btn disabled" disabled><span>🇬🇧</span>English — später</button>
+      </div>
+      <p class="note">Für die aktuelle Testphase wird nur die deutsche Version entwickelt.</p>
+    </div>
+  </div>
+  <div class="page-id">DE-001</div>
+</section>
+
+<!-- DE-002 -->
+<section id="de002" class="page hidden">
+  <div class="choice-wrap">
+    <div class="choice-card">
+      <div class="choice-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+        <div style="width:60px"></div>
+      </div>
+      <h2 class="choice-title">Wie möchtest du fortfahren?</h2>
+      <p class="choice-sub">Wähle, ob du neu bei Sekretarz bist oder bereits ein Konto hast.</p>
+
+      <div class="choice-grid">
+        <button class="choice-option" onclick="go('de003')">
+          <b>Neues Konto erstellen</b>
+          <span>Registriere dich mit E-Mail, Telefonnummer und sicherem Passwort.</span>
+        </button>
+
+        <button class="choice-option" onclick="go('de006')">
+          <b>Ich habe bereits ein Konto</b>
+          <span>Melde dich mit E-Mail oder Telefonnummer und deinem Passwort an.</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="page-id">DE-002</div>
+</section>
+
+<!-- DE-003 -->
+<section id="de003" class="page hidden">
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>Konto erstellen</h2>
+      <p>Erstelle dein persönliches, geschütztes Sekretarz-Konto.</p>
+
+      <div class="field">
+        <label>Vorname</label>
+        <input id="regFirstName" autocomplete="given-name" placeholder="Vorname">
+      </div>
+
+      <div class="field">
+        <label>Nachname</label>
+        <input id="regLastName" autocomplete="family-name" placeholder="Nachname">
+      </div>
+
+      <div class="field">
+        <label>Straße und Hausnummer</label>
+        <input id="regStreet" autocomplete="street-address" placeholder="z. B. Musterstraße 12">
+      </div>
+
+      <div class="field">
+        <label>PLZ</label>
+        <input id="regZip" inputmode="numeric" autocomplete="postal-code" placeholder="z. B. 83646">
+      </div>
+
+      <div class="field">
+        <label>Ort</label>
+        <input id="regCity" autocomplete="address-level2" placeholder="Ort">
+      </div>
+
+      <div class="field">
+        <label>E-Mail-Adresse</label>
+        <input id="regEmail" type="email" autocomplete="email" placeholder="name@beispiel.de">
+      </div>
+
+      <div class="field">
+        <label>Telefonnummer</label>
+        <div class="phone-row">
+          <select id="regPhonePrefix" aria-label="Ländervorwahl">
+            <option value="+49" selected>🇩🇪 +49</option>
+            <option value="+43">🇦🇹 +43</option>
+            <option value="+41">🇨🇭 +41</option>
+            <option value="+48">🇵🇱 +48</option>
+            <option value="+31">🇳🇱 +31</option>
+            <option value="+33">🇫🇷 +33</option>
+            <option value="+39">🇮🇹 +39</option>
+            <option value="+34">🇪🇸 +34</option>
+            <option value="+44">🇬🇧 +44</option>
+          </select>
+          <input id="regPhone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="171 1234567">
+        </div>
+        <div class="helper">Nummer ohne führende 0 eingeben. Beispiel Deutschland: <b>171 1234567</b> statt <b>0171 1234567</b>.</div>
+      </div>
+
+      <div class="field">
+        <label>Passwort</label>
+        <div class="password-wrap">
+          <input id="regPassword" type="password" autocomplete="new-password" placeholder="Mindestens 8 Zeichen">
+          <button type="button" class="eye-btn" onclick="togglePassword('regPassword', this)" aria-label="Passwort anzeigen">◉̸</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Passwort wiederholen</label>
+        <div class="password-wrap">
+          <input id="regPassword2" type="password" autocomplete="new-password" placeholder="Passwort erneut eingeben">
+          <button type="button" class="eye-btn" onclick="togglePassword('regPassword2', this)" aria-label="Passwort anzeigen">◉̸</button>
+        </div>
+      </div>
+
+      <label class="checkrow">
+        <input id="regTerms" type="checkbox">
+        <span>Ich akzeptiere die Nutzungsbedingungen und die Datenschutzerklärung.</span>
+      </label>
+
+      <div id="regMsg" class="hidden"></div>
+
+      <button class="btn primary full" onclick="registerUser()">Konto erstellen</button>
+      <p class="tiny">Im aktuellen Prototyp wird noch kein echtes Konto auf einem Server angelegt.</p>
+    </div>
+  </div>
+  <div class="page-id">DE-003</div>
+</section>
+
+
+<!-- DE-004 -->
+<section id="de004" class="page hidden">
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>E-Mail bestätigen</h2>
+      <p>Wir haben einen Bestätigungslink an deine E-Mail-Adresse gesendet.</p>
+
+      <div class="success" id="emailVerifyInfo">
+        Bestätigungs-E-Mail wurde vorbereitet.
+      </div>
+
+      <div class="field">
+        <label>E-Mail-Adresse</label>
+        <input id="verifyEmailDisplay" disabled>
+      </div>
+
+      <button class="btn primary full" onclick="simulateEmailClick()">
+        Test: Bestätigungslink öffnen
+      </button>
+
+      <button class="btn secondary full" style="margin-top:10px" onclick="resendEmail()">
+        E-Mail erneut senden
+      </button>
+
+      <p class="tiny">
+        Testmodus: Dieser Button simuliert den Klick auf den Link aus der Bestätigungs-E-Mail.
+      </p>
+    </div>
+  </div>
+  <div class="page-id">DE-004</div>
+</section>
+
+<!-- DE-005 -->
+<section id="de005" class="page hidden">
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>Telefon bestätigen</h2>
+      <p>Wir haben einen 6-stelligen Sicherheitscode an deine Telefonnummer gesendet.</p>
+
+      <div class="field">
+        <label>Telefonnummer</label>
+        <input id="verifyPhoneDisplay" disabled>
+      </div>
+
+      <div class="field">
+        <label>SMS-Code</label>
+        <input id="smsCodeInput" inputmode="numeric" maxlength="6" placeholder="6-stelliger Code">
+      </div>
+
+      <div id="smsTestCode" class="success hidden"></div>
+      <div id="smsMsg" class="hidden"></div>
+
+      <button class="btn primary full" onclick="verifySmsCode()">Code bestätigen</button>
+
+      <button class="btn secondary full" style="margin-top:10px" onclick="sendSmsCode()">
+        Neuen Code senden
+      </button>
+
+      <p class="tiny">
+        Testmodus: Der erzeugte SMS-Code wird angezeigt, damit der Ablauf sofort getestet werden kann.
+      </p>
+    </div>
+  </div>
+  <div class="page-id">DE-005</div>
+</section>
+
+<!-- DE-006 -->
+<section id="de006" class="page hidden">
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>Anmelden</h2>
+      <p>Melde dich mit E-Mail oder Telefonnummer an.</p>
+
+      <div id="recognizedAccount" class="success hidden"></div>
+
+      <div class="field">
+        <label>E-Mail oder Telefonnummer</label>
+        <input id="loginId" placeholder="z. B. name@beispiel.de oder Telefonnummer">
+      </div>
+
+      <div class="field">
+        <label>Passwort</label>
+        <div class="password-wrap">
+          <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort">
+          <button type="button" class="eye-btn" onclick="togglePassword('loginPassword', this)" aria-label="Passwort anzeigen">◉̸</button>
+        </div>
+      </div>
+
+      <div id="loginMsg" class="hidden"></div>
+
+      <button class="btn primary full" onclick="attemptLogin()">Anmelden</button>
+
+      <div style="text-align:center;margin-top:14px">
+        <button class="linkbtn" onclick="go('de007')">Passwort vergessen?</button>
+      </div>
+
+      
+    </div>
+  </div>
+  <div class="page-id">DE-006</div>
+</section>
+
+<!-- DE-007 -->
+<section id="de007" class="page hidden">
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>Passwort zurücksetzen</h2>
+      <p>Gib deine E-Mail-Adresse oder Telefonnummer ein.</p>
+
+      <div class="field">
+        <label>E-Mail oder Telefonnummer</label>
+        <input id="recoveryId" placeholder="E-Mail oder Telefonnummer">
+      </div>
+
+      <div id="recoveryMsg" class="hidden"></div>
+
+      <button class="btn primary full" onclick="sendRecovery()">Wiederherstellungslink senden</button>
+      <p class="tiny">Später wird die Wiederherstellung per sicherem Link oder Bestätigungscode erfolgen.</p>
+    </div>
+  </div>
+  <div class="page-id">DE-007</div>
+</section>
+
+<!-- DE-008 -->
+<section id="de008" class="page hidden">
+  <div class="app-shell">
+    <header class="app-head">
+      <div class="app-brand">
+        <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
+        <span>Sekretarz</span>
+      </div>
+      <div class="app-nav-right">
+        <button class="backbtn" onclick="back()">← Zurück</button>
+        <button class="btn secondary" onclick="logout()">Abmelden</button>
+      </div>
+    </header>
+
+    <div class="app-content">
+      <h1>Meine Angelegenheiten</h1>
+      <div class="search">🔎 Suchen...</div>
+
+      <div class="summary">
+        <div class="sum"><span>Dringend</span><b>3</b></div>
+        <div class="sum"><span>Warte</span><b>5</b></div>
+        <div class="sum"><span>Heute</span><b>2</b></div>
+      </div>
+
+      <div id="cases" class="cases">
+        <button class="case" style="text-align:left;width:100%" onclick="openCase('Fenster – Isarwinkel','Warte auf Antwort','Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.','KI betreut','Haus & Wohnung','Antwort von Isarwinkel analysieren und nächsten Schritt planen.','ai','','')">
+          <div class="case-top"><div><h3>Fenster – Isarwinkel</h3><span class="tag">Warte auf Antwort</span></div><small>28.08.2026</small></div>
+          <p>Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.</p>
+        </button>
+
+        <button class="case" style="text-align:left;width:100%" onclick="openCase('Werkstatt – Termin','Zu bestätigen','Vorgeschlagenen Werkstatttermin bestätigen.','02.09.2026')">
+          <div class="case-top"><div><h3>Werkstatt – Termin</h3><span class="tag">Zu bestätigen</span></div><small>02.09.2026</small></div>
+          <p>Vorgeschlagenen Werkstatttermin bestätigen.</p>
+        </button>
+
+        <button class="case" style="text-align:left;width:100%" onclick="openCase('Autoversicherung','Zu erledigen','Angebot und Verlängerungsfrist prüfen.','05.09.2026')">
+          <div class="case-top"><div><h3>Autoversicherung</h3><span class="tag">Zu erledigen</span></div><small>05.09.2026</small></div>
+          <p>Angebot und Verlängerungsfrist prüfen.</p>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn primary fab" onclick="openNewCase()">＋ Angelegenheit</button>
+
+    <nav class="bottom">
+      <button data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button class="active" data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button data-nav="more" onclick="openMore()">•••<br>Mehr</button>
+    </nav>
+  </div>
+  <div class="page-id">DE-008</div>
+</section>
+
+<!-- DE-009 -->
+<section id="de009" class="page hidden">
+  <div class="detail-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
+    </div>
+
+    <div class="detail-card">
+      <div class="case-top" style="align-items:flex-start">
+        <div>
+          <h2 id="detailTitle" style="margin:0 0 10px">Angelegenheit</h2>
+          <span id="detailStatus" class="tag">Status</span>
+        </div>
+        <small id="detailDate"></small>
+      </div>
+
+
+      <div id="reminderCaseCenter" class="reminder-center hidden">
+        <div class="reminder-simple-card">
+          <div class="reminder-simple-kicker">Erinnerung</div>
+          <h3 id="reminderSimpleHeading">Einfache Erinnerung</h3>
+          <p id="reminderSimpleText">Diese Aufgabe wird zur gespeicherten Zeit erinnert.</p>
+
+          <div id="reminderSimpleInfo" class="reminder-simple-info"></div>
+
+          <div class="reminder-simple-actions">
+            <button id="reminderEditBtn" class="btn primary" onclick="editCurrentCase()">Bearbeiten</button>
+            <button id="reminderReplanBtn" class="btn primary hidden" onclick="replanCurrentCase()">Erneut planen</button>
+            <button id="reminderDoneBtn" class="btn secondary" onclick="markCaseDone()">Als erledigt markieren</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="aiCaseCenter" class="ai-center" style="margin-top:16px">
+        <div class="ai-block purple">
+          <div class="ai-kicker">Sekretär-Analyse</div>
+          <h3>Was ist gerade los?</h3>
+          <p id="aiSituationText">Noch keine Analyse vorhanden.</p>
+        </div>
+
+        <div class="ai-block blue">
+          <div class="ai-kicker">Nächster sinnvoller Schritt</div>
+          <h3 id="aiNextStepTitle">Nächsten Schritt vorbereiten</h3>
+          <p id="aiNextStepText">Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.</p>
+        </div>
+
+        <div class="ai-block yellow">
+          <div class="ai-kicker">Frage an dich</div>
+          <h3>Fehlen Informationen?</h3>
+          <div class="ai-question-box">
+            <p id="aiQuestionText">Gab es seit dem letzten Kontakt ein Telefonat oder eine andere wichtige Information?</p>
+            <div class="ai-answer-row">
+              <button class="btn secondary" onclick="answerAIQuestion(false)">Nein</button>
+              <button class="btn primary" onclick="answerAIQuestion(true)">Ja, ergänzen</button>
+            </div>
+            <textarea id="aiUserNote" class="hidden" rows="3" placeholder="Fasse kurz zusammen, was passiert ist."></textarea>
+            <button id="aiSaveNoteBtn" class="btn primary hidden" onclick="saveAIUserNote()">Zur Historie hinzufügen</button>
+          </div>
+        </div>
+
+        <details class="collapse-card">
+          <summary><span><span class="collapse-kicker">Plan</span>Plan für diese Angelegenheit</span></summary>
+          <div class="collapse-body">
+            <div id="aiPlanList" class="ai-plan"></div>
+          </div>
+        </details>
+
+        <details id="caseLocationBox" class="collapse-card hidden">
+          <summary><span><span class="collapse-kicker">Ort / Kontakt</span>Kontakt zur Angelegenheit</span></summary>
+          <div class="collapse-body">
+            <p id="caseLocationContent" style="margin:0;color:var(--muted);line-height:1.5"></p>
+          </div>
+        </details>
+
+        <details class="collapse-card">
+          <summary><span><span class="collapse-kicker">Historie</span>Was ist bisher passiert?</span></summary>
+          <div class="collapse-body">
+            <div id="caseTimeline" class="timeline"></div>
+          </div>
+        </details>
+
+        <div class="ai-block green">
+          <div class="ai-kicker">Sekretär-Aktionen</div>
+          <h3>Was soll ich jetzt tun?</h3>
+          <div class="ai-actions">
+            <button class="btn primary" onclick="prepareNextStep()">Nächsten Schritt vorbereiten</button>
+            <button class="btn secondary" onclick="editCurrentCase()">Bearbeiten</button>
+            <button class="btn secondary" onclick="goDashboard()">Zum Dashboard</button>
+            <button class="btn secondary" onclick="markCaseDone()">Als erledigt markieren</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-id">DE-009</div>
+</section>
+
+<!-- DE-010 -->
+<section id="de010" class="page hidden">
+  <div class="form-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
+    </div>
+
+    <div class="form-card">
+      <div class="form-head">
+        <h2 id="caseFormHeading">Neue Angelegenheit</h2>
+        <span class="tag" id="caseFormMode">Neu</span>
+      </div>
+
+      <div class="form-grid">
+        <div class="field wide">
+          <label>Wie soll dein Sekretär diese Angelegenheit behandeln?</label>
+          <div class="care-choice">
+            <label class="care-card active" id="careCardReminder">
+              <span><input type="radio" name="caseCareType" value="reminder" checked onchange="setCaseCareType('reminder')"><b>Nur erinnern</b></span>
+              <small>Für einfache Aufgaben wie „Brötchen kaufen“, Medikamente, Anruf oder einmaligen Termin.</small>
+            </label>
+
+            <label class="care-card" id="careCardAI">
+              <span><input type="radio" name="caseCareType" value="ai" onchange="setCaseCareType('ai')"><b>Mit KI betreuen</b></span>
+              <small>Der Sekretär verfolgt die Angelegenheit, analysiert neue Informationen und plant die nächsten Schritte.</small>
+            </label>
+          </div>
+        </div>
+
+        <div class="field wide">
+          <label>Titel</label>
+          <input id="caseTitle" placeholder="z. B. Fenster – Isarwinkel">
+        </div>
+
+        <div class="field">
+          <label>Lebensbereich</label>
+          <select id="caseCategory">
+            <option>Haus & Wohnung</option>
+            <option>Gesundheit & Ärzte</option>
+            <option>Auto & Mobilität</option>
+            <option>Versicherungen</option>
+            <option>Behörden</option>
+            <option>Finanzen</option>
+            <option>Familie</option>
+            <option>Arbeit</option>
+            <option>Verträge & Abos</option>
+            <option>Einkäufe</option>
+            <option>Reisen</option>
+            <option>Dokumente</option>
+            <option>Sonstiges</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Status</label>
+          <select id="caseStatus">
+            <option>Zu erledigen</option>
+            <option>Warte auf Antwort</option>
+            <option>Zu bestätigen</option>
+            <option>Dringend</option>
+            <option>Erledigt</option>
+            <option>Nicht erledigt</option>
+          </select>
+        </div>
+
+
+        <div class="field wide">
+          <div class="contact-card">
+            <h3>Ort / Kontakt zur Angelegenheit</h3>
+            <div class="contact-grid">
+              <div class="field" style="margin:0">
+                <label>Name / Praxis / Firma</label>
+                <input id="casePlaceName" placeholder="z. B. Zahnarztpraxis Dr. Müller">
+              </div>
+              <div class="field" style="margin:0">
+                <label>Kontaktart</label>
+                <select id="caseContactType">
+                  <option value="">Nicht festgelegt</option>
+                  <option>Arzt / Praxis</option>
+                  <option>Firma</option>
+                  <option>Behörde</option>
+                  <option>Versicherung</option>
+                  <option>Vermieter / Hausverwaltung</option>
+                  <option>Privatkontakt</option>
+                  <option>Sonstiges</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0">
+                <label>Straße und Hausnummer</label>
+                <input id="casePlaceStreet" placeholder="Musterstraße 12">
+              </div>
+              <div class="field" style="margin:0">
+                <label>PLZ / Ort</label>
+                <input id="casePlaceCity" placeholder="80331 München">
+              </div>
+              <div class="field" style="margin:0">
+                <label>Telefon</label>
+                <input id="casePlacePhone" placeholder="+49 ...">
+              </div>
+              <div class="field" style="margin:0">
+                <label>E-Mail</label>
+                <input id="casePlaceEmail" type="email" placeholder="praxis@example.de">
+              </div>
+            </div>
+            <div class="nav-preview">
+              Wenn später ein Termin an diesem Ort ansteht, kann der Sekretär fragen:
+              <b>„Soll ich dich jetzt dorthin navigieren?“</b>
+              Falls Adresse oder Kontaktdaten fehlen, soll er sie beim Nutzer erfragen oder passende öffentliche Daten im Internet vorschlagen.
+            </div>
+          </div>
+        </div>
+
+        <!-- SIMPLE REMINDER -->
+        <div id="reminderPanel" class="mode-panel">
+          <h3>Einfaches Erinnern</h3>
+          <p>Der Sekretär erinnert dich zur gewünschten Zeit. Wenn du nicht reagierst, erinnert er dich alle 5 Minuten erneut – maximal 5-mal.</p>
+
+          <div class="mini-grid">
+            <div class="field" style="margin:0">
+              <label>Zeitpunkt</label>
+              <input id="caseReminderDateTime" type="datetime-local">
+            </div>
+            <div class="field" style="margin:0">
+              <label>Nach 5 erfolglosen Erinnerungen</label>
+              <input value="Rot markieren: Nicht erledigt" disabled>
+            </div>
+          </div>
+
+          <div class="ai-note" style="margin-top:10px">
+            Sobald du „Erledigt“ bestätigst, wird die Aufgabe geschlossen. Ohne Bestätigung bleibt sie im Kalender sichtbar und wird nach der fünften Erinnerung rot als „Nicht erledigt“ markiert.
+          </div>
+        </div>
+
+        <!-- AI CASE -->
+        <div id="aiPanel" class="mode-panel hidden-mode">
+          <h3>KI-Betreuung der Angelegenheit</h3>
+          <p>Der Sekretär soll diese Angelegenheit aktiv verfolgen, fehlende Informationen erfragen und den nächsten sinnvollen Schritt vorbereiten.</p>
+
+          <div class="field" style="margin:0 0 10px">
+            <label>Worum geht es und was soll erreicht werden?</label>
+            <textarea id="caseDescription" rows="4" placeholder="Beschreibe die Angelegenheit und das gewünschte Ergebnis."></textarea>
+          </div>
+
+          <div class="field" style="margin:0 0 10px">
+            <label>Aktueller Stand / letzter bekannter Schritt</label>
+            <textarea id="caseNextStep" rows="3" placeholder="z. B. Wir warten auf die Antwort von Isarwinkel."></textarea>
+          </div>
+
+          <label style="font-weight:700;font-size:14px">Welche Informationen darf der Sekretär für diese Angelegenheit berücksichtigen?</label>
+          <div class="check-grid">
+            <label class="check-item"><input id="sourceEmail" type="checkbox" checked> E-Mails und Antworten</label>
+            <label class="check-item"><input id="sourceDocs" type="checkbox" checked> Dokumente und Anhänge</label>
+            <label class="check-item"><input id="sourceCalls" type="checkbox" checked> Meine Notizen / Telefonate</label>
+            <label class="check-item"><input id="sourceWeb" type="checkbox" checked> Aktuelle geprüfte Internetquellen</label>
+          </div>
+
+          <div class="ai-note" style="margin-top:10px">
+            Wenn Informationen fehlen, soll der Sekretär nachfragen – z. B. ob seit der letzten E-Mail ein Telefonat stattgefunden hat. Neue Angaben werden Teil der Historie dieser Angelegenheit.
+          </div>
+        </div>
+      </div>
+
+      <div id="caseFormMsg" class="hidden"></div>
+
+      <div class="preview-box">
+        <h3>Vorschau</h3>
+        <div id="casePreview" class="helper">Fülle den Titel aus, um die Vorschau zu sehen.</div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn secondary" onclick="back()">Abbrechen</button>
+        <button class="btn primary" onclick="saveCaseForm()">Speichern</button>
+      </div>
+    </div>
+  </div>
+  <div class="page-id">DE-010</div>
+</section>
+
+
+
+<!-- DE-011 -->
+<section id="de011" class="page hidden">
+  <div class="today-shell">
+    <header class="app-head">
+      <div class="app-brand">
+        <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+        <span>Sekretarz</span>
+      </div>
+      <div class="app-nav-right">
+        <button class="btn secondary" onclick="logout()">Abmelden</button>
+      </div>
+    </header>
+
+    <div class="today-content">
+      <div class="today-hero">
+        <h1 id="todayGreeting">Guten Abend.</h1>
+        <p id="todaySummary">Dein Sekretär prüft, was heute wichtig ist.</p>
+      </div>
+
+      
+      <div id="todayReminderNow"></div>
+      <div class="secretary-states">
+        <div id="stateNeedTile" class="state-card state-need clickable" role="button" tabindex="0"
+             onclick="toggleTodayFilter('need')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTodayFilter('need');}">
+          <div class="state-title">Ich brauche etwas von dir</div>
+          <div class="state-count" id="stateNeedCount">0</div>
+          <div class="state-desc">Hier musst du selbst kurz entscheiden oder etwas ergänzen.</div>
+        </div>
+        <div id="stateCareTile" class="state-card state-care clickable" role="button" tabindex="0"
+             onclick="toggleTodayFilter('care')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTodayFilter('care');}">
+          <div class="state-title">Ich kümmere mich</div>
+          <div class="state-count" id="stateCareCount">0</div>
+          <div class="state-desc">Diese Dinge behält dein Sekretär für dich im Blick.</div>
+        </div>
+        <div id="stateAlertTile" class="state-card state-alert clickable" role="button" tabindex="0"
+             onclick="toggleTodayFilter('alert')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTodayFilter('alert');}">
+          <div class="state-title">Achtung</div>
+          <div class="state-count" id="stateAlertCount">0</div>
+          <div class="state-desc">Hier wird etwas dringend oder ist bereits überfällig.</div>
+        </div>
+        <div id="stateDoneTile" class="state-card state-done clickable" role="button" tabindex="0"
+             onclick="toggleTodayFilter('done')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTodayFilter('done');}">
+          <div class="state-title">Erledigt</div>
+          <div class="state-count" id="stateDoneCount">0</div>
+          <div class="state-desc">Heute abgeschlossene oder erledigte Dinge.</div>
+        </div>
+      </div>
+
+<div id="todayNeedFilterNote" class="today-filter-note hidden">Nur Dinge, bei denen du etwas tun oder entscheiden musst.</div>
+      <div class="today-list" id="todayList"></div>
+      <div class="all-good">Alles andere ist unter Kontrolle.</div>
+    </div>
+
+    <nav class="bottom">
+      <button class="active" data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button data-nav="more" onclick="openMore()">•••<br>Mehr</button>
+    </nav>
+  </div>
+  <div class="page-id">DE-011</div>
+</section>
+
+<!-- DE-012 -->
+<section id="de012" class="page hidden">
+  <div class="inbox-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+    </div>
+
+    <div class="inbox-card">
+      <h2>Inbox</h2>
+      <p class="inbox-sub">Alles Neue landet zuerst hier. Dein Sekretär kann später entscheiden, ob daraus eine neue Angelegenheit wird oder ob es zu einer bestehenden gehört.</p>
+
+      <div class="inbox-quick">
+        <button onclick="setInboxType('Notiz')">✎ Neue Notiz</button>
+        <button onclick="setInboxType('Telefonat')">☎ Telefonat festhalten</button>
+        <button onclick="setInboxType('Dokument')">▤ Dokument vormerken</button>
+        <button onclick="setInboxType('Nachricht')">✉ Nachricht erfassen</button>
+      </div>
+
+      <div class="field">
+        <label>Typ</label>
+        <select id="inboxType">
+          <option>Notiz</option>
+          <option>Telefonat</option>
+          <option>Dokument</option>
+          <option>Nachricht</option>
+          <option>E-Mail</option>
+          <option>Sonstiges</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Was ist neu?</label>
+        <textarea id="inboxText" rows="4" placeholder="z. B. Isarwinkel hat angerufen und einen Termin angekündigt."></textarea>
+      </div>
+
+      <div id="inboxMsg" class="hidden"></div>
+      <button class="btn primary full" onclick="saveInboxItem()">In Inbox speichern</button>
+      <div id="inboxDecisionBox" class="inbox-action-box hidden">
+        <h3>Was soll der Sekretär damit machen?</h3>
+        <div id="inboxDecisionPreview" class="inbox-item" style="margin-bottom:10px"></div>
+        <div class="inbox-choice">
+          <button onclick="showInboxCaseSelect()">Zu bestehender Angelegenheit</button>
+          <button onclick="createCaseFromLastInbox()">Neue Angelegenheit</button>
+          <button onclick="leaveLastInboxUnassigned()">In Inbox lassen</button>
+        </div>
+        <div id="inboxCaseSelectBox" class="inbox-case-select hidden">
+          <div class="field">
+            <label>Bestehende Angelegenheit</label>
+            <select id="inboxCaseSelect"></select>
+          </div>
+          <button class="btn primary full" onclick="assignLastInboxToCase()">Zu Angelegenheit hinzufügen</button>
+        </div>
+      </div>
+
+
+      <div id="inboxList" class="inbox-list"></div>
+    </div>
+
+    <nav class="bottom">
+      <button data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button class="active" data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button data-nav="more" onclick="openMore()">•••<br>Mehr</button>
+    </nav>
+  </div>
+  <div class="page-id">DE-012</div>
+</section>
+
+
+<!-- DE-014 -->
+<section id="de014" class="page hidden">
+  <div class="calendar-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+    </div>
+
+    
+    <div class="calendar-connect-bar">
+      <div>
+        <b>Externe Kalender</b>
+        <small>Google, Apple, Outlook oder Kalender vom Gerät anzeigen.</small>
+      </div>
+      <button onclick="openCalendarConnect()">Kalender verbinden</button>
+    </div>
+
+
+    <div class="calendar-source-filter" id="calendarSourceFilter">
+      <button class="active" data-source-filter="all" onclick="setCalendarSourceFilter('all')">Alle</button>
+      <button data-source-filter="sekretarz" onclick="setCalendarSourceFilter('sekretarz')">Sekretarz</button>
+      <button data-source-filter="google" onclick="setCalendarSourceFilter('google')">Google</button>
+      <button data-source-filter="icloud" onclick="setCalendarSourceFilter('icloud')">iCloud</button>
+      <button data-source-filter="outlook" onclick="setCalendarSourceFilter('outlook')">Outlook</button>
+      <button data-source-filter="device" onclick="setCalendarSourceFilter('device')">Gerät</button>
+    </div>
+
+    <div class="calendar-dedupe-note">
+      Gleiche Termine aus mehreren Kalendern werden automatisch zusammengeführt.
+    </div>
+
+    <div class="calendar-card">
+      <div class="calendar-head">
+        <h2 id="calendarMonthTitle">Kalender</h2>
+        <div class="cal-nav">
+          <button onclick="changeCalendarMonth(-1)">‹</button>
+          <button onclick="calendarToday()">Heute</button>
+          <button onclick="changeCalendarMonth(1)">›</button>
+        </div>
+      </div>
+
+      <div class="calendar-weekdays">
+        <div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
+      </div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+
+      <div style="margin-top:20px">
+        <h3 style="margin:0 0 10px">Termine & Erinnerungen</h3>
+        <div id="calendarDaySummary" class="calendar-day-summary hidden"></div>
+        <div id="calendarEventList" class="calendar-list"></div>
+        <div class="external-calendar-note">
+          Externe Termine werden hier später nach echter Verbindung angezeigt. Bis dahin zeigt der Kalender nur Termine aus Sekretarz.
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom">
+      <button data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button class="active" data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button data-nav="more" onclick="openMore()">•••<br>Mehr</button>
+    </nav>
+  </div>
+  <div class="page-id">DE-014</div>
+</section>
+
+
+<!-- DE-015 -->
+<section id="de015" class="page hidden">
+  <div class="connect-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+    </div>
+
+    <div class="connect-card">
+      <h1>Kalender verbinden</h1>
+      <p class="connect-sub">
+        Wähle deinen Kalender. Den Rest erklären wir Schritt für Schritt.
+      </p>
+
+      <div id="calendarConnectFlow" class="connect-flow hidden">
+        <div class="flow-top">
+          <b id="flowProviderTitle">Kalender verbinden</b>
+          <span id="flowStepLabel" class="flow-step">Schritt 1 von 3</span>
+        </div>
+        <div class="flow-progress"><span id="flowProgressBar"></span></div>
+        <div id="flowBody" class="flow-body"></div>
+      </div>
+
+      <div class="provider-list">
+        <div class="provider" data-provider="google">
+          <div class="provider-icon">G</div>
+          <div class="provider-main">
+            <b>Google Kalender</b>
+            <small>Für Google- und Gmail-Konten.</small>
+          </div>
+          <div class="provider-actions">
+            <button data-connect-provider="google" onclick="selectCalendarProvider('google')">Verbinden</button>
+            <button class="help-btn" onclick="showCalendarHelp('google','video')">Video-Anleitung</button>
+            <button class="help-btn" onclick="showCalendarHelp('google','pdf')">PDF-Anleitung</button>
+          </div>
+        </div>
+
+        <div class="provider" data-provider="icloud">
+          <div class="provider-icon">☁</div>
+          <div class="provider-main">
+            <b>Apple iCloud</b>
+            <small>Für Apple- und iCloud-Kalender.</small>
+          </div>
+          <div class="provider-actions">
+            <button data-connect-provider="icloud" onclick="selectCalendarProvider('icloud')">Verbinden</button>
+            <button class="help-btn" onclick="showCalendarHelp('icloud','video')">Video-Anleitung</button>
+            <button class="help-btn" onclick="showCalendarHelp('icloud','pdf')">PDF-Anleitung</button>
+          </div>
+        </div>
+
+        <div class="provider" data-provider="outlook">
+          <div class="provider-icon">O</div>
+          <div class="provider-main">
+            <b>Outlook / Microsoft</b>
+            <small>Für Outlook, Microsoft 365 und Exchange.</small>
+          </div>
+          <div class="provider-actions">
+            <button data-connect-provider="outlook" onclick="selectCalendarProvider('outlook')">Verbinden</button>
+            <button class="help-btn" onclick="showCalendarHelp('outlook','video')">Video-Anleitung</button>
+            <button class="help-btn" onclick="showCalendarHelp('outlook','pdf')">PDF-Anleitung</button>
+          </div>
+        </div>
+
+        <div class="provider" data-provider="device">
+          <div class="provider-icon">▣</div>
+          <div class="provider-main">
+            <b>Kalender vom Gerät</b>
+            <small>Für Termine, die direkt auf deinem Handy gespeichert sind.</small>
+          </div>
+          <div class="provider-actions">
+            <button data-connect-provider="device" onclick="selectCalendarProvider('device')">Verbinden</button>
+            <button class="help-btn" onclick="showCalendarHelp('device','video')">Video-Anleitung</button>
+            <button class="help-btn" onclick="showCalendarHelp('device','pdf')">PDF-Anleitung</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="calendarConnectStatus" class="connect-status hidden"></div>
+      <div id="calendarHelpPanel" class="help-panel hidden"></div>
+
+
+      <div class="sync-note">
+        <b>Du kommst nicht weiter?</b><br>
+        Nutze einfach die Video- oder PDF-Anleitung. Beides erklärt jeden Schritt ohne Fachbegriffe.
+      </div>
+    </div>
+  </div>
+  <div class="page-id">DE-015</div>
+</section>
+
+
+<!-- DE-016 -->
+<section id="de016" class="page hidden">
+  <div class="more-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+    </div>
+
+    <div class="more-card">
+      <h1>Mehr</h1>
+      <p class="more-sub">Profil, Verbindungen und weitere Einstellungen an einem Ort.</p>
+
+      <div class="more-section">
+        <h3>Konto</h3>
+        <div class="more-list">
+          <button class="more-item" onclick="openProfile()">
+            <span class="more-item-icon">◯</span>
+            <span class="more-item-main">
+              <b>Mein Profil</b>
+              <small>Persönliche Daten, Krankenkasse und Vorlieben.</small>
+            </span>
+            <span class="more-arrow">›</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="more-section">
+        <h3>Verbindungen</h3>
+        <div class="more-list">
+          <button class="more-item" onclick="openCalendarConnect()">
+            <span class="more-item-icon">▣</span>
+            <span class="more-item-main">
+              <b>Kalender verbinden</b>
+              <small>Google, Apple iCloud, Outlook oder Gerätekalender.</small>
+            </span>
+            <span class="more-arrow">›</span>
+          </button>
+
+          <button class="more-item" type="button" disabled>
+            <span class="more-item-icon">✉</span>
+            <span class="more-item-main">
+              <b>E-Mail verbinden</b>
+              <small>Kommt als nächster Integrationsbereich.</small>
+            </span>
+            <span class="more-badge">Später</span>
+          </button>
+
+          <button class="more-item" type="button" disabled>
+            <span class="more-item-icon">◉</span>
+            <span class="more-item-main">
+              <b>WhatsApp verbinden</b>
+              <small>Wird später genauso einfach eingerichtet.</small>
+            </span>
+            <span class="more-badge">Später</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="more-section">
+        <h3>Hilfe & Einstellungen</h3>
+        <div class="more-list">
+          <button class="more-item" type="button" disabled>
+            <span class="more-item-icon">▶</span>
+            <span class="more-item-main">
+              <b>Anleitungen</b>
+              <small>Video- und PDF-Hilfen für die Einrichtung.</small>
+            </span>
+            <span class="more-badge">Später</span>
+          </button>
+
+          <button class="more-item" type="button" disabled>
+            <span class="more-item-icon">⚙</span>
+            <span class="more-item-main">
+              <b>Einstellungen</b>
+              <small>Allgemeine Einstellungen der App.</small>
+            </span>
+            <span class="more-badge">Später</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <nav class="bottom">
+      <button data-nav="today" onclick="openToday()">☀<br>Heute</button>
+      <button data-nav="cases" onclick="goDashboard()">☷<br><span class="nav-short">Anliegen</span></button>
+      <button data-nav="calendar" onclick="openCalendar()">▣<br>Kalender</button>
+      <button data-nav="inbox" onclick="openInbox()">⌄<br>Inbox</button>
+      <button class="active" data-nav="more" onclick="openMore()">•••<br>Mehr</button>
+    </nav>
+  </div>
+  <div class="page-id">DE-016</div>
+</section>
+
+<!-- DE-013 -->
+<section id="de013" class="page hidden">
+  <div class="profile-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
+    </div>
+
+    <div class="profile-card">
+      <h2>Mein Profil</h2>
+      <p class="profile-intro">Hier merkt sich dein Sekretär wichtige persönliche Daten, damit du sie nicht bei jeder Angelegenheit neu eingeben musst.</p>
+
+      <div class="profile-section">
+        <h3>Persönliche Daten</h3>
+        <div class="profile-grid">
+          <div class="field" style="margin:0">
+            <label>Vorname</label>
+            <input id="profileFirstName">
+          </div>
+          <div class="field" style="margin:0">
+            <label>Nachname</label>
+            <input id="profileLastName">
+          </div>
+          <div class="field wide" style="margin:0">
+            <label>E-Mail</label>
+            <input id="profileEmail" type="email">
+          </div>
+          <div class="field wide" style="margin:0">
+            <label>Telefon</label>
+            <input id="profilePhone" type="tel">
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <h3>Adresse</h3>
+        <div class="profile-grid">
+          <div class="field wide" style="margin:0">
+            <label>Straße und Hausnummer</label>
+            <input id="profileStreet">
+          </div>
+          <div class="field" style="margin:0">
+            <label>PLZ</label>
+            <input id="profileZip">
+          </div>
+          <div class="field" style="margin:0">
+            <label>Ort</label>
+            <input id="profileCity">
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <h3>Gesundheit / Krankenkasse</h3>
+        <div class="profile-grid">
+          <div class="field wide" style="margin:0">
+            <label>Krankenkasse</label>
+            <input id="profileHealthInsurer" placeholder="z. B. AOK Bayern">
+          </div>
+          <div class="field" style="margin:0">
+            <label>Ort / Geschäftsstelle</label>
+            <input id="profileHealthCity">
+          </div>
+          <div class="field" style="margin:0">
+            <label>E-Mail</label>
+            <input id="profileHealthEmail" type="email">
+          </div>
+        </div>
+        <div class="helper" style="margin-top:8px">Diese Angaben kann der Sekretär später z. B. für Anfragen zu Zuschüssen oder Kostenübernahmen verwenden.</div>
+      </div>
+
+      <div class="profile-section">
+        <h3>Meine Vorlieben</h3>
+        <div class="field" style="margin:0">
+          <label>Bevorzugte Navigation</label>
+          <select id="profileMaps">
+            <option value="ask">Immer fragen</option>
+            <option value="apple">Apple Karten</option>
+            <option value="google">Google Maps</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="profileMsg" class="hidden"></div>
+
+      <div class="profile-save">
+        <button class="btn primary full" onclick="saveProfile()">Profil speichern</button>
+      </div>
+    </div>
+  </div>
+  <div class="page-id">DE-013</div>
+</section>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <h2>Neue Angelegenheit</h2>
+    <div class="field"><label>Titel</label><input id="newTitle" placeholder="z. B. Werkstatt anrufen"></div>
+    <div class="field"><label>Status</label>
+      <select id="newStatus">
+        <option>Zu erledigen</option>
+        <option>Warte auf Antwort</option>
+        <option>Zu bestätigen</option>
+      </select>
+    </div>
+    <div class="field"><label>Notiz</label><textarea id="newNote" rows="3"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn secondary" onclick="closeModal()">Abbrechen</button>
+      <button class="btn primary" onclick="addCase()">Hinzufügen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let loggedIn=false;
+let historyStack=['de001'];
+let currentPage='de001';
+let failedAttempts=0;
+const MAX_ATTEMPTS=3;
+
+function hideAll(){
+  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015','de016'].forEach(id=>{
+    const page=document.getElementById(id);
+    if(page) page.classList.add('hidden');
+  });
+}
+
+function showDirect(id){
+  const modal=document.getElementById('modal');
+  if(modal) modal.classList.add('hidden');
+
+  document.body.style.pointerEvents='auto';
+
+  hideAll();
+  const page=document.getElementById(id);
+  if(!page) return;
+  page.classList.remove('hidden');
+  currentPage=id;
+  try{
+    sessionStorage.setItem('sekretarzCurrentPage',id);
+    localStorage.setItem('sekretarzLastPage',id);
+  }catch(e){}
+  if(id==='de006') setTimeout(refreshRecognizedAccount,0);
+  if(id==='de011') setTimeout(renderToday,0);
+  if(id==='de012') setTimeout(renderInbox,0);
+  if(id==='de013') setTimeout(loadProfile,0);
+  if(id==='de014') setTimeout(renderCalendar,0);
+  if(id==='de015') setTimeout(()=>{ renderCalendarConnect(); bindCalendarConnectButtons(); },0);
+  window.scrollTo(0,0);
+}
+
+function go(id){
+  if(currentPage!==id) historyStack.push(id);
+  showDirect(id);
+}
+
+
+function hardNavigate(target){
+  if(target==='today') return openToday();
+  if(target==='cases') return goDashboard();
+  if(target==='calendar') return openCalendar();
+  if(target==='inbox') return openInbox();
+  if(target==='more') return openMore();
+}
+
+document.addEventListener('click',function(e){
+  const btn=e.target.closest && e.target.closest('.bottom [data-nav]');
+  if(!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  hardNavigate(btn.getAttribute('data-nav'));
+},true);
+
+
+function back(){
+  if(currentPage==='de013'){
+    try{
+      const profileReturnPage=sessionStorage.getItem('sekretarzProfileReturnPage') || localStorage.getItem('sekretarzProfileReturnPage');
+      if(profileReturnPage==='de016'){
+        historyStack=['de011','de016'];
+        sessionStorage.removeItem('sekretarzProfileReturnPage');
+        localStorage.removeItem('sekretarzProfileReturnPage');
+        showDirect('de016');
+        return;
+      }
+    }catch(e){}
+  }
+
+  if(currentPage==='de009'){
+    try{
+      const returnPage=sessionStorage.getItem('sekretarzCaseReturnPage') || localStorage.getItem('sekretarzCaseReturnPage');
+      if(returnPage==='de014'){
+        historyStack=['de011','de014'];
+        sessionStorage.removeItem('sekretarzCaseReturnPage');
+        localStorage.removeItem('sekretarzCaseReturnPage');
+        renderCalendar();
+        showDirect('de014');
+        return;
+      }
+    }catch(e){}
+  }
+
+  if(historyStack.length>1){
+    historyStack.pop();
+    const target=historyStack[historyStack.length-1];
+    if(target==='de011') renderToday();
+    if(target==='de012') renderInbox();
+    if(target==='de013') loadProfile();
+    if(target==='de014') renderCalendar();
+    if(target==='de015') renderCalendarConnect();
+    showDirect(target);
+  } else {
+    const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
+    if(persistedLogin){
+      loggedIn=true;
+      historyStack=['de011'];
+      renderToday();
+      showDirect('de011');
+    }else{
+      goStart();
+    }
+  }
+}
+
+function goStart(){
+  loggedIn=false;
+  historyStack=['de001'];
+  try{
+    sessionStorage.setItem('sekretarzCurrentPage','de001');
+    localStorage.setItem('sekretarzLastPage','de001');
+  }catch(e){}
+  showDirect('de001');
+}
+
+function setMsg(id,type,text){
+  const el=document.getElementById(id);
+  el.className=type;
+  el.textContent=text;
+}
+
+function clearMsg(id){
+  const el=document.getElementById(id);
+  el.className='hidden';
+  el.textContent='';
+}
+
+function togglePassword(inputId, button){
+  const input=document.getElementById(inputId);
+  const showing=input.type==='text';
+  input.type=showing?'password':'text';
+  button.textContent=showing?'◉̸':'◉';
+  button.setAttribute('aria-label',showing?'Passwort anzeigen':'Passwort ausblenden');
+}
+
+
+
+const CALENDAR_CONNECT_KEY='sekretarzCalendarConnectV1';
+
+function getCalendarConnectState(){
+  try{
+    const raw=localStorage.getItem(CALENDAR_CONNECT_KEY);
+    const obj=raw ? JSON.parse(raw) : {};
+    if(!obj || typeof obj!=='object') return {};
+
+    if(obj.flowSchemaVersion!==3){
+      return {
+        preparedProvider: obj.preparedProvider || obj.connectedProvider || '',
+        pendingProvider:'',
+        flowStep:0,
+        flowSchemaVersion:3
+      };
+    }
+    return obj;
+  }catch(e){
+    return {preparedProvider:'',pendingProvider:'',flowStep:0,flowSchemaVersion:3};
+  }
+}
+
+function saveCalendarConnectState(state){
+  try{
+    localStorage.setItem(CALENDAR_CONNECT_KEY,JSON.stringify(state));
+    return true;
+  }catch(e){ return false; }
+}
+
+function providerLabel(provider){
+  return {
+    google:'Google Kalender',
+    icloud:'Apple iCloud',
+    outlook:'Outlook / Microsoft',
+    device:'Kalender vom Gerät'
+  }[provider] || provider;
+}
+
+
+function showCalendarHelp(provider, kind){
+  const panel=document.getElementById('calendarHelpPanel');
+  if(!panel) return;
+  const label=providerLabel(provider);
+  panel.classList.remove('hidden');
+  if(kind==='video'){
+    panel.innerHTML='<b>Video-Anleitung – '+escapeHtml(label)+'</b>Hier erscheint später ein kurzes Schritt-für-Schritt-Video. Du kannst es jederzeit anhalten, zurückspulen und erneut ansehen.';
+  }else{
+    panel.innerHTML='<b>PDF-Anleitung – '+escapeHtml(label)+'</b>Hier erscheint später eine einfache PDF-Anleitung mit Bildern und klaren Einzelschritten.';
+  }
+}
+
+function selectCalendarProvider(provider){
+  const previous=getCalendarConnectState();
+  const state={
+    preparedProvider: previous.preparedProvider || '',
+    pendingProvider:String(provider||''),
+    flowStep:1,
+    flowSchemaVersion:3
+  };
+  saveCalendarConnectState(state);
+
+  const status=document.getElementById('calendarConnectStatus');
+  if(status) status.classList.add('hidden');
+
+  startCalendarConnectFlow(provider,1);
+
+  const flow=document.getElementById('calendarConnectFlow');
+  if(flow){
+    setTimeout(()=>{
+      try{ flow.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){ flow.scrollIntoView(); }
+    },50);
+  }
+
+  if(!flow || flow.classList.contains('hidden')){
+    if(status){
+      status.classList.remove('hidden');
+      status.textContent='Verbindung konnte nicht gestartet werden.';
+    }
+  }
+
+  renderCalendarConnect();
+}
+
+
+function flowText(provider,step){
+  const label=providerLabel(provider);
+  if(step===1){
+    return {
+      title:'Mit '+label+' anmelden',
+      text:'Du wirst später zur sicheren Anmeldung bei '+label+' weitergeleitet. Dein Passwort wird nicht in der Sekretär-App gespeichert.'
+    };
+  }
+  if(step===2){
+    return {
+      title:'Zugriff erlauben',
+      text:'Erlaube dem Sekretär nur den Zugriff auf deine Kalenderdaten, damit deine Termine angezeigt und berücksichtigt werden können.'
+    };
+  }
+  return {
+    title:'Verbindung prüfen',
+    text:'Der Sekretär prüft die Verbindung. Erst wenn alles funktioniert, wird der Kalender als verbunden angezeigt.'
+  };
+}
+
+function startCalendarConnectFlow(provider,step){
+  const box=document.getElementById('calendarConnectFlow');
+  const title=document.getElementById('flowProviderTitle');
+  const stepLabel=document.getElementById('flowStepLabel');
+  const progress=document.getElementById('flowProgressBar');
+  const body=document.getElementById('flowBody');
+  if(!box || !title || !stepLabel || !progress || !body) return;
+
+  box.classList.remove('hidden');
+  title.textContent=providerLabel(provider);
+  box.setAttribute('data-active-provider',String(provider||''));
+  stepLabel.textContent='Schritt '+step+' von 3';
+  progress.style.width=(step*33.333)+'%';
+
+  const copy=flowText(provider,step);
+  let actions='';
+  if(step===1){
+    actions='<div class="flow-actions"><button onclick="cancelCalendarFlow()">Abbrechen</button><button class="primary" onclick="nextCalendarFlowStep()">Weiter</button></div>';
+  }else if(step===2){
+    actions='<div class="flow-actions"><button onclick="previousCalendarFlowStep()">Zurück</button><button class="primary" onclick="nextCalendarFlowStep()">Zugriff erlauben</button></div>';
+  }else{
+    actions='<div class="flow-actions"><button onclick="previousCalendarFlowStep()">Zurück</button><button class="primary" onclick="finishCalendarConnection()">Verbindung prüfen</button></div>';
+  }
+
+  body.innerHTML='<h3>'+escapeHtml(copy.title)+'</h3><p>'+escapeHtml(copy.text)+'</p>'+actions;
+}
+
+function nextCalendarFlowStep(){
+  const state=getCalendarConnectState();
+  const provider=state.pendingProvider;
+  if(!provider) return;
+  state.flowStep=Math.min((state.flowStep||1)+1,3);
+  saveCalendarConnectState(state);
+  startCalendarConnectFlow(provider,state.flowStep);
+}
+
+function previousCalendarFlowStep(){
+  const state=getCalendarConnectState();
+  const provider=state.pendingProvider;
+  if(!provider) return;
+  state.flowStep=Math.max((state.flowStep||1)-1,1);
+  saveCalendarConnectState(state);
+  startCalendarConnectFlow(provider,state.flowStep);
+}
+
+function cancelCalendarFlow(){
+  const state=getCalendarConnectState();
+  state.pendingProvider='';
+  state.flowStep=0;
+  saveCalendarConnectState(state);
+  const box=document.getElementById('calendarConnectFlow');
+  if(box) box.classList.add('hidden');
+  renderCalendarConnect();
+}
+
+function finishCalendarConnection(){
+  const state=getCalendarConnectState();
+  const provider=state.pendingProvider;
+  if(!provider) return;
+
+  state.preparedProvider=provider;
+  state.pendingProvider='';
+  state.flowStep=0;
+  saveCalendarConnectState(state);
+
+  const box=document.getElementById('calendarConnectFlow');
+  if(box){
+    box.classList.remove('hidden');
+    const body=document.getElementById('flowBody');
+    const stepLabel=document.getElementById('flowStepLabel');
+    const progress=document.getElementById('flowProgressBar');
+    if(stepLabel) stepLabel.textContent='Fertig';
+    if(progress) progress.style.width='100%';
+    if(body) body.innerHTML='<div class="flow-success">Einrichtung vorbereitet. Die echte Verbindung zu '+escapeHtml(providerLabel(provider))+' wird erst nach der sicheren Anmeldung beim Anbieter aktiv.</div>';
+  }
+  renderCalendarConnect();
+}
+
+
+function bindCalendarConnectButtons(){
+  document.querySelectorAll('[data-connect-provider]').forEach(btn=>{
+    btn.onclick=function(){
+      const provider=this.getAttribute('data-connect-provider');
+      if(provider) selectCalendarProvider(provider);
+    };
+  });
+}
+
+function renderCalendarConnect(){
+  const state=getCalendarConnectState();
+  saveCalendarConnectState(state);
+  const prepared=state.preparedProvider || '';
+
+  document.querySelectorAll('[data-provider]').forEach(row=>{
+    const p=row.getAttribute('data-provider');
+    const isPending=(state.pendingProvider===p && state.flowStep);
+    row.classList.toggle('connected',p===prepared || isPending);
+    const btn=row.querySelector('.provider-actions button:first-child');
+    if(btn){
+      if(isPending){
+        btn.textContent='Einrichtung läuft…';
+      }else if(p===prepared){
+        btn.textContent='Vorbereitet';
+      }else{
+        btn.textContent='Verbinden';
+      }
+    }
+  });
+
+  if(state.pendingProvider && state.flowStep){
+    startCalendarConnectFlow(state.pendingProvider,state.flowStep);
+  }
+
+  bindCalendarConnectButtons();
+}
+
+function openCalendarConnect(){
+  renderCalendarConnect();
+  if(currentPage==='de016') historyStack=['de011','de016','de015'];
+  else if(currentPage==='de014') historyStack=['de011','de014','de015'];
+  else if(!historyStack.includes('de011')) historyStack=['de011','de014','de015'];
+  else if(historyStack[historyStack.length-1]!=='de015') historyStack.push('de015');
+  showDirect('de015');
+}
+
+const REMINDER_RUNTIME_KEY='sekretarzReminderRuntimeV1';
+const CALENDAR_CURSOR_KEY='sekretarzCalendarCursorV1';
+
+function loadCalendarCursor(){
+  try{
+    const saved=localStorage.getItem(CALENDAR_CURSOR_KEY);
+    if(saved && /^\d{4}-\d{2}$/.test(saved)){
+      const [y,m]=saved.split('-').map(Number);
+      if(y>=2000 && y<=2100 && m>=1 && m<=12) return new Date(y,m-1,1);
+    }
+  }catch(e){}
+  return new Date();
+}
+
+function saveCalendarCursor(){
+  try{
+    const y=calendarCursor.getFullYear();
+    const m=String(calendarCursor.getMonth()+1).padStart(2,'0');
+    localStorage.setItem(CALENDAR_CURSOR_KEY,y+'-'+m);
+  }catch(e){}
+}
+
+let calendarCursor=loadCalendarCursor();
+
+const CALENDAR_SELECTED_DAY_KEY='sekretarzCalendarSelectedDayV1';
+
+function loadCalendarSelectedDay(){
+  try{
+    const saved=localStorage.getItem(CALENDAR_SELECTED_DAY_KEY);
+    return /^\d{4}-\d{2}-\d{2}$/.test(saved||'') ? saved : '';
+  }catch(e){ return ''; }
+}
+let calendarSelectedDay=loadCalendarSelectedDay();
+
+function saveCalendarSelectedDay(){
+  try{
+    if(calendarSelectedDay) localStorage.setItem(CALENDAR_SELECTED_DAY_KEY,calendarSelectedDay);
+    else localStorage.removeItem(CALENDAR_SELECTED_DAY_KEY);
+  }catch(e){}
+}
+function formatCalendarDayKey(y,m,d){
+  return String(y)+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+function selectCalendarDay(y,m,d){
+  const key=formatCalendarDayKey(y,m,d);
+  calendarSelectedDay=(calendarSelectedDay===key?'':key);
+  saveCalendarSelectedDay();
+  renderCalendar();
+}
+
+
+const CALENDAR_SOURCE_FILTER_KEY='sekretarzCalendarSourceFilterV1';
+
+function loadCalendarSourceFilter(){
+  try{
+    const saved=localStorage.getItem(CALENDAR_SOURCE_FILTER_KEY);
+    const allowed=['all','sekretarz','google','icloud','outlook','device'];
+    return allowed.includes(saved) ? saved : 'all';
+  }catch(e){
+    return 'all';
+  }
+}
+
+let calendarSourceFilter=loadCalendarSourceFilter();
+
+function calendarSourceLabel(source){
+  return {
+    sekretarz:'Sekretarz',
+    google:'Google Kalender',
+    icloud:'Apple iCloud',
+    outlook:'Outlook / Microsoft',
+    device:'Kalender vom Gerät'
+  }[source] || 'Sekretarz';
+}
+
+function setCalendarSourceFilter(source){
+  const allowed=['all','sekretarz','google','icloud','outlook','device'];
+  calendarSourceFilter=allowed.includes(source) ? source : 'all';
+  try{ localStorage.setItem(CALENDAR_SOURCE_FILTER_KEY,calendarSourceFilter); }catch(e){}
+  syncCalendarSourceFilterUI();
+  renderCalendar();
+}
+
+function syncCalendarSourceFilterUI(){
+  document.querySelectorAll('[data-source-filter]').forEach(btn=>{
+    btn.classList.toggle('active',btn.getAttribute('data-source-filter')===calendarSourceFilter);
+  });
+}
+
+function normalizeCalendarEventFromCase(c){
+  return {
+    id:'case:'+String(c.id||c.title||Math.random()),
+    caseId:c.id||'',
+    title:c.title||'Erinnerung',
+    dateTime:c.reminderDateTime || c.dateDisplay || '',
+    hasExactTime:Boolean(c.reminderDateTime),
+    status:c.status||'Aktiv',
+    source:'sekretarz',
+    externalId:null
+  };
+}
+
+function normalizeEventTitle(value){
+  return String(value||'')
+    .toLocaleLowerCase('de-DE')
+    .replace(/[–—-]+/g,' ')
+    .replace(/[^\p{L}\p{N}\s]/gu,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function calendarMinuteKey(dateTime){
+  const d=parseReminderDateTime(dateTime);
+  if(!d) return '';
+  d.setSeconds(0,0);
+  return d.toISOString().slice(0,16);
+}
+
+function eventDuplicateKey(ev){
+  if(ev.externalId){
+    return 'external:'+String(ev.source||'')+':'+String(ev.externalId);
+  }
+  return 'content:'+normalizeEventTitle(ev.title)+':'+calendarMinuteKey(ev.dateTime);
+}
+
+function dedupeCalendarEvents(events){
+  const sorted=[...events].sort((a,b)=>{
+    // Sekretarz ma pierwszeństwo przy tym samym terminie,
+    // bo może mieć dodatkową logikę przypomnień i spraw.
+    if(a.source==='sekretarz' && b.source!=='sekretarz') return -1;
+    if(b.source==='sekretarz' && a.source!=='sekretarz') return 1;
+    return 0;
+  });
+
+  const seenExternal=new Set();
+  const seenContent=new Set();
+  const result=[];
+
+  for(const ev of sorted){
+    const contentKey='content:'+normalizeEventTitle(ev.title)+':'+calendarMinuteKey(ev.dateTime);
+    const extKey=ev.externalId ? 'external:'+String(ev.source||'')+':'+String(ev.externalId) : '';
+
+    if(extKey && seenExternal.has(extKey)) continue;
+    if(seenContent.has(contentKey)) continue;
+
+    if(extKey) seenExternal.add(extKey);
+    seenContent.add(contentKey);
+    result.push(ev);
+  }
+  return result;
+}
+
+
+
+function parseReminderDateTime(value){
+  if(!value) return null;
+  const text=String(value).trim();
+
+  const deDate=text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if(deDate){
+    const d=new Date(Number(deDate[3]),Number(deDate[2])-1,Number(deDate[1]),12,0,0,0);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  const d=new Date(text);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function formatReminderDE(value){
+  if(!value) return 'Kein Termin';
+  const text=String(value).trim();
+  if(/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(text)) return text;
+
+  const d=parseReminderDateTime(text);
+  if(!d) return 'Kein Termin';
+  return d.toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function getReminderRuntime(){
+  try{
+    const raw=localStorage.getItem(REMINDER_RUNTIME_KEY);
+    const obj=raw ? JSON.parse(raw) : {};
+    return obj && typeof obj==='object' ? obj : {};
+  }catch(e){ return {}; }
+}
+
+function saveReminderRuntime(data){
+  try{
+    localStorage.setItem(REMINDER_RUNTIME_KEY,JSON.stringify(data));
+    return true;
+  }catch(e){ return false; }
+}
+
+function getDueReminder(){
+  const now=Date.now();
+  const cases=getStoredCases()
+    .filter(c=>c.careType==='reminder' && c.status!=='Erledigt' && c.reminderDateTime)
+    .map(c=>({...c,_time:parseReminderDateTime(c.reminderDateTime)?.getTime()||Infinity}))
+    .filter(c=>c._time<=now)
+    .sort((a,b)=>a._time-b._time);
+  return cases[0] || null;
+}
+
+function updateReminderAttempt(caseData){
+  if(!caseData || !caseData.id) return null;
+  const runtime=getReminderRuntime();
+  const key=String(caseData.id);
+  const now=Date.now();
+  const state=runtime[key] || {attempts:0,lastAttemptAt:0,done:false};
+
+  if(state.done) return state;
+
+  const fiveMin=5*60*1000;
+  if(state.attempts<5 && (!state.lastAttemptAt || now-state.lastAttemptAt>=fiveMin)){
+    state.attempts += 1;
+    state.lastAttemptAt = now;
+    runtime[key]=state;
+    saveReminderRuntime(runtime);
+  }
+
+  if(state.attempts>=5){
+    const cases=getStoredCases();
+    const idx=cases.findIndex(c=>String(c.id)===key);
+    if(idx>=0 && cases[idx].status!=='Erledigt'){
+      cases[idx].status='Nicht erledigt';
+      saveCasesToStorage(cases);
+    }
+  }
+  return state;
+}
+
+function markReminderDone(caseId){
+  const cases=getStoredCases();
+  const idx=cases.findIndex(c=>String(c.id)===String(caseId));
+  if(idx<0) return;
+  cases[idx].status='Erledigt';
+  saveCasesToStorage(cases);
+
+  const runtime=getReminderRuntime();
+  const key=String(caseId);
+  runtime[key]={...(runtime[key]||{}),done:true};
+  saveReminderRuntime(runtime);
+
+  renderDashboardCases();
+  renderToday();
+  renderCalendar();
+}
+
+function postponeReminder(caseId){
+  const runtime=getReminderRuntime();
+  const key=String(caseId);
+  const state=runtime[key] || {attempts:1,lastAttemptAt:Date.now(),done:false};
+  state.lastAttemptAt=Date.now();
+  runtime[key]=state;
+  saveReminderRuntime(runtime);
+  renderToday();
+}
+
+function renderTodayReminder(){
+  const box=document.getElementById('todayReminderNow');
+  if(!box) return;
+
+  const due=getDueReminder();
+  if(!due){
+    box.innerHTML='';
+    return;
+  }
+
+  const state=updateReminderAttempt(due) || {attempts:1};
+  const urgent=state.attempts>=5 || due.status==='Nicht erledigt';
+  box.innerHTML=
+    '<div class="reminder-now '+(urgent?'urgent':'')+'">'+
+      '<h3>'+(urgent?'Achtung – nicht erledigt':'Erinnerung jetzt')+'</h3>'+
+      '<p><b>'+escapeHtml(due.title)+'</b><br>'+escapeHtml(formatReminderDE(due.reminderDateTime))+
+      '<br>Versuch '+Math.min(state.attempts||1,5)+' von 5</p>'+
+      '<div class="reminder-actions">'+
+        '<button class="done" onclick="markReminderDone(\''+escapeHtml(String(due.id))+'\')">Erledigt</button>'+
+        '<button onclick="postponeReminder(\''+escapeHtml(String(due.id))+'\')">Später</button>'+
+      '</div>'+
+    '</div>';
+}
+
+function getReminderCases(){
+  const ownEvents=getStoredCases()
+    .filter(c=>c.careType==='reminder' && (c.reminderDateTime || c.dateDisplay))
+    .map(normalizeCalendarEventFromCase);
+
+  // Prawdziwe wydarzenia Google/iCloud/Outlook/Gerät dojdą tu dopiero po realnej synchronizacji.
+  const externalEvents=[];
+
+  return dedupeCalendarEvents([...ownEvents,...externalEvents])
+    .filter(ev=>calendarSourceFilter==='all' || ev.source===calendarSourceFilter)
+    .sort((a,b)=>(parseReminderDateTime(a.dateTime)?.getTime()||0)-(parseReminderDateTime(b.dateTime)?.getTime()||0));
+}
+
+
+function eventDayKey(ev){
+  const d=parseReminderDateTime(ev.dateTime);
+  if(!d) return '';
+  return formatCalendarDayKey(d.getFullYear(),d.getMonth(),d.getDate());
+}
+
+function openCalendarEvent(eventId){
+  const events=getReminderCases();
+  const ev=events.find(x=>String(x.id)===String(eventId));
+  if(!ev || ev.source!=='sekretarz') return;
+
+  const cases=getStoredCases();
+  const c=cases.find(x=>String(x.id||'')===String(ev.caseId||''))
+    || cases.find(x=>String(x.title||'')===String(ev.title||''));
+  if(!c) return;
+
+  try{
+    sessionStorage.setItem('sekretarzCaseReturnPage','de014');
+    localStorage.setItem('sekretarzCaseReturnPage','de014');
+  }catch(e){}
+
+  historyStack=['de011','de014'];
+
+  openCase(
+    c.title||'Angelegenheit',
+    c.status||'Aktiv',
+    c.desc||'',
+    c.dateDisplay||'',
+    c.category||'Sonstiges',
+    c.nextStep||'',
+    c.careType||'reminder',
+    c.reminderDateTime||'',
+    c.sourceSettings||null,
+    c.contact||null,
+    c.id||null
+  );
+}
+
+function renderCalendar(){
+  syncCalendarSourceFilterUI();
+  const title=document.getElementById('calendarMonthTitle');
+  const grid=document.getElementById('calendarGrid');
+  const list=document.getElementById('calendarEventList');
+  const daySummary=document.getElementById('calendarDaySummary');
+  if(!title || !grid || !list) return;
+
+  const year=calendarCursor.getFullYear();
+  const month=calendarCursor.getMonth();
+  title.textContent=new Date(year,month,1).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+
+  const events=getReminderCases();
+  const eventDays=new Set(events
+    .map(c=>parseReminderDateTime(c.dateTime))
+    .filter(Boolean)
+    .filter(d=>d.getFullYear()===year && d.getMonth()===month)
+    .map(d=>d.getDate()));
+
+  const first=new Date(year,month,1);
+  const lastDay=new Date(year,month+1,0).getDate();
+  const start=(first.getDay()+6)%7;
+  const today=new Date();
+
+  let html='';
+  for(let i=0;i<start;i++) html+='<div class="cal-day empty"></div>';
+  for(let day=1;day<=lastDay;day++){
+    const isToday=day===today.getDate() && month===today.getMonth() && year===today.getFullYear();
+    const has=eventDays.has(day);
+    const dayKey=formatCalendarDayKey(year,month,day);
+    const selected=(calendarSelectedDay===dayKey);
+    html+='<button type="button" class="cal-day '+(isToday?'today ':'')+(has?'has-event ':'')+(selected?'selected':'')+
+      '" onclick="selectCalendarDay('+year+','+month+','+day+')">'+
+      '<span class="cal-num">'+day+'</span>'+(has?'<span class="cal-dot"></span>':'')+'</button>';
+  }
+  grid.innerHTML=html;
+
+  let visibleEvents=events.filter(c=>{
+    const d=parseReminderDateTime(c.dateTime);
+    return d && d.getFullYear()===year && d.getMonth()===month;
+  });
+
+  if(calendarSelectedDay){
+    visibleEvents=visibleEvents.filter(c=>eventDayKey(c)===calendarSelectedDay);
+    if(daySummary){
+      const [sy,sm,sd]=calendarSelectedDay.split('-').map(Number);
+      daySummary.textContent='Ausgewählter Tag: '+String(sd).padStart(2,'0')+'.'+String(sm).padStart(2,'0')+'.'+sy;
+      daySummary.classList.remove('hidden');
+    }
+  }else if(daySummary){
+    daySummary.classList.add('hidden');
+    daySummary.textContent='';
+  }
+
+  list.innerHTML=visibleEvents.length
+    ? visibleEvents.map(c=>
+      '<div class="calendar-event '+(c.source==='sekretarz'?'clickable':'')+'" '+(c.source==='sekretarz'?'data-calendar-event-id="'+encodeURIComponent(String(c.id||''))+'" onclick="openCalendarEvent(decodeURIComponent(this.dataset.calendarEventId))"':'')+'>'+
+      '<b>'+escapeHtml(c.title)+'</b><small>'+escapeHtml(formatReminderDE(c.dateTime))+
+      ' · '+escapeHtml(c.status||'Aktiv')+'</small><div class="event-source source-'+escapeHtml(c.source||'sekretarz')+'"><span class="src-dot"></span>'+
+      escapeHtml(calendarSourceLabel(c.source))+'</div></div>'
+    ).join('')
+    : '<div class="empty-state">'+(
+        calendarSelectedDay
+          ? 'Keine Termine an diesem Tag.'
+          : (calendarSourceFilter==='all'
+              ? 'Keine Erinnerungen in diesem Monat.'
+              : 'Keine Termine aus '+escapeHtml(calendarSourceLabel(calendarSourceFilter))+' in diesem Monat.')
+      )+'</div>';
+}
+
+function changeCalendarMonth(delta){
+  calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()+delta,1);
+  calendarSelectedDay='';
+  saveCalendarSelectedDay();
+  saveCalendarCursor();
+  renderCalendar();
+}
+
+function calendarToday(){
+  calendarCursor=new Date();
+  calendarSelectedDay='';
+  saveCalendarSelectedDay();
+  saveCalendarCursor();
+  renderCalendar();
+}
+
+function openCalendar(){
+  calendarCursor=loadCalendarCursor();
+  renderCalendar();
+  if(currentPage==='de011') historyStack=['de011','de014'];
+  else if(currentPage==='de008') historyStack=['de011','de008','de014'];
+  else if(!historyStack.includes('de011')) historyStack=['de011','de014'];
+  else if(historyStack[historyStack.length-1]!=='de014') historyStack.push('de014');
+  showDirect('de014');
+}
+
+const INBOX_STORAGE_KEY='sekretarzInboxV1';
+
+let lastInboxItemId=null;
+
+function getSecretaryStateCounts(){
+  const cases=getStoredCases();
+  const inbox=getInboxItems();
+  let need=0, care=0, alert=0, done=0;
+
+  cases.forEach(c=>{
+    const status=(c.status||'').toLowerCase();
+    if(status.includes('erledigt')) done++;
+    else if(status.includes('dringend') || status.includes('nicht erledigt')) alert++;
+    else if(status.includes('warte') || c.careType==='ai') care++;
+    else need++;
+  });
+
+  need += inbox.filter(i=>!i.assignment || i.assignment==='unassigned').length;
+
+  return {need,care,alert,done};
+}
+
+function renderSecretaryStateCounts(){
+  const counts=getSecretaryStateCounts();
+  const map={
+    stateNeedCount:counts.need,
+    stateCareCount:counts.care,
+    stateAlertCount:counts.alert,
+    stateDoneCount:counts.done
+  };
+  Object.entries(map).forEach(([id,val])=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=String(val);
+  });
+}
+
+function getInboxItemById(id){
+  return getInboxItems().find(i=>i.id===id) || null;
+}
+
+function renderInboxDecisionPreview(item){
+  const box=document.getElementById('inboxDecisionPreview');
+  if(!box || !item) return;
+  box.innerHTML='<b>'+escapeHtml(item.type||'Inbox')+'</b><div>'+escapeHtml(item.text||'')+'</div><small>'+escapeHtml(item.date||'')+'</small>';
+}
+
+function updateInboxItem(id, updater){
+  const items=getInboxItems();
+  const idx=items.findIndex(i=>i.id===id);
+  if(idx<0) return false;
+  items[idx]=updater({...items[idx]});
+  return saveInboxItems(items);
+}
+
+function populateInboxCaseSelect(){
+  const select=document.getElementById('inboxCaseSelect');
+  if(!select) return;
+  const cases=getStoredCases();
+
+  let changed=false;
+  cases.forEach((c,index)=>{
+    if(c.id===undefined || c.id===null || c.id===''){
+      c.id='case-existing-'+index;
+      changed=true;
+    }
+  });
+  if(changed) saveCasesToStorage(cases);
+
+  select.innerHTML=cases.length
+    ? cases.map(c=>'<option value="'+escapeHtml(String(c.id))+'">'+escapeHtml(c.title||'Ohne Titel')+'</option>').join('')
+    : '<option value="">Keine Angelegenheit vorhanden</option>';
+}
+
+function showInboxCaseSelect(){
+  populateInboxCaseSelect();
+  const box=document.getElementById('inboxCaseSelectBox');
+  if(box) box.classList.remove('hidden');
+}
+
+function assignInboxItemToCase(itemId, caseId){
+  if(!itemId || !caseId) return false;
+
+  const item=getInboxItemById(itemId);
+  const cases=getStoredCases();
+  const c=cases.find(x=>String(x.id)===String(caseId));
+  if(!item || !c) return false;
+
+  const entry={
+    type:item.type || 'Inbox',
+    text:item.text || '',
+    date:item.date || new Date().toLocaleString('de-DE')
+  };
+
+  if(!Array.isArray(c.history)) c.history=[];
+  c.history.unshift(entry);
+
+  if(!saveCasesToStorage(cases)) return false;
+
+  return updateInboxItem(itemId, old=>({
+    ...old,
+    assignment:'case',
+    assignedCaseId:String(caseId),
+    assignedCaseTitle:c.title || 'Angelegenheit'
+  }));
+}
+
+function assignLastInboxToCase(){
+  const select=document.getElementById('inboxCaseSelect');
+  const caseId=select ? String(select.value||'') : '';
+  const itemId=lastInboxItemId;
+
+  if(!itemId){
+    setMsg('inboxMsg','error','Keine offene Inbox-Information gefunden.');
+    return;
+  }
+  if(!caseId){
+    setMsg('inboxMsg','error','Bitte eine Angelegenheit auswählen.');
+    return;
+  }
+
+  if(assignInboxItemToCase(itemId,caseId)){
+    setMsg('inboxMsg','success','Zur Angelegenheit hinzugefügt.');
+    const decisionBox=document.getElementById('inboxDecisionBox');
+    const caseBox=document.getElementById('inboxCaseSelectBox');
+    if(decisionBox) decisionBox.classList.add('hidden');
+    if(caseBox) caseBox.classList.add('hidden');
+    lastInboxItemId=null;
+    renderInbox();
+    renderDashboardCases();
+    renderToday();
+  }else{
+    setMsg('inboxMsg','error','Die Information konnte nicht zugeordnet werden.');
+  }
+}
+
+function createCaseFromLastInbox(){
+  const item=getInboxItemById(lastInboxItemId);
+  if(!item) return;
+  const cases=getStoredCases();
+  const newCase={
+    id:'case-'+Date.now(),
+    title:item.text.length>52 ? item.text.slice(0,52)+'…' : item.text,
+    description:item.text,
+    careType:'ai',
+    status:'Aktiv',
+    history:[{
+      type:item.type || 'Inbox',
+      text:item.text,
+      date:item.date || new Date().toLocaleString('de-DE')
+    }]
+  };
+  cases.unshift(newCase);
+  saveCasesToStorage(cases);
+  updateInboxItem(item.id, old=>({
+    ...old,
+    assignment:'newcase',
+    assignedCaseId:newCase.id,
+    assignedCaseTitle:newCase.title
+  }));
+  setMsg('inboxMsg','success','Neue Angelegenheit wurde erstellt.');
+  document.getElementById('inboxDecisionBox').classList.add('hidden');
+  lastInboxItemId=null;
+  renderInbox();
+  renderDashboardCases();
+  renderToday();
+}
+
+function leaveLastInboxUnassigned(){
+  if(lastInboxItemId){
+    updateInboxItem(lastInboxItemId, old=>({...old,assignment:'unassigned'}));
+  }
+  const box=document.getElementById('inboxDecisionBox');
+  if(box) box.classList.add('hidden');
+  setMsg('inboxMsg','success','Bleibt in der Inbox.');
+  lastInboxItemId=null;
+  renderInbox();
+  renderToday();
+}
+
+
+
+function getInboxItems(){
+  try{
+    const raw=localStorage.getItem(INBOX_STORAGE_KEY);
+    const parsed=raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){ return []; }
+}
+
+function saveInboxItems(items){
+  try{
+    localStorage.setItem(INBOX_STORAGE_KEY,JSON.stringify(items));
+    return true;
+  }catch(e){ return false; }
+}
+
+function setInboxType(type){
+  const el=document.getElementById('inboxType');
+  if(el) el.value=type;
+  const text=document.getElementById('inboxText');
+  if(text) text.focus();
+}
+
+function renderInbox(){
+  const box=document.getElementById('inboxList');
+  if(!box) return;
+  const items=getInboxItems();
+
+  const pending=items.find(item=>!item.assignment || item.assignment==='unassigned');
+  const decisionBox=document.getElementById('inboxDecisionBox');
+  const caseBox=document.getElementById('inboxCaseSelectBox');
+
+  if(pending){
+    lastInboxItemId=pending.id;
+    renderInboxDecisionPreview(pending);
+    if(decisionBox) decisionBox.classList.remove('hidden');
+    if(caseBox) caseBox.classList.add('hidden');
+  }else{
+    lastInboxItemId=null;
+    if(decisionBox) decisionBox.classList.add('hidden');
+    if(caseBox) caseBox.classList.add('hidden');
+  }
+
+  if(!items.length){
+    box.innerHTML='<div class="empty-state">Noch nichts Neues. Dein Sekretär wartet auf neue Informationen.</div>';
+    return;
+  }
+  box.innerHTML=items.map(item=>{
+    let state='';
+    if(item.assignment==='case' || item.assignment==='newcase'){
+      state='<div><small>Zugeteilt: '+escapeHtml(item.assignedCaseTitle||'Angelegenheit')+'</small></div>';
+    }else{
+      state='<div><small>Noch nicht zugeordnet</small></div>';
+    }
+    return '<div class="inbox-item"><b>'+escapeHtml(item.type)+'</b><div>'+escapeHtml(item.text)+'</div><div><small>'+escapeHtml(item.date)+'</small></div>'+state+'</div>';
+  }).join('');
+}
+
+function saveInboxItem(){
+  clearMsg('inboxMsg');
+  const type=document.getElementById('inboxType').value;
+  const text=document.getElementById('inboxText').value.trim();
+  if(!text){
+    setMsg('inboxMsg','error','Bitte kurz eingeben, was neu ist.');
+    return;
+  }
+  const items=getInboxItems();
+  const newItem={
+    id:'inbox-'+Date.now(),
+    type,
+    text,
+    date:new Date().toLocaleString('de-DE'),
+    assignment:'unassigned'
+  };
+  items.unshift(newItem);
+  if(saveInboxItems(items)){
+    lastInboxItemId=newItem.id;
+    document.getElementById('inboxText').value='';
+    setMsg('inboxMsg','success','Gespeichert.');
+    renderInboxDecisionPreview(newItem);
+    const decisionBox=document.getElementById('inboxDecisionBox');
+    if(decisionBox) decisionBox.classList.remove('hidden');
+    const caseBox=document.getElementById('inboxCaseSelectBox');
+    if(caseBox) caseBox.classList.add('hidden');
+    renderInbox();
+    renderToday();
+  }else{
+    setMsg('inboxMsg','error','Die Information konnte nicht gespeichert werden.');
+  }
+}
+
+function openInbox(){
+  renderInbox();
+  if(currentPage==='de011') historyStack=['de011','de012'];
+  else if(currentPage==='de008') historyStack=['de011','de008','de012'];
+  else if(!historyStack.includes('de011')) historyStack=['de011','de012'];
+  else if(historyStack[historyStack.length-1]!=='de012') historyStack.push('de012');
+  showDirect('de012');
+}
+
+function getTodayGreeting(){
+  const hour=new Date().getHours();
+  if(hour<11) return 'Guten Morgen';
+  if(hour<18) return 'Guten Tag';
+  return 'Guten Abend';
+}
+
+
+let todayFilter=null;
+
+function getTodayCaseState(c){
+  const status=String(c.status||'').toLowerCase();
+  if(status.includes('erledigt')) return 'done';
+  if(status.includes('dringend') || status.includes('nicht erledigt')) return 'alert';
+  if(status.includes('warte') || c.careType==='ai') return 'care';
+  return 'need';
+}
+
+function isNeedUserCase(c){
+  return getTodayCaseState(c)==='need';
+}
+
+function toggleTodayFilter(filterName){
+  todayFilter=(todayFilter===filterName ? null : filterName);
+  renderToday();
+}
+
+
+function openTodayCase(caseId){
+  const c=getStoredCases().find(x=>String(x.id)===String(caseId));
+  if(!c) return;
+
+  try{
+    sessionStorage.setItem('sekretarzCaseReturnPage','de011');
+    localStorage.setItem('sekretarzCaseReturnPage','de011');
+  }catch(e){}
+
+  openCase(
+    c.title||'Angelegenheit',
+    c.status||'',
+    c.desc||'',
+    c.dateDisplay||'',
+    c.category||'',
+    c.nextStep||'',
+    c.careType||'reminder',
+    c.reminderDateTime||'',
+    c.sourceSettings||'',
+    c.contact||'',
+    c.id||''
+  );
+}
+
+function renderToday(){
+  const greeting=document.getElementById('todayGreeting');
+  const summary=document.getElementById('todaySummary');
+  const list=document.getElementById('todayList');
+  if(!greeting || !summary || !list) return;
+  renderTodayReminder();
+
+  const profile=getUserProfile();
+  greeting.textContent=getTodayGreeting()+(profile.firstName ? ' – '+profile.firstName : '');
+
+  const cases=getStoredCases();
+  const inbox=getInboxItems();
+  const items=[];
+
+  if(todayFilter){
+    cases.filter(c=>getTodayCaseState(c)===todayFilter).forEach(c=>{
+      const state=getTodayCaseState(c);
+      const defaults={
+        need:'Deine Entscheidung oder Ergänzung wird benötigt.',
+        care:'Dein Sekretär behält diese Angelegenheit für dich im Blick.',
+        alert:'Diese Angelegenheit braucht dringend Aufmerksamkeit.',
+        done:'Diese Angelegenheit ist erledigt.'
+      };
+      const icons={need:'?',care:'↻',alert:'!',done:'✓'};
+      items.push({
+        icon:icons[state],
+        title:c.title||'Angelegenheit',
+        text:c.dateDisplay || c.nextStep || defaults[state],
+        caseId:c.id || ''
+      });
+    });
+
+    if(todayFilter==='need'){
+      const unassignedInbox=inbox.filter(i=>!i.assignment || i.assignment==='unassigned');
+      if(unassignedInbox.length){
+        items.push({icon:'⌄',title:'Inbox',text:unassignedInbox.length+' neue Information(en) warten auf deine Zuordnung.'});
+      }
+    }
+
+    if(!items.length){
+      const emptyText={
+        need:'Aktuell brauchst du nichts zu entscheiden oder zu ergänzen.',
+        care:'Aktuell gibt es nichts, das dein Sekretär selbst für dich verfolgt.',
+        alert:'Aktuell gibt es nichts Dringendes oder Überfälliges.',
+        done:'Aktuell gibt es keine erledigten Angelegenheiten.'
+      };
+      items.push({icon:'✓',title:'Keine Einträge',text:emptyText[todayFilter]});
+    }
+  }else{
+    const urgent=cases.find(c=>c.status==='Dringend' || c.status==='Nicht erledigt');
+    if(urgent) items.push({icon:'!',title:urgent.title,text:'Diese Angelegenheit braucht deine Aufmerksamkeit.'});
+
+    const waiting=cases.find(c=>c.status==='Warte auf Antwort');
+    if(waiting) items.push({icon:'↻',title:waiting.title,text:'Noch keine Antwort. Dein Sekretär behält die Angelegenheit im Blick.'});
+
+    const reminder=cases.find(c=>c.careType==='reminder' && c.status!=='Erledigt');
+    if(reminder) items.push({icon:'◷',title:reminder.title,text:reminder.dateDisplay || 'Erinnerung ist aktiv.'});
+
+    if(inbox.length) items.push({icon:'⌄',title:'Inbox',text:inbox.length+' neue Information(en) warten auf Zuordnung.'});
+
+    if(!items.length){
+      items.push({icon:'✓',title:'Heute nichts Dringendes',text:'Dein Sekretär hat aktuell nichts, wofür du sofort aktiv werden musst.'});
+    }
+  }
+
+  const summaries={
+    need:'Hier sind die Dinge, bei denen du etwas tun oder entscheiden musst.',
+    care:'Diese Dinge behält dein Sekretär selbst für dich im Blick.',
+    alert:'Diese Dinge sind dringend oder bereits überfällig.',
+    done:'Hier siehst du die erledigten Angelegenheiten.'
+  };
+  summary.textContent=todayFilter
+    ? summaries[todayFilter]
+    : 'Ich habe heute '+items.length+' Punkt'+(items.length===1?'':'e')+' für dich im Blick.';
+
+  renderSecretaryStateCounts();
+
+  const tiles={
+    need:document.getElementById('stateNeedTile'),
+    care:document.getElementById('stateCareTile'),
+    alert:document.getElementById('stateAlertTile'),
+    done:document.getElementById('stateDoneTile')
+  };
+  Object.entries(tiles).forEach(([name,tile])=>{
+    if(tile) tile.classList.toggle('selected',todayFilter===name);
+  });
+
+  const filterNote=document.getElementById('todayNeedFilterNote');
+  if(filterNote){
+    const notes={
+      need:'Nur Dinge, bei denen du etwas tun oder entscheiden musst.',
+      care:'Nur Dinge, die dein Sekretär selbst für dich im Blick behält.',
+      alert:'Nur dringende oder überfällige Dinge.',
+      done:'Nur erledigte Angelegenheiten.'
+    };
+    filterNote.textContent=todayFilter ? notes[todayFilter] : '';
+    filterNote.classList.toggle('hidden',!todayFilter);
+  }
+
+  list.innerHTML=items.slice(0,4).map(item=>{
+    const isClickableCase=((todayFilter==='done' || todayFilter==='need') && item.caseId);
+    const attrs=isClickableCase
+      ? ' role="button" tabindex="0" onclick="openTodayCase(\''+escapeHtml(item.caseId)+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openTodayCase(\''+escapeHtml(item.caseId)+'\');}" style="cursor:pointer"'
+      : '';
+    return '<div class="today-item"'+attrs+'><div class="today-icon">'+escapeHtml(item.icon)+'</div><div><b>'+escapeHtml(item.title)+'</b><small>'+escapeHtml(item.text)+'</small></div></div>';
+  }).join('');
+}
+function openToday(){
+  renderToday();
+  historyStack=['de011'];
+  showDirect('de011');
+}
+
+const PROFILE_STORAGE_KEY='sekretarzUserProfileV1';
+
+function buildProfileFromAccount(){
+  let account=null;
+  try{ account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null'); }catch(e){}
+  return {
+    firstName:account?.firstName || '',
+    lastName:account?.lastName || '',
+    email:account?.email || '',
+    phone:account?.phone || '',
+    street:account?.street || '',
+    zip:account?.zip || '',
+    city:account?.city || '',
+    healthInsurer:'',
+    healthCity:'',
+    healthEmail:'',
+    maps:'ask'
+  };
+}
+
+function getUserProfile(){
+  try{
+    const raw=localStorage.getItem(PROFILE_STORAGE_KEY);
+    if(raw){
+      const p=JSON.parse(raw);
+      if(p && typeof p==='object') return {...buildProfileFromAccount(),...p};
+    }
+  }catch(e){}
+  const initial=buildProfileFromAccount();
+  try{ localStorage.setItem(PROFILE_STORAGE_KEY,JSON.stringify(initial)); }catch(e){}
+  return initial;
+}
+
+function loadProfile(){
+  const p=getUserProfile();
+  const map={
+    profileFirstName:p.firstName, profileLastName:p.lastName, profileEmail:p.email,
+    profilePhone:p.phone, profileStreet:p.street, profileZip:p.zip, profileCity:p.city,
+    profileHealthInsurer:p.healthInsurer, profileHealthCity:p.healthCity,
+    profileHealthEmail:p.healthEmail, profileMaps:p.maps || 'ask'
+  };
+  Object.entries(map).forEach(([id,value])=>{
+    const el=document.getElementById(id);
+    if(el) el.value=value || '';
+  });
+  clearMsg('profileMsg');
+}
+
+
+function openMore(){
+  if(currentPage==='de011') historyStack=['de011','de016'];
+  else if(currentPage==='de008') historyStack=['de011','de008','de016'];
+  else if(currentPage==='de012') historyStack=['de011','de012','de016'];
+  else if(currentPage==='de014') historyStack=['de011','de014','de016'];
+  else if(!historyStack.includes('de011')) historyStack=['de011','de016'];
+  else if(historyStack[historyStack.length-1]!=='de016') historyStack.push('de016');
+  showDirect('de016');
+}
+
+function openProfile(){
+  loadProfile();
+
+  try{
+    if(currentPage==='de016'){
+      sessionStorage.setItem('sekretarzProfileReturnPage','de016');
+      localStorage.setItem('sekretarzProfileReturnPage','de016');
+    }else{
+      sessionStorage.removeItem('sekretarzProfileReturnPage');
+      localStorage.removeItem('sekretarzProfileReturnPage');
+    }
+  }catch(e){}
+
+  if(currentPage==='de016') historyStack=['de011','de016','de013'];
+  else if(currentPage==='de011') historyStack=['de011','de013'];
+  else if(currentPage==='de008') historyStack=['de011','de008','de013'];
+  else if(!historyStack.includes('de011')) historyStack=['de011','de013'];
+  else if(historyStack[historyStack.length-1]!=='de013') historyStack.push('de013');
+  showDirect('de013');
+}
+
+function saveProfile(){
+  const p={
+    firstName:document.getElementById('profileFirstName').value.trim(),
+    lastName:document.getElementById('profileLastName').value.trim(),
+    email:document.getElementById('profileEmail').value.trim().toLowerCase(),
+    phone:document.getElementById('profilePhone').value.trim(),
+    street:document.getElementById('profileStreet').value.trim(),
+    zip:document.getElementById('profileZip').value.trim(),
+    city:document.getElementById('profileCity').value.trim(),
+    healthInsurer:document.getElementById('profileHealthInsurer').value.trim(),
+    healthCity:document.getElementById('profileHealthCity').value.trim(),
+    healthEmail:document.getElementById('profileHealthEmail').value.trim(),
+    maps:document.getElementById('profileMaps').value
+  };
+
+  if(!p.firstName || !p.lastName || !p.email){
+    setMsg('profileMsg','error','Bitte mindestens Vorname, Nachname und E-Mail ausfüllen.');
+    return;
+  }
+  try{
+    localStorage.setItem(PROFILE_STORAGE_KEY,JSON.stringify(p));
+    setMsg('profileMsg','success','Profil gespeichert. Dein Sekretär kann diese Angaben künftig verwenden.');
+  }catch(e){
+    setMsg('profileMsg','error','Profil konnte nicht gespeichert werden.');
+  }
+}
+
+function registerUser(){
+  clearMsg('regMsg');
+
+  const firstName=document.getElementById('regFirstName').value.trim();
+  const lastName=document.getElementById('regLastName').value.trim();
+  const street=document.getElementById('regStreet').value.trim();
+  const zip=document.getElementById('regZip').value.trim();
+  const city=document.getElementById('regCity').value.trim();
+  const email=document.getElementById('regEmail').value.trim();
+  const prefix=document.getElementById('regPhonePrefix').value;
+  const phoneRaw=document.getElementById('regPhone').value.trim();
+  const p1=document.getElementById('regPassword').value;
+  const p2=document.getElementById('regPassword2').value;
+  const terms=document.getElementById('regTerms').checked;
+
+  if(!firstName || !lastName || !street || !zip || !city || !email || !phoneRaw || !p1 || !p2){
+    setMsg('regMsg','error','Bitte alle Felder ausfüllen.');
+    return;
+  }
+
+  if(!email.includes('@') || !email.includes('.')){
+    setMsg('regMsg','error','Bitte eine gültige E-Mail-Adresse eingeben.');
+    return;
+  }
+
+  const phoneDigits=phoneRaw.replace(/\D/g,'');
+
+  if(phoneDigits.startsWith('0')){
+    setMsg('regMsg','error','Bitte die Telefonnummer ohne führende 0 eingeben.');
+    return;
+  }
+
+  if(phoneDigits.length<6){
+    setMsg('regMsg','error','Bitte eine gültige Telefonnummer eingeben.');
+    return;
+  }
+
+  if(p1.length<8){
+    setMsg('regMsg','error','Das Passwort muss mindestens 8 Zeichen haben.');
+    return;
+  }
+
+  if(p1!==p2){
+    setMsg('regMsg','error','Die Passwörter stimmen nicht überein.');
+    return;
+  }
+
+  if(!terms){
+    setMsg('regMsg','error','Bitte Nutzungsbedingungen und Datenschutz akzeptieren.');
+    return;
+  }
+
+  const fullPhone=prefix+' '+phoneDigits;
+  const account={
+    firstName:firstName,
+    lastName:lastName,
+    street:street,
+    zip:zip,
+    city:city,
+    email:email.trim().toLowerCase(),
+    phone:fullPhone,
+    password:p1
+  };
+
+  try{
+    localStorage.setItem('sekretarzDemoAccount',JSON.stringify(account));
+    const oldProfile=getUserProfile();
+    localStorage.setItem(PROFILE_STORAGE_KEY,JSON.stringify({
+      ...oldProfile,
+      firstName:account.firstName,
+      lastName:account.lastName,
+      email:account.email,
+      phone:account.phone,
+      street:account.street,
+      zip:account.zip,
+      city:account.city
+    }));
+
+    const savedAccount=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
+
+    if(!savedAccount ||
+       savedAccount.email!==account.email ||
+       savedAccount.phone!==account.phone ||
+       savedAccount.password!==account.password){
+      setMsg('regMsg','error','Das Testkonto konnte im Browser nicht korrekt gespeichert werden.');
+      return;
+    }
+
+    // Compatibility with older prototype builds.
+    localStorage.setItem('sekretarzDemoProfile',JSON.stringify(account));
+    localStorage.setItem('sekretarzDemoLoginPassword',p1);
+  }catch(err){
+    setMsg('regMsg','error','Das Testkonto konnte im Browser nicht gespeichert werden.');
+    return;
+  }
+
+  setMsg(
+    'regMsg',
+    'success',
+    `Konto gespeichert. Bestätigungs-E-Mail wird vorbereitet.`
+  );
+
+  localStorage.setItem('sekretarzPendingEmail',account.email);
+  localStorage.setItem('sekretarzPendingPhone',fullPhone);
+
+  setTimeout(()=>{
+    historyStack=['de001','de002','de003','de004'];
+    prepareEmailVerification(account.email);
+    showDirect('de004');
+  },700);
+}
+
+
+let currentSmsCode='';
+
+function prepareEmailVerification(email){
+  document.getElementById('verifyEmailDisplay').value=email || localStorage.getItem('sekretarzPendingEmail') || '';
+  document.getElementById('emailVerifyInfo').textContent='Bestätigungs-E-Mail wurde an '+document.getElementById('verifyEmailDisplay').value+' vorbereitet.';
+}
+
+function resendEmail(){
+  const email=document.getElementById('verifyEmailDisplay').value;
+  document.getElementById('emailVerifyInfo').textContent='Neue Bestätigungs-E-Mail wurde an '+email+' vorbereitet.';
+}
+
+function simulateEmailClick(){
+  const phone=localStorage.getItem('sekretarzPendingPhone') || '';
+  document.getElementById('verifyPhoneDisplay').value=phone;
+  sendSmsCode();
+  go('de005');
+}
+
+function sendSmsCode(){
+  currentSmsCode=String(Math.floor(100000+Math.random()*900000));
+  localStorage.setItem('sekretarzDemoSmsCode',currentSmsCode);
+
+  const phone=localStorage.getItem('sekretarzPendingPhone') || '';
+  document.getElementById('verifyPhoneDisplay').value=phone;
+
+  const box=document.getElementById('smsTestCode');
+  box.className='success';
+  box.textContent='TEST-SMS-Code: '+currentSmsCode;
+
+  clearMsg('smsMsg');
+}
+
+function verifySmsCode(){
+  const entered=document.getElementById('smsCodeInput').value.trim();
+  const expected=currentSmsCode || localStorage.getItem('sekretarzDemoSmsCode') || '';
+
+  if(!entered){
+    setMsg('smsMsg','error','Bitte den 6-stelligen SMS-Code eingeben.');
+    return;
+  }
+
+  if(entered!==expected){
+    setMsg('smsMsg','error','Der eingegebene Code ist falsch.');
+    return;
+  }
+
+  setMsg('smsMsg','success','Telefonnummer bestätigt. Dein Konto ist jetzt aktiviert.');
+
+  setTimeout(()=>{
+    loggedIn=false;
+    historyStack=['de001','de002','de003','de004','de005','de006'];
+    document.getElementById('loginId').value=localStorage.getItem('sekretarzPendingEmail') || '';
+    showDirect('de006');
+  },700);
+}
+
+function refreshRecognizedAccount(){
+  const box=document.getElementById('recognizedAccount');
+  if(!box) return;
+
+  const account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
+
+  if(account && account.email){
+    box.className='success';
+    box.textContent='Konto erkannt: '+account.email;
+  }else{
+    box.className='error';
+    box.textContent='Kein registriertes Testkonto in diesem Browser gefunden.';
+  }
+}
+
+function attemptLogin(){
+  clearMsg('loginMsg');
+
+  const id=document.getElementById('loginId').value.trim();
+  const pw=document.getElementById('loginPassword').value;
+
+  const storedAccount=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
+
+  const normalizedEmail=id.trim().toLowerCase();
+  const normalizedPhone=id.replace(/\s+/g,'');
+  const normalizedStoredPhone=(storedAccount?.phone || '').replace(/\s+/g,'');
+
+  const demoValid=(normalizedEmail==='demo@sekretarz.app' || normalizedPhone==='+49123456789') && pw==='sekretarz';
+
+  const registeredValid=!!storedAccount &&
+    (
+      normalizedEmail===(storedAccount.email || '').trim().toLowerCase() ||
+      normalizedPhone===normalizedStoredPhone
+    ) &&
+    pw===storedAccount.password;
+
+  if(demoValid || registeredValid){
+    failedAttempts=0;
+    loggedIn=true;
+    try{ localStorage.setItem('sekretarzLoggedIn','1'); }catch(e){}
+    renderDashboardCases();
+    renderToday();
+    historyStack=['de011'];
+    showDirect('de011');
+    return;
+  }
+
+  failedAttempts++;
+
+  const remaining=MAX_ATTEMPTS-failedAttempts;
+
+  if(remaining>0){
+    setMsg(
+      'loginMsg',
+      'error',
+      `Anmeldung fehlgeschlagen. Noch ${remaining} ${remaining===1?'Versuch':'Versuche'} möglich.`
+    );
+  } else {
+    setMsg(
+      'loginMsg',
+      'error',
+      'Drei falsche Anmeldeversuche. Die Passwort-Wiederherstellung wird gestartet.'
+    );
+    setTimeout(()=>{
+      failedAttempts=0;
+      document.getElementById('recoveryId').value=id;
+      go('de007');
+    },1000);
+  }
+}
+
+function sendRecovery(){
+  clearMsg('recoveryMsg');
+  const id=document.getElementById('recoveryId').value.trim();
+
+  if(!id){
+    setMsg('recoveryMsg','error','Bitte E-Mail-Adresse oder Telefonnummer eingeben.');
+    return;
+  }
+
+  setMsg(
+    'recoveryMsg',
+    'success',
+    'Wiederherstellung vorbereitet. Im echten System wird jetzt ein sicherer Link oder Bestätigungscode gesendet.'
+  );
+}
+
+function logout(){
+  loggedIn=false;
+  try{ localStorage.removeItem('sekretarzLoggedIn'); }catch(e){}
+  historyStack=['de001','de002'];
+  showDirect('de002');
+}
+
+function goDashboard(){
+  const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
+  if(loggedIn || persistedLogin){
+    loggedIn=true;
+    renderDashboardCases();
+    if(currentPage==='de011') historyStack=['de011','de008'];
+    else if(!historyStack.includes('de011')) historyStack=['de011','de008'];
+    else if(historyStack[historyStack.length-1]!=='de008') historyStack.push('de008');
+    showDirect('de008');
+  } else {
+    goStart();
+  }
+}
+
+let currentCaseData=null;
+
+function getCaseHistory(data){
+  if(Array.isArray(data?.history) && data.history.length) return data.history;
+  const history=[];
+  if(data?.desc) history.push({type:'Start',text:data.desc,date:data.dateDisplay || ''});
+  return history;
+}
+
+function buildAIPlan(data){
+  if(data?.careType!=='ai'){
+    return [
+      'Zur gewünschten Zeit erinnern.',
+      'Bei Bestätigung als erledigt markieren.',
+      'Ohne Reaktion bis zu 5-mal nachfassen.'
+    ];
+  }
+
+  const plan=[];
+  if(data?.status==='Warte auf Antwort'){
+    plan.push('Auf die nächste Antwort warten und neue Informationen automatisch der Angelegenheit zuordnen.');
+    plan.push('Neue Antwort analysieren und mit dem bisherigen Verlauf vergleichen.');
+    plan.push('Falls keine Antwort kommt, rechtzeitig einen Follow-up-Schritt vorbereiten.');
+  }else{
+    plan.push('Aktuellen Stand prüfen und fehlende Informationen erkennen.');
+    plan.push('Den nächsten sinnvollen Schritt vorbereiten.');
+    plan.push('Neue Ereignisse, E-Mails, Dokumente oder Telefonate in die Historie aufnehmen.');
+  }
+
+  if(data?.sourceSettings?.web){
+    plan.push('Bei Bedarf aktuelle geprüfte Internetquellen einbeziehen.');
+  }
+  return plan;
+}
+
+function renderAIPlan(data){
+  const box=document.getElementById('aiPlanList');
+  if(!box) return;
+  const plan=buildAIPlan(data);
+  box.innerHTML=plan.map((item,i)=>
+    '<div class="ai-plan-item"><div class="ai-plan-num">'+(i+1)+'</div><div>'+escapeHtml(item)+'</div></div>'
+  ).join('');
+}
+
+function renderTimeline(data){
+  const box=document.getElementById('caseTimeline');
+  if(!box) return;
+  const history=getCaseHistory(data);
+  if(!history.length){
+    box.innerHTML='<p style="color:var(--muted)">Noch keine Historie vorhanden.</p>';
+    return;
+  }
+  box.innerHTML=history.map(item=>
+    '<div class="timeline-item"><div class="timeline-dot"></div><div><b>'+escapeHtml(item.type || 'Eintrag')+'</b><div>'+escapeHtml(item.text || '')+'</div><small>'+escapeHtml(item.date || '')+'</small></div></div>'
+  ).join('');
+}
+
+
+function renderReminderCenter(data){
+  const box=document.getElementById('reminderCaseCenter');
+  const aiBox=document.getElementById('aiCaseCenter');
+  const heading=document.getElementById('reminderSimpleHeading');
+  const text=document.getElementById('reminderSimpleText');
+  const info=document.getElementById('reminderSimpleInfo');
+
+  const isAI=data?.careType==='ai';
+
+  if(box) box.classList.toggle('hidden',isAI);
+  if(aiBox) aiBox.classList.toggle('hidden',!isAI);
+
+  if(isAI) return;
+
+  const done=String(data?.status||'').toLowerCase().includes('erledigt');
+  const doneBtn=document.getElementById('reminderDoneBtn');
+  const editBtn=document.getElementById('reminderEditBtn');
+  const replanBtn=document.getElementById('reminderReplanBtn');
+
+  if(heading) heading.textContent=done ? 'Erledigt ✓' : 'Erinnerung aktiv';
+
+  if(text){
+    text.textContent=done
+      ? 'Diese Erinnerung ist abgeschlossen.'
+      : (data?.desc || 'Der Sekretär erinnert dich an diese Aufgabe.');
+  }
+
+  if(doneBtn) doneBtn.classList.toggle('hidden',done);
+  if(editBtn) editBtn.classList.toggle('hidden',done);
+  if(replanBtn) replanBtn.classList.toggle('hidden',!done);
+
+  if(info){
+    const parts=[];
+    if(data?.dateDisplay) parts.push('Termin: '+data.dateDisplay);
+    if(data?.reminderDateTime){
+      const parsed=new Date(data.reminderDateTime);
+      if(!Number.isNaN(parsed.getTime())){
+        parts.push('Erinnerung: '+parsed.toLocaleString('de-DE'));
+      }
+    }
+    info.textContent=parts.length ? parts.join(' · ') : 'Keine zusätzliche Zeitangabe gespeichert.';
+  }
+}
+
+function renderAICenter(data){
+  const situation=document.getElementById('aiSituationText');
+  const nextText=document.getElementById('aiNextStepText');
+  const nextTitle=document.getElementById('aiNextStepTitle');
+  const question=document.getElementById('aiQuestionText');
+
+  if(data?.careType==='ai'){
+    if(situation){
+      situation.textContent=(data.status==='Warte auf Antwort')
+        ? 'Diese Angelegenheit ist aktiv unter KI-Betreuung. Aktuell warten wir auf eine Antwort. Der Sekretär soll neue Informationen automatisch in den Verlauf einordnen und den nächsten Schritt vorbereiten.'
+        : 'Diese Angelegenheit wird aktiv durch den Sekretär begleitet. Der aktuelle Stand wird laufend mit neuen Informationen ergänzt.';
+    }
+    if(nextTitle) nextTitle.textContent=data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten';
+    if(nextText) nextText.textContent=data?.nextStep || 'Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.';
+    if(question) question.textContent='Gab es seit dem letzten Kontakt ein Telefonat, eine Nachricht oder eine andere wichtige Information?';
+  }else{
+    if(situation) situation.textContent='Dies ist eine einfache Erinnerung. Es ist keine laufende KI-Analyse erforderlich.';
+    if(nextTitle) nextTitle.textContent='Erinnerung';
+    if(nextText) nextText.textContent='Der Sekretär erinnert zur gespeicherten Zeit und verfolgt die Bestätigung.';
+    if(question) question.textContent='Möchtest du zu dieser Aufgabe noch etwas ergänzen?';
+  }
+
+  renderAIPlan(data);
+  renderTimeline(data);
+}
+
+function answerAIQuestion(hasInfo){
+  const note=document.getElementById('aiUserNote');
+  const btn=document.getElementById('aiSaveNoteBtn');
+  if(!note || !btn) return;
+  note.classList.toggle('hidden',!hasInfo);
+  btn.classList.toggle('hidden',!hasInfo);
+  if(hasInfo) note.focus();
+}
+
+function saveAIUserNote(){
+  const note=document.getElementById('aiUserNote');
+  const btn=document.getElementById('aiSaveNoteBtn');
+  const text=(note?.value || '').trim();
+  if(!text || !currentCaseData) return;
+
+  const history=getCaseHistory(currentCaseData);
+  history.push({
+    type:'Deine Notiz',
+    text,
+    date:new Date().toLocaleString('de-DE')
+  });
+
+  currentCaseData.history=history;
+  const saved=upsertStoredCase(currentCaseData);
+  currentCaseData=saved;
+  renderTimeline(saved);
+
+  note.value='';
+  note.classList.add('hidden');
+  btn.classList.add('hidden');
+}
+
+function prepareNextStep(){
+  if(!currentCaseData) return;
+  const box=document.getElementById('aiNextStepText');
+  if(!box) return;
+
+  if(currentCaseData.status==='Warte auf Antwort'){
+    box.textContent='Wenn keine neue Antwort eingeht, soll der Sekretär einen Follow-up-Termin setzen und eine passende Erinnerung oder Antwort vorbereiten.';
+  }else{
+    box.textContent='Der Sekretär prüft den aktuellen Stand und schlägt den nächsten konkreten Schritt vor.';
+  }
+}
+
+
+function replanCurrentCase(){
+  if(!currentCaseData) return;
+
+  const source={...currentCaseData};
+
+  currentCaseData={
+    ...source,
+    id:'case-'+Date.now(),
+    status:'Zu bestätigen',
+    dateDisplay:'',
+    reminderDateTime:'',
+    createdAt:new Date().toISOString()
+  };
+
+  try{
+    localStorage.setItem('sekretarzEditCaseDraftV1',JSON.stringify(currentCaseData));
+  }catch(e){}
+
+  editingCaseId=null;
+  go('de010');
+
+  setTimeout(()=>{
+    try{
+      const title=document.getElementById('caseTitleInput');
+      const desc=document.getElementById('caseDescInput');
+      const date=document.getElementById('caseDateInput');
+      const time=document.getElementById('caseTimeInput');
+
+      if(title) title.value=source.title||'';
+      if(desc) desc.value=source.desc||'';
+      if(date) date.value='';
+      if(time) time.value='';
+    }catch(e){}
+  },0);
+}
+
+function markCaseDone(){
+  if(!currentCaseData) return;
+
+  const cases=getStoredCases();
+  const idx=cases.findIndex(c=>c.id===currentCaseData.id);
+
+  currentCaseData.status='Erledigt';
+
+  if(idx>=0){
+    cases[idx]={...cases[idx],status:'Erledigt'};
+    saveCasesToStorage(cases);
+  }else{
+    currentCaseData=upsertStoredCase(currentCaseData);
+  }
+
+  const statusEl=document.getElementById('caseStatus');
+  if(statusEl){
+    statusEl.textContent='Erledigt';
+    statusEl.className='badge status-done';
+  }
+
+  renderReminderCenter(currentCaseData);
+
+  if(currentCaseData.careType==='ai'){
+    renderAICenter(currentCaseData);
+  }
+}
+function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careType='',reminderDateTime='',sourceSettings=null,contact=null,id=null){
+  try{
+    const origin=sessionStorage.getItem('sekretarzCaseReturnPage') || localStorage.getItem('sekretarzCaseReturnPage');
+    if(currentPage!=='de014' && origin!=='de014'){
+      sessionStorage.removeItem('sekretarzCaseReturnPage');
+      localStorage.removeItem('sekretarzCaseReturnPage');
+    }
+  }catch(e){}
+
+  currentCaseData={id,title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact,dateDisplay:date};
+
+  try{
+    if(id){
+      sessionStorage.setItem('sekretarzCurrentCaseId',id);
+      localStorage.setItem('sekretarzLastCaseId',id);
+    }
+  }catch(e){}
+  const detailTitle=document.getElementById('detailTitle');
+  const detailStatusNode=document.getElementById('detailStatus');
+  const detailDate=document.getElementById('detailDate');
+
+  if(detailTitle) detailTitle.textContent=title;
+  if(detailStatusNode) detailStatusNode.textContent=status;
+  if(detailDate) detailDate.textContent=date;
+
+  const detailCard=document.querySelector('#de009 .detail-card');
+  const detailStatus=detailStatusNode;
+  const visual=getStatusVisual(status,careType);
+
+  if(detailCard){
+    detailCard.classList.remove('status-blue','status-yellow','status-orange','status-red','status-green','status-purple');
+    detailCard.classList.add(visual.cls);
+  }
+  if(detailStatus){
+    detailStatus.innerHTML='<i class="status-dot '+visual.dot+'"></i>'+escapeHtml(status);
+  }
+
+  renderCurrentCaseLocation();
+  renderReminderCenter(currentCaseData);
+  if(currentCaseData.careType==='ai'){
+    renderAICenter(currentCaseData);
+  }
+  go('de009');
+}
+
+const CASES_STORAGE_KEY='sekretarzCasesV1';
+
+function getDefaultCases(){
+  return [
+    {
+      id:'demo-isarwinkel',
+      title:'Fenster – Isarwinkel',
+      status:'Warte auf Antwort',
+      desc:'Ich warte auf eine Antwort zur Fensterregulierung und zu den Dichtungen.',
+      dateDisplay:'28.08.2026',
+      category:'Haus & Wohnung',
+      nextStep:'Antwort von Isarwinkel analysieren und nächsten Schritt planen.',
+      careType:'ai',
+      reminderDateTime:'',
+      sourceSettings:{email:true,docs:true,calls:true,web:true},
+      contact:null,
+      history:[]
+    },
+    {
+      id:'demo-werkstatt',
+      title:'Werkstatt – Termin',
+      status:'Zu bestätigen',
+      desc:'Vorgeschlagenen Werkstatttermin bestätigen.',
+      dateDisplay:'02.09.2026',
+      category:'Auto & Mobilität',
+      nextStep:'',
+      careType:'reminder',
+      reminderDateTime:'',
+      sourceSettings:{email:false,docs:false,calls:false,web:false},
+      contact:null,
+      history:[]
+    },
+    {
+      id:'demo-autoversicherung',
+      title:'Autoversicherung',
+      status:'Zu erledigen',
+      desc:'Angebot und Verlängerungsfrist prüfen.',
+      dateDisplay:'05.09.2026',
+      category:'Versicherungen',
+      nextStep:'',
+      careType:'reminder',
+      reminderDateTime:'',
+      sourceSettings:{email:false,docs:false,calls:false,web:false},
+      contact:null,
+      history:[]
+    }
+  ];
+}
+
+function loadCasesFromStorage(){
+  try{
+    const raw=localStorage.getItem(CASES_STORAGE_KEY);
+    if(!raw){
+      const defaults=getDefaultCases();
+      localStorage.setItem(CASES_STORAGE_KEY,JSON.stringify(defaults));
+      return defaults;
+    }
+    const parsed=JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){
+    return getDefaultCases();
+  }
+}
+
+function saveCasesToStorage(cases){
+  try{
+    localStorage.setItem(CASES_STORAGE_KEY,JSON.stringify(cases));
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function getStoredCases(){
+  return loadCasesFromStorage();
+}
+
+function upsertStoredCase(data){
+  const cases=getStoredCases();
+  const copy={...data};
+  if(!copy.id){
+    copy.id='case-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
+  }
+
+  const idx=cases.findIndex(c=>c.id===copy.id);
+  if(idx>=0) cases[idx]=copy;
+  else cases.unshift(copy);
+
+  saveCasesToStorage(cases);
+  return copy;
+}
+
+function findStoredCaseById(id){
+  return getStoredCases().find(c=>c.id===id) || null;
+}
+
+function renderDashboardCases(){
+  const container=document.getElementById('cases');
+  if(!container) return;
+  container.innerHTML='';
+
+  const cases=getStoredCases();
+  cases.forEach(data=>{
+    const el=document.createElement('button');
+    bindCaseCard(el,data,data.dateDisplay || data.reminderDateTime?.replace('T',' ') || '',data.desc || '');
+    el.dataset.caseId=data.id || '';
+    container.appendChild(el);
+  });
+
+  colorizeDashboardCases();
+}
+
+function getStatusVisual(status,careType){
+  if(careType==='ai') return {cls:'status-purple',dot:'dot-purple',label:'KI betreut'};
+  if(status==='Erledigt') return {cls:'status-green',dot:'dot-green',label:'Erledigt'};
+  if(status==='Nicht erledigt' || status==='Dringend') return {cls:'status-red',dot:'dot-red',label:status};
+  if(status==='Warte auf Antwort' || status==='Zu bestätigen') return {cls:'status-yellow',dot:'dot-yellow',label:status};
+  if(status==='Wichtig' || status==='Termin naht') return {cls:'status-orange',dot:'dot-orange',label:status};
+  return {cls:'status-blue',dot:'dot-blue',label:status || 'Aktiv'};
+}
+
+function readContactData(){
+  return {
+    name:(document.getElementById('casePlaceName')?.value || '').trim(),
+    type:(document.getElementById('caseContactType')?.value || '').trim(),
+    street:(document.getElementById('casePlaceStreet')?.value || '').trim(),
+    city:(document.getElementById('casePlaceCity')?.value || '').trim(),
+    phone:(document.getElementById('casePlacePhone')?.value || '').trim(),
+    email:(document.getElementById('casePlaceEmail')?.value || '').trim()
+  };
+}
+
+function fillContactData(contact){
+  contact=contact || {};
+  document.getElementById('casePlaceName').value=contact.name || '';
+  document.getElementById('caseContactType').value=contact.type || '';
+  document.getElementById('casePlaceStreet').value=contact.street || '';
+  document.getElementById('casePlaceCity').value=contact.city || '';
+  document.getElementById('casePlacePhone').value=contact.phone || '';
+  document.getElementById('casePlaceEmail').value=contact.email || '';
+}
+
+function renderCurrentCaseLocation(){
+  const box=document.getElementById('caseLocationBox');
+  const content=document.getElementById('caseLocationContent');
+  if(!box || !content) return;
+
+  const c=currentCaseData?.contact || {};
+  const lines=[];
+  if(c.name) lines.push('<b>'+escapeHtml(c.name)+'</b>');
+  if(c.type) lines.push(escapeHtml(c.type));
+  const addr=[c.street,c.city].filter(Boolean).join(', ');
+  if(addr) lines.push(escapeHtml(addr));
+  if(c.phone) lines.push('Telefon: '+escapeHtml(c.phone));
+  if(c.email) lines.push('E-Mail: '+escapeHtml(c.email));
+
+  if(lines.length){
+    content.innerHTML=lines.join('<br>');
+    box.classList.remove('hidden');
+  }else{
+    box.classList.add('hidden');
+    content.innerHTML='';
+  }
+}
+
+function setCaseCareType(type){
+  const isAI=type==='ai';
+  const reminder=document.getElementById('reminderPanel');
+  const ai=document.getElementById('aiPanel');
+  const reminderCard=document.getElementById('careCardReminder');
+  const aiCard=document.getElementById('careCardAI');
+
+  if(reminder) reminder.classList.toggle('hidden-mode',isAI);
+  if(ai) ai.classList.toggle('hidden-mode',!isAI);
+  if(reminderCard) reminderCard.classList.toggle('active',!isAI);
+  if(aiCard) aiCard.classList.toggle('active',isAI);
+
+  const radio=document.querySelector('input[name="caseCareType"][value="'+type+'"]');
+  if(radio) radio.checked=true;
+
+  updateCasePreview();
+}
+
+function getCaseCareType(){
+  return document.querySelector('input[name="caseCareType"]:checked')?.value || 'reminder';
+}
+
+let editingCaseOriginalTitle=null;
+let editingCaseId=null;
+
+function openNewCase(){
+  currentCaseData=null;
+  editingCaseOriginalTitle=null;
+  editingCaseId=null;
+  try{ localStorage.removeItem('sekretarzEditModeV1'); }catch(e){}
+  document.getElementById('caseFormHeading').textContent='Neue Angelegenheit';
+  document.getElementById('caseFormMode').textContent='Neu';
+  document.getElementById('caseTitle').value='';
+  document.getElementById('caseCategory').value='Haus & Wohnung';
+  document.getElementById('caseStatus').value='Zu erledigen';
+  document.getElementById('caseReminderDateTime').value='';
+  document.getElementById('caseDescription').value='';
+  document.getElementById('caseNextStep').value='';
+  fillContactData(null);
+  setCaseCareType('reminder');
+  clearMsg('caseFormMsg');
+  updateCasePreview();
+  go('de010');
+}
+
+
+function toDateInputValue(dateDisplay){
+  const m=String(dateDisplay||'').match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  return m ? m[3]+'-'+m[2]+'-'+m[1] : '';
+}
+
+function toTimeInputValue(reminderDateTime){
+  if(!reminderDateTime) return '';
+  const d=new Date(reminderDateTime);
+  if(Number.isNaN(d.getTime())) return '';
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+function editCurrentCase(){
+  if(!currentCaseData) return;
+
+  editingCaseOriginalTitle=currentCaseData.title || null;
+  editingCaseId=currentCaseData.id || null;
+
+  try{
+    localStorage.setItem('sekretarzEditCaseDraftV1',JSON.stringify(currentCaseData));
+    localStorage.setItem('sekretarzEditModeV1','1');
+  }catch(e){}
+
+  const heading=document.getElementById('caseFormHeading');
+  const mode=document.getElementById('caseFormMode');
+
+  if(heading) heading.textContent='Angelegenheit bearbeiten';
+  if(mode) mode.textContent='Bearbeiten';
+
+  document.getElementById('caseTitle').value=currentCaseData.title || '';
+  document.getElementById('caseCategory').value=currentCaseData.category || 'Sonstiges';
+  document.getElementById('caseStatus').value=currentCaseData.status || 'Zu erledigen';
+
+  const careType=currentCaseData.careType || 'reminder';
+  setCaseCareType(careType);
+
+  document.getElementById('caseReminderDateTime').value=currentCaseData.reminderDateTime || '';
+  document.getElementById('caseDescription').value=currentCaseData.desc || '';
+  document.getElementById('caseNextStep').value=currentCaseData.nextStep || '';
+
+  fillContactData(currentCaseData.contact || null);
+
+  const srcSettings=currentCaseData.sourceSettings || {};
+  const sourceEmail=document.getElementById('sourceEmail');
+  const sourceDocs=document.getElementById('sourceDocs');
+  const sourceCalls=document.getElementById('sourceCalls');
+  const sourceWeb=document.getElementById('sourceWeb');
+
+  if(sourceEmail) sourceEmail.checked=srcSettings.email !== false;
+  if(sourceDocs) sourceDocs.checked=srcSettings.docs !== false;
+  if(sourceCalls) sourceCalls.checked=srcSettings.calls !== false;
+  if(sourceWeb) sourceWeb.checked=srcSettings.web !== false;
+
+  clearMsg('caseFormMsg');
+  updateCasePreview();
+  go('de010');
+}
+
+function formatDateDE(value){
+  if(!value) return 'Kein Termin';
+  const parts=value.split('-');
+  return parts.length===3 ? parts[2]+'.'+parts[1]+'.'+parts[0] : value;
+}
+
+function updateCasePreview(){
+  const title=(document.getElementById('caseTitle')?.value || '').trim();
+  const status=document.getElementById('caseStatus')?.value || '';
+  const category=document.getElementById('caseCategory')?.value || '';
+  const type=getCaseCareType();
+  const preview=document.getElementById('casePreview');
+  if(!preview) return;
+
+  if(!title){
+    preview.textContent='Fülle den Titel aus, um die Vorschau zu sehen.';
+    return;
+  }
+
+  const typeLabel=type==='ai' ? 'Mit KI betreuen' : 'Nur erinnern';
+  const contact=readContactData();
+  const contactLine=contact.name ? '<br>Ort/Kontakt: '+escapeHtml(contact.name)+(contact.city ? ' · '+escapeHtml(contact.city) : '') : '';
+  let extra='';
+
+  if(type==='reminder'){
+    const dt=document.getElementById('caseReminderDateTime')?.value || '';
+    extra=dt ? '<br>Erinnerung: '+escapeHtml(dt.replace('T',' ')) : '<br>Noch kein Erinnerungszeitpunkt gewählt.';
+  }else{
+    extra='<br>KI verfolgt Verlauf, fragt bei fehlenden Informationen nach und bereitet nächste Schritte vor.';
+  }
+
+  preview.innerHTML='<b>'+escapeHtml(title)+'</b><br>'+escapeHtml(category)+' · '+escapeHtml(status)+'<br><b>'+escapeHtml(typeLabel)+'</b>'+extra+contactLine;
+}
+
+function findExistingCaseCardByTitle(title){
+  const cards=[...document.querySelectorAll('#cases .case')];
+  return cards.find(card=>{
+    const h3=card.querySelector('h3');
+    return h3 && h3.textContent.trim()===title;
+  }) || null;
+}
+
+function bindCaseCard(el,data,dateDisplay,cardText){
+  el.onclick=()=>{
+    openCase(
+      data.title,
+      data.status,
+      data.desc,
+      dateDisplay,
+      data.category,
+      data.nextStep,
+      data.careType,
+      data.reminderDateTime,
+      data.sourceSettings,
+      data.contact,
+      data.id || null
+    );
+    if(currentCaseData){
+      currentCaseData.history=Array.isArray(data.history) ? data.history : [];
+      renderAICenter(currentCaseData);
+    }
+  };
+
+  el.classList.remove('status-blue','status-yellow','status-orange','status-red','status-green','status-purple');
+  const visual=getStatusVisual(data.status,data.careType);
+  el.classList.add('case',visual.cls);
+  el.style.cssText='text-align:left;width:100%';
+
+  const modeTag=data.careType==='ai' ? 'KI betreut' : 'Erinnerung';
+  el.innerHTML='<div class="case-top"><div><h3><i class="status-dot '+visual.dot+'"></i>'+escapeHtml(data.title)+'</h3><span class="tag">'+escapeHtml(data.status)+'</span> <span class="tag">'+escapeHtml(modeTag)+'</span></div><small>'+escapeHtml(dateDisplay)+'</small></div><p>'+escapeHtml(cardText)+'</p>';
+}
+
+function saveCaseForm(){
+  clearMsg('caseFormMsg');
+
+  const title=document.getElementById('caseTitle').value.trim();
+  const category=document.getElementById('caseCategory').value;
+  const status=document.getElementById('caseStatus').value;
+  const careType=getCaseCareType();
+  const reminderDateTime=document.getElementById('caseReminderDateTime').value;
+  const desc=document.getElementById('caseDescription').value.trim();
+  const nextStep=document.getElementById('caseNextStep').value.trim();
+
+  if(!title){
+    setMsg('caseFormMsg','error','Bitte einen Titel eingeben.');
+    return;
+  }
+
+  if(careType==='reminder' && !reminderDateTime){
+    setMsg('caseFormMsg','error','Bitte einen Erinnerungszeitpunkt wählen.');
+    return;
+  }
+
+  if(careType==='ai' && !desc){
+    setMsg('caseFormMsg','error','Bitte kurz beschreiben, worum es bei dieser KI-Angelegenheit geht.');
+    return;
+  }
+
+  const contact=readContactData();
+
+  const sourceSettings={
+    email:!!document.getElementById('sourceEmail')?.checked,
+    docs:!!document.getElementById('sourceDocs')?.checked,
+    calls:!!document.getElementById('sourceCalls')?.checked,
+    web:!!document.getElementById('sourceWeb')?.checked
+  };
+
+  let dateDisplay='KI betreut';
+  let cardText=desc || 'KI-Angelegenheit unter Kontrolle des Sekretärs.';
+
+  if(careType==='reminder'){
+    dateDisplay=reminderDateTime.replace('T',' ');
+    cardText='Erinnerung mit bis zu 5 Versuchen im Abstand von 5 Minuten.';
+  }
+
+  const data={
+    id:editingCaseId || null,
+    title,status,category,careType,reminderDateTime,
+    desc:desc || cardText,
+    nextStep,
+    sourceSettings,
+    contact,
+    dateDisplay,
+    history:Array.isArray(currentCaseData?.history) ? currentCaseData.history : []
+  };
+
+  const isEditing=!!(editingCaseOriginalTitle || editingCaseId);
+
+  const savedData=upsertStoredCase(data);
+  currentCaseData=savedData;
+
+  editingCaseOriginalTitle=null;
+  editingCaseId=null;
+  try{ localStorage.removeItem('sekretarzEditModeV1'); }catch(e){}
+
+  renderDashboardCases();
+
+  setMsg(
+    'caseFormMsg',
+    'success',
+    isEditing ? 'Angelegenheit aktualisiert.' :
+    (careType==='ai' ? 'KI-Angelegenheit gespeichert.' : 'Erinnerung gespeichert.')
+  );
+
+  setTimeout(()=>{
+    historyStack=['de001','de002','de011'];
+    showDirect('de008');
+  },450);
+}
+
+document.addEventListener('input',e=>{
+  if(['caseTitle','caseCategory','caseStatus','caseReminderDateTime','casePlaceName','casePlaceCity'].includes(e.target?.id)) updateCasePreview();
+});
+document.addEventListener('change',e=>{
+  if(['caseTitle','caseCategory','caseStatus','caseReminderDateTime','casePlaceName','casePlaceCity'].includes(e.target?.id)) updateCasePreview();
+});
+
+function openModal(){document.getElementById('modal').classList.remove('hidden')}
+function closeModal(){document.getElementById('modal').classList.add('hidden')}
+
+function escapeHtml(s){
+  return s.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))
+}
+
+function addCase(){
+  const t=document.getElementById('newTitle').value.trim();
+  if(!t) return alert('Bitte einen Titel eingeben.');
+
+  const s=document.getElementById('newStatus').value;
+  const n=document.getElementById('newNote').value.trim()||'Neue Angelegenheit.';
+
+  const el=document.createElement('button');
+  el.className='case';
+  el.style.cssText='text-align:left;width:100%';
+  el.onclick=()=>openCase(t,s,n,'Heute');
+  el.innerHTML=`<div class="case-top"><div><h3>${escapeHtml(t)}</h3><span class="tag">${escapeHtml(s)}</span></div><small>Heute</small></div><p>${escapeHtml(n)}</p>`;
+
+  document.getElementById('cases').prepend(el);
+  document.getElementById('newTitle').value='';
+  document.getElementById('newNote').value='';
+  closeModal();
+}
+
+function restoreCaseById(id){
+  if(!id) return false;
+  const data=findStoredCaseById(id);
+  if(!data) return false;
+
+  openCase(
+    data.title || '',
+    data.status || '',
+    data.desc || '',
+    data.dateDisplay || data.reminderDateTime?.replace('T',' ') || '',
+    data.category || 'Sonstiges',
+    data.nextStep || '',
+    data.careType || '',
+    data.reminderDateTime || '',
+    data.sourceSettings || null,
+    data.contact || null,
+    data.id || null
+  );
+  if(currentCaseData) currentCaseData.history=Array.isArray(data.history) ? data.history : [];
+  renderAICenter(currentCaseData);
+  return true;
+}
+
+
+function sanitizeNavigationState(){
+  try{
+    const saved=sessionStorage.getItem('sekretarzCurrentPage') || localStorage.getItem('sekretarzLastPage');
+    if(saved==='de011'){
+      sessionStorage.removeItem('sekretarzCaseReturnPage');
+      localStorage.removeItem('sekretarzCaseReturnPage');
+      historyStack=['de011'];
+    }
+  }catch(e){}
+}
+
+function restoreAppState(){
+  let target='de001';
+  try{
+    const saved=sessionStorage.getItem('sekretarzCurrentPage') || localStorage.getItem('sekretarzLastPage');
+    const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
+    const account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
+
+    if(saved && document.getElementById(saved)){
+      target=saved;
+    }else if(persistedLogin){
+      target='de011';
+    }else if(account && account.email){
+      target='de006';
+    }
+
+    if(['de008','de009','de010','de011','de012','de013','de014','de015','de016'].includes(target) && !persistedLogin){
+      target='de006';
+    }
+
+    loggedIn=persistedLogin;
+
+    if(target==='de009'){
+      const currentCaseId=sessionStorage.getItem('sekretarzCurrentCaseId') || localStorage.getItem('sekretarzLastCaseId');
+      const returnPage=sessionStorage.getItem('sekretarzCaseReturnPage') || localStorage.getItem('sekretarzCaseReturnPage');
+      if(currentCaseId && restoreCaseById(currentCaseId)){
+        if(returnPage==='de014') historyStack=['de011','de014','de009'];
+        else historyStack=['de011','de008','de009'];
+        return;
+      }
+      target=(returnPage==='de014' ? 'de014' : 'de008');
+    }
+
+    if(target==='de010' && localStorage.getItem('sekretarzEditModeV1')==='1'){
+      const draft=JSON.parse(localStorage.getItem('sekretarzEditCaseDraftV1') || 'null');
+      if(draft && draft.title){
+        currentCaseData=draft;
+        editingCaseOriginalTitle=draft.title || null;
+        editingCaseId=draft.id || null;
+      }
+    }
+
+    if(target==='de011') historyStack=['de011'];
+    else if(target==='de008') historyStack=['de011','de008'];
+    else if(target==='de012') historyStack=['de011','de012'];
+    else if(target==='de013'){
+      const profileReturnPage=sessionStorage.getItem('sekretarzProfileReturnPage') || localStorage.getItem('sekretarzProfileReturnPage');
+      historyStack=(profileReturnPage==='de016' ? ['de011','de016','de013'] : ['de011','de013']);
+    }
+    else if(target==='de014') historyStack=['de011','de014'];
+    else if(target==='de015') historyStack=['de011','de014','de015'];
+    else if(target==='de016') historyStack=['de011','de016'];
+    else historyStack=[target];
+
+    if(target==='de011') renderToday();
+    if(target==='de012') renderInbox();
+    if(target==='de013') loadProfile();
+    if(target==='de014') renderCalendar();
+    if(target==='de015') renderCalendarConnect();
+    showDirect(target);
+    if(target==='de010' && currentCaseData && localStorage.getItem('sekretarzEditModeV1')==='1') editCurrentCase();
+  }catch(e){
+    showDirect('de001');
+  }
+}
+
+setInterval(()=>{
+  try{
+    if(currentPage==='de011') renderToday();
+  }catch(e){}
+},30000);
+
+window.addEventListener('pageshow',()=>{
+  try{
+    const modal=document.getElementById('modal');
+    if(modal) modal.classList.add('hidden');
+    document.body.style.pointerEvents='auto';
+  }catch(e){}
+
+  try{
+    sanitizeNavigationState();
+    restoreAppState();
+  }catch(e){
+    const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
+    if(persistedLogin){ loggedIn=true; historyStack=['de011']; renderToday(); showDirect('de011'); } else { showDirect('de001'); }
+  }
+
+  setTimeout(()=>{
+    try{ renderDashboardCases(); }catch(e){}
+    try{
+      if(currentPage==='de011') renderToday();
+      if(currentPage==='de012') renderInbox();
+      if(currentPage==='de013') loadProfile();
+      if(currentPage==='de014') renderCalendar();
+      if(currentPage==='de015') renderCalendarConnect();
+    }catch(e){}
+  },0);
+});
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations()
+    .then(regs=>Promise.all(regs.map(r=>r.unregister())))
+    .catch(()=>{});
+
+  if('caches' in window){
+    caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
+  }
+}
+
+
+function colorizeDashboardCases(){
+  document.querySelectorAll('#cases .case').forEach(el=>{
+    const text=el.textContent || '';
+    let status='Zu erledigen';
+    if(text.includes('Warte auf Antwort')) status='Warte auf Antwort';
+    else if(text.includes('Dringend')) status='Dringend';
+    else if(text.includes('Nicht erledigt')) status='Nicht erledigt';
+    else if(text.includes('Erledigt')) status='Erledigt';
+    else if(text.includes('Zu bestätigen')) status='Zu bestätigen';
+
+    const isAI=text.includes('Fenster – Isarwinkel') || text.includes('KI betreut');
+    const visual=getStatusVisual(status,isAI ? 'ai' : '');
+    el.classList.add(visual.cls);
+
+    const h3=el.querySelector('h3');
+    if(h3 && !h3.querySelector('.status-dot')){
+      h3.insertAdjacentHTML('afterbegin','<i class="status-dot '+visual.dot+'"></i>');
+    }
+  });
+}
+
+// Dashboard rendering is handled by the guarded pageshow boot above.
+
+
+function resetDemoCases(){
+  localStorage.removeItem(CASES_STORAGE_KEY);
+  try{
+    sessionStorage.removeItem('sekretarzCurrentCaseId');
+    localStorage.removeItem('sekretarzLastCaseId');
+  }catch(e){}
+  renderDashboardCases();
+}
+
+</script>
+</body>
+</html>

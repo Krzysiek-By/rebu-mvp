@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v13.6">
+<meta name="sekretarz-version" content="DE-v13.7 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -765,6 +765,7 @@ button{cursor:pointer}
       <div class="choose-title">Sprache wählen</div>
       <div class="langs">
         <button class="lang-btn active" onclick="go('de002')"><span>🇩🇪</span>Deutsch</button>
+        <button class="lang-btn active" style="margin-top:12px" onclick="testSystemNotification()"><span>🔔</span>Benachrichtigung testen</button>
         <button class="lang-btn disabled" disabled><span>🇵🇱</span>Polski — später</button>
         <button class="lang-btn disabled" disabled><span>🇬🇧</span>English — später</button>
       </div>
@@ -4410,12 +4411,33 @@ window.addEventListener('pageshow',()=>{
 });
 
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations()
-    .then(regs=>Promise.all(regs.map(r=>r.unregister())))
+  navigator.serviceWorker.register('/sw.js',{scope:'/'})
     .catch(()=>{});
+}
 
-  if('caches' in window){
-    caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))).catch(()=>{});
+async function testSystemNotification(){
+  if(!('Notification' in window)){
+    alert('Dieses Gerät unterstützt Web-Benachrichtigungen hier nicht.');
+    return;
+  }
+  if(!('serviceWorker' in navigator)){
+    alert('Service Worker wird auf diesem Gerät nicht unterstützt.');
+    return;
+  }
+  try{
+    let permission=Notification.permission;
+    if(permission!=='granted') permission=await Notification.requestPermission();
+    if(permission!=='granted'){
+      alert('Benachrichtigungen wurden nicht erlaubt.');
+      return;
+    }
+    const reg=await navigator.serviceWorker.ready;
+    await reg.showNotification('Sekretarz',{
+      body:'Testbenachrichtigung – Systembenachrichtigungen funktionieren.',
+      tag:'sekretarz-test-notification'
+    });
+  }catch(e){
+    alert('Testbenachrichtigung konnte nicht gesendet werden.');
   }
 }
 

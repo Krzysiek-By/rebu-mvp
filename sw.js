@@ -9,12 +9,19 @@ self.addEventListener('activate', event => {
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch(e) {}
-  const title = data.title || 'Sekretarz';
+
+  const declarative = data && data.notification ? data.notification : null;
+  const title = (declarative && declarative.title) || data.title || 'Sekretarz';
+  const body = (declarative && declarative.body) || data.body || 'Du hast eine neue Erinnerung.';
+  const url = (declarative && declarative.navigate) || data.url || '/';
+
   const options = {
-    body: data.body || 'Du hast eine neue Erinnerung.',
+    body,
     tag: data.tag || 'sekretarz-reminder',
-    data: { url: (data.url || '/') }
+    silent: false,
+    data: { url }
   };
+
   event.waitUntil(self.registration.showNotification(title, options));
 });
 

@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v13.9 TEST">
+<meta name="sekretarz-version" content="DE-v13.10 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1020,6 +1020,10 @@ button{cursor:pointer}
 
       <div style="text-align:center;margin-top:14px">
         <button class="linkbtn" onclick="go('de007')">Passwort vergessen?</button>
+      </div>
+
+      <div style="text-align:center;margin-top:10px">
+        <button class="linkbtn" onclick="startNewRegistration()">Noch kein Konto? Neues Konto erstellen</button>
       </div>
 
       
@@ -3247,6 +3251,13 @@ function saveProfile(){
   }catch(e){
     setMsg('profileMsg','error','Profil konnte nicht gespeichert werden.');
   }
+}
+
+function startNewRegistration(){
+  failedAttempts=0;
+  clearMsg('loginMsg');
+  historyStack=['de001','de002'];
+  showDirect('de003');
 }
 
 function registerUser(){

@@ -7,7 +7,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v13.10 TEST">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<meta name="sekretarz-version" content="DE-v13.11 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -3820,6 +3823,16 @@ function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careTy
 }
 
 const CASES_STORAGE_KEY='sekretarzCasesV1';
+const CASES_STORAGE_PREFIX='sekretarzCasesUserV2:';
+
+function getCasesStorageKey(){
+  try{
+    const account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
+    const identity=(account?.email || account?.phone || '').trim().toLowerCase();
+    if(identity) return CASES_STORAGE_PREFIX+encodeURIComponent(identity);
+  }catch(e){}
+  return CASES_STORAGE_KEY;
+}
 
 function getDefaultCases(){
   return [
@@ -3870,22 +3883,28 @@ function getDefaultCases(){
 
 function loadCasesFromStorage(){
   try{
-    const raw=localStorage.getItem(CASES_STORAGE_KEY);
+    const key=getCasesStorageKey();
+    const raw=localStorage.getItem(key);
     if(!raw){
+      // Registered users start with their own empty case list.
+      if(key!==CASES_STORAGE_KEY){
+        localStorage.setItem(key,'[]');
+        return [];
+      }
       const defaults=getDefaultCases();
-      localStorage.setItem(CASES_STORAGE_KEY,JSON.stringify(defaults));
+      localStorage.setItem(key,JSON.stringify(defaults));
       return defaults;
     }
     const parsed=JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   }catch(e){
-    return getDefaultCases();
+    return [];
   }
 }
 
 function saveCasesToStorage(cases){
   try{
-    localStorage.setItem(CASES_STORAGE_KEY,JSON.stringify(cases));
+    localStorage.setItem(getCasesStorageKey(),JSON.stringify(cases));
     return true;
   }catch(e){
     return false;
@@ -4494,7 +4513,7 @@ function colorizeDashboardCases(){
 
 
 function resetDemoCases(){
-  localStorage.removeItem(CASES_STORAGE_KEY);
+  localStorage.removeItem(getCasesStorageKey());
   try{
     sessionStorage.removeItem('sekretarzCurrentCaseId');
     localStorage.removeItem('sekretarzLastCaseId');

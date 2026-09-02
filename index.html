@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v13.7 TEST">
+<meta name="sekretarz-version" content="DE-v13.8 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -765,7 +765,7 @@ button{cursor:pointer}
       <div class="choose-title">Sprache wählen</div>
       <div class="langs">
         <button class="lang-btn active" onclick="go('de002')"><span>🇩🇪</span>Deutsch</button>
-        <button class="lang-btn active" style="margin-top:12px" onclick="testSystemNotification()"><span>🔔</span>Benachrichtigung testen</button>
+        <button class="lang-btn active" style="margin-top:12px" onclick="testSystemNotification()"><span>🔔</span>Web Push testen</button>
         <button class="lang-btn disabled" disabled><span>🇵🇱</span>Polski — später</button>
         <button class="lang-btn disabled" disabled><span>🇬🇧</span>English — später</button>
       </div>
@@ -4415,13 +4415,18 @@ if('serviceWorker' in navigator){
     .catch(()=>{});
 }
 
+const SEKRETARZ_VAPID_PUBLIC_KEY='BJ71UNvSsY4Ef4nAOL8I3M8PcBl1iahdVgC9ARvF-XnHdN_Q4Wr7UVwyv5p-sKIbDY8lAqo-SBMwubGEzP2IhvU';
+
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData=atob(base64);
+  return Uint8Array.from([...rawData].map(ch=>ch.charCodeAt(0)));
+}
+
 async function testSystemNotification(){
-  if(!('Notification' in window)){
-    alert('Dieses Gerät unterstützt Web-Benachrichtigungen hier nicht.');
-    return;
-  }
-  if(!('serviceWorker' in navigator)){
-    alert('Service Worker wird auf diesem Gerät nicht unterstützt.');
+  if(!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)){
+    alert('Web Push wird auf diesem Gerät hier nicht unterstützt.');
     return;
   }
   try{
@@ -4432,12 +4437,23 @@ async function testSystemNotification(){
       return;
     }
     const reg=await navigator.serviceWorker.ready;
-    await reg.showNotification('Sekretarz',{
-      body:'Testbenachrichtigung – Systembenachrichtigungen funktionieren.',
-      tag:'sekretarz-test-notification'
+    let subscription=await reg.pushManager.getSubscription();
+    if(!subscription){
+      subscription=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(SEKRETARZ_VAPID_PUBLIC_KEY)
+      });
+    }
+    const response=await fetch('/api/test-push',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({subscription})
     });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(result.error || 'push_failed');
   }catch(e){
-    alert('Testbenachrichtigung konnte nicht gesendet werden.');
+    console.error(e);
+    alert('Web-Push-Test konnte nicht gesendet werden.');
   }
 }
 

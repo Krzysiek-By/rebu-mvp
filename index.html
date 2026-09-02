@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v13.4">
+<meta name="sekretarz-version" content="DE-v13.5 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1386,7 +1386,7 @@ button{cursor:pointer}
       </div>
     </div>
   </div>
-  <div class="page-id">DE-010</div>
+  <div class="page-id">DE-010 · v13.5 TEST</div>
 </section>
 
 
@@ -4001,6 +4001,7 @@ function openNewCase(){
   currentCaseData=null;
   editingCaseOriginalTitle=null;
   editingCaseId=null;
+  try{ localStorage.removeItem('sekretarzEditModeV1'); }catch(e){}
   document.getElementById('caseFormHeading').textContent='Neue Angelegenheit';
   document.getElementById('caseFormMode').textContent='Neu';
   document.getElementById('caseTitle').value='';
@@ -4037,6 +4038,7 @@ function editCurrentCase(){
 
   try{
     localStorage.setItem('sekretarzEditCaseDraftV1',JSON.stringify(currentCaseData));
+    localStorage.setItem('sekretarzEditModeV1','1');
   }catch(e){}
 
   const heading=document.getElementById('caseFormHeading');
@@ -4207,6 +4209,7 @@ function saveCaseForm(){
 
   editingCaseOriginalTitle=null;
   editingCaseId=null;
+  try{ localStorage.removeItem('sekretarzEditModeV1'); }catch(e){}
 
   renderDashboardCases();
 
@@ -4323,6 +4326,15 @@ function restoreAppState(){
       target=(returnPage==='de014' ? 'de014' : 'de008');
     }
 
+    if(target==='de010' && localStorage.getItem('sekretarzEditModeV1')==='1'){
+      const draft=JSON.parse(localStorage.getItem('sekretarzEditCaseDraftV1') || 'null');
+      if(draft && draft.title){
+        currentCaseData=draft;
+        editingCaseOriginalTitle=draft.title || null;
+        editingCaseId=draft.id || null;
+      }
+    }
+
     if(target==='de011') historyStack=['de011'];
     else if(target==='de008') historyStack=['de011','de008'];
     else if(target==='de012') historyStack=['de011','de012'];
@@ -4341,6 +4353,7 @@ function restoreAppState(){
     if(target==='de014') renderCalendar();
     if(target==='de015') renderCalendarConnect();
     showDirect(target);
+    if(target==='de010' && currentCaseData && localStorage.getItem('sekretarzEditModeV1')==='1') editCurrentCase();
   }catch(e){
     showDirect('de001');
   }

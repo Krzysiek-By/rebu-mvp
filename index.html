@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#356df3">
-<meta name="sekretarz-version" content="DE-v13.5">
+<meta name="sekretarz-version" content="DE-v13.6">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1214,7 +1214,7 @@ button{cursor:pointer}
 <section id="de010" class="page hidden">
   <div class="form-wrap">
     <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
-      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="backbtn" onclick="cancelCaseForm()">← Zurück</button>
       <button class="logo" aria-label="Dashboard" onclick="goDashboard()"></button>
     </div>
 
@@ -1381,7 +1381,7 @@ button{cursor:pointer}
       </div>
 
       <div class="form-actions">
-        <button class="btn secondary" onclick="back()">Abbrechen</button>
+        <button class="btn secondary" onclick="cancelCaseForm()">Abbrechen</button>
         <button class="btn primary" onclick="saveCaseForm()">Speichern</button>
       </div>
     </div>
@@ -4146,6 +4146,23 @@ function bindCaseCard(el,data,dateDisplay,cardText){
 
   const modeTag=data.careType==='ai' ? 'KI betreut' : 'Erinnerung';
   el.innerHTML='<div class="case-top"><div><h3><i class="status-dot '+visual.dot+'"></i>'+escapeHtml(data.title)+'</h3><span class="tag">'+escapeHtml(data.status)+'</span> <span class="tag">'+escapeHtml(modeTag)+'</span></div><small>'+escapeHtml(dateDisplay)+'</small></div><p>'+escapeHtml(cardText)+'</p>';
+}
+
+function cancelCaseForm(){
+  try{
+    localStorage.removeItem('sekretarzEditModeV1');
+    localStorage.removeItem('sekretarzEditCaseDraftV1');
+  }catch(e){}
+
+  editingCaseOriginalTitle=null;
+  editingCaseId=null;
+
+  if(currentCaseData && currentCaseData.id){
+    const saved=findStoredCaseById(currentCaseData.id);
+    if(saved) currentCaseData=saved;
+  }
+
+  back();
 }
 
 function saveCaseForm(){

@@ -24,10 +24,16 @@ module.exports = async function handler(req, res) {
   );
 
   const payload = JSON.stringify({
-    title: 'Sekretarz',
-    body: 'Web-Push-Test – Nachricht kam vom Server.',
-    tag: 'sekretarz-web-push-test',
-    url: '/'
+    web_push: 8030,
+    notification: {
+      title: 'Sekretarz',
+      lang: 'de-DE',
+      dir: 'ltr',
+      body: 'Web-Push-Test mit Ton – Nachricht kam vom Server.',
+      navigate: 'https://sekretarz-app.vercel.app/',
+      silent: false
+    },
+    tag: 'sekretarz-web-push-sound-test'
   });
 
   try {

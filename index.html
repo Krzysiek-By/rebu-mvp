@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.13 TEST">
+<meta name="sekretarz-version" content="DE-v13.14 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -3616,13 +3616,11 @@ async function sendRecovery(){
   }
 
   try{
-    const response=await fetch(SUPABASE_URL+'/auth/v1/recover',{
+    const recoveryRedirect='https://sekretarz-app.vercel.app/?recovery=1';
+    const response=await fetch(SUPABASE_URL+'/auth/v1/recover?redirect_to='+encodeURIComponent(recoveryRedirect),{
       method:'POST',
-      headers:supabaseHeaders(),
-      body:JSON.stringify({
-        email,
-        options:{redirectTo:'https://sekretarz-app.vercel.app/'}
-      })
+      headers:{...supabaseHeaders(), 'redirect_to': recoveryRedirect},
+      body:JSON.stringify({email})
     });
     const result=await response.json().catch(()=>({}));
     if(!response.ok){
@@ -3638,13 +3636,27 @@ async function sendRecovery(){
 function handleRecoveryCallback(){
   try{
     const hashParams=new URLSearchParams((window.location.hash || '').replace(/^#/,''));
-    const type=hashParams.get('type');
-    const accessToken=hashParams.get('access_token');
-    if(type==='recovery' && accessToken){
+    const searchParams=new URLSearchParams(window.location.search || '');
+    const type=hashParams.get('type') || searchParams.get('type') || '';
+    const accessToken=hashParams.get('access_token') || searchParams.get('access_token') || '';
+    const isRecovery=(type==='recovery') || (searchParams.get('recovery')==='1');
+
+    if(isRecovery && accessToken){
       sessionStorage.setItem('sekretarzRecoveryAccessToken',accessToken);
       historyStack=['de017'];
       showDirect('de017');
-      try{ history.replaceState(null,'',window.location.pathname+window.location.search); }catch(e){}
+      try{ history.replaceState(null,'',window.location.pathname+'?recovery=1'); }catch(e){}
+      return true;
+    }
+
+    if(isRecovery){
+      historyStack=['de017'];
+      showDirect('de017');
+      setTimeout(()=>{
+        try{
+          setMsg('newPasswordMsg','error','Der Wiederherstellungslink wurde geöffnet, aber der Anmeldetoken fehlt. Bitte fordere einen neuen Link an.');
+        }catch(e){}
+      },0);
       return true;
     }
   }catch(e){}

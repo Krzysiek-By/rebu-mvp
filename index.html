@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.23 TEST">
+<meta name="sekretarz-version" content="DE-v13.25 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -760,7 +760,7 @@ button{cursor:pointer}
 .contacts-head h1{margin:0 0 5px;font-size:30px}.contacts-head p{margin:0;color:var(--muted);line-height:1.4}
 .contacts-list{display:grid;gap:10px;margin-top:16px}.contact-entry{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
 .contact-entry-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.contact-entry h3{margin:0 0 4px;font-size:18px}.contact-entry p{margin:3px 0;color:var(--muted);line-height:1.4}
-.contact-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.contact-actions button{padding:9px 12px;border-radius:11px;border:1px solid var(--line);background:#fff;font-weight:700}.contact-actions .danger{color:#b42318}
+.contact-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.contact-actions button{padding:9px 12px;border-radius:11px;border:1px solid var(--line);background:#fff;font-weight:700}.contact-actions .btn.primary{background:linear-gradient(135deg,#356df3,#5b35e8);color:#fff;border-color:transparent}.contact-actions .danger{color:#b42318}
 .contact-form{border:1px solid var(--line);border-radius:17px;padding:15px;margin-top:14px;background:#f9fbff}.contact-form h2{margin:0 0 12px;font-size:20px}.contact-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.contact-form-grid .wide{grid-column:1/-1}
 .contacts-empty{padding:18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;margin-top:14px}
 @media(max-width:620px){.contact-form-grid{grid-template-columns:1fr}.contact-form-grid .wide{grid-column:auto}.contacts-head{display:block}.contacts-head .btn{margin-top:12px;width:100%}}
@@ -1866,7 +1866,7 @@ button{cursor:pointer}
     </div>
     <div class="contacts-card">
       <div class="contacts-head">
-        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p></div>
+        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.25</div></div>
         <button class="btn primary" onclick="newContact()">＋ Kontakt</button>
       </div>
       <div id="contactFormBox" class="contact-form hidden">
@@ -1877,8 +1877,8 @@ button{cursor:pointer}
           <div class="field" style="margin:0"><label>Kontaktart</label><select id="contactType"><option value="">Nicht festgelegt</option><option>Arzt / Praxis</option><option>Firma</option><option>Behörde</option><option>Versicherung</option><option>Vermieter / Hausverwaltung</option><option>Privatkontakt</option><option>Sonstiges</option></select></div>
           <div class="field" style="margin:0"><label>Straße und Hausnummer</label><input id="contactStreet" placeholder="Musterstraße 12"></div>
           <div class="field" style="margin:0"><label>PLZ / Ort</label><input id="contactCity" placeholder="83646 Bad Tölz"></div>
-          <div class="field" style="margin:0"><label>Telefon</label><input id="contactPhone" placeholder="+49 ..."></div>
-          <div class="field" style="margin:0"><label>Mobil</label><input id="contactMobile" placeholder="+49 ..."></div>
+          <div class="field" style="margin:0"><label>Telefon</label><div class="phone-row"><select id="contactPhonePrefix" aria-label="Ländervorwahl Telefon"><option value="+49" selected>🇩🇪 +49</option><option value="+43">🇦🇹 +43</option><option value="+41">🇨🇭 +41</option><option value="+48">🇵🇱 +48</option><option value="+31">🇳🇱 +31</option><option value="+33">🇫🇷 +33</option><option value="+39">🇮🇹 +39</option><option value="+34">🇪🇸 +34</option><option value="+44">🇬🇧 +44</option></select><input id="contactPhone" type="tel" inputmode="tel" placeholder="8041 1212"></div></div>
+          <div class="field" style="margin:0"><label>Mobil</label><div class="phone-row"><select id="contactMobilePrefix" aria-label="Ländervorwahl Mobil"><option value="+49" selected>🇩🇪 +49</option><option value="+43">🇦🇹 +43</option><option value="+41">🇨🇭 +41</option><option value="+48">🇵🇱 +48</option><option value="+31">🇳🇱 +31</option><option value="+33">🇫🇷 +33</option><option value="+39">🇮🇹 +39</option><option value="+34">🇪🇸 +34</option><option value="+44">🇬🇧 +44</option></select><input id="contactMobile" type="tel" inputmode="tel" placeholder="171 1234567"></div></div>
           <div class="field" style="margin:0"><label>E-Mail</label><input id="contactEmail" type="email" placeholder="kontakt@example.de"></div>
           <div class="field" style="margin:0"><label>Webseite</label><input id="contactWebsite" type="url" placeholder="https://example.de"></div>
           <div class="field wide" style="margin:0"><label>Notiz (optional)</label><input id="contactNote" placeholder="z. B. unsere Werkstatt"></div>
@@ -3448,12 +3448,29 @@ function openContacts(){
   }
   showDirect('de018');
 }
+function splitContactPhone(value){
+  const v=String(value||'').trim();
+  const prefixes=['+49','+43','+41','+48','+31','+33','+39','+34','+44'];
+  const p=prefixes.find(x=>v.startsWith(x))||'+49';
+  return {prefix:p,number:v.startsWith(p)?v.slice(p.length).trim():v};
+}
+function joinContactPhone(prefix,number){
+  const n=String(number||'').trim();
+  if(!n)return '';
+  if(n.startsWith('+'))return n;
+  return String(prefix||'+49')+' '+n.replace(/^0+/, '');
+}
+function setContactFormOpen(open){
+  const form=document.getElementById('contactFormBox'), list=document.getElementById('contactsList');
+  if(form)form.classList.toggle('hidden',!open);
+  if(list)list.classList.toggle('hidden',open);
+}
 function newContact(){
   ['contactEditId','contactName','contactStreet','contactCity','contactPhone','contactMobile','contactEmail','contactWebsite','contactNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('contactType').value='';document.getElementById('contactFormTitle').textContent='Neuer Kontakt';clearMsg('contactMsg');document.getElementById('contactFormBox').classList.remove('hidden');
+  document.getElementById('contactPhonePrefix').value='+49';document.getElementById('contactMobilePrefix').value='+49';document.getElementById('contactType').value='';document.getElementById('contactFormTitle').textContent='Neuer Kontakt';clearMsg('contactMsg');setContactFormOpen(true);
 }
-function closeContactForm(){const b=document.getElementById('contactFormBox');if(b)b.classList.add('hidden');}
-function readAddressBookForm(){return {name:document.getElementById('contactName').value.trim(),type:document.getElementById('contactType').value,street:document.getElementById('contactStreet').value.trim(),city:document.getElementById('contactCity').value.trim(),phone:document.getElementById('contactPhone').value.trim(),mobile:document.getElementById('contactMobile').value.trim(),email:document.getElementById('contactEmail').value.trim(),website:document.getElementById('contactWebsite').value.trim(),note:document.getElementById('contactNote').value.trim()};}
+function closeContactForm(){setContactFormOpen(false);}
+function readAddressBookForm(){return {name:document.getElementById('contactName').value.trim(),type:document.getElementById('contactType').value,street:document.getElementById('contactStreet').value.trim(),city:document.getElementById('contactCity').value.trim(),phone:joinContactPhone(document.getElementById('contactPhonePrefix').value,document.getElementById('contactPhone').value),mobile:joinContactPhone(document.getElementById('contactMobilePrefix').value,document.getElementById('contactMobile').value),email:document.getElementById('contactEmail').value.trim(),website:document.getElementById('contactWebsite').value.trim(),note:document.getElementById('contactNote').value.trim()};}
 function saveContactForm(){
   clearMsg('contactMsg');const data=readAddressBookForm();if(!data.name){setMsg('contactMsg','error','Bitte einen Namen eingeben.');return;}
   const items=getStoredContacts();const id=document.getElementById('contactEditId').value;
@@ -3462,7 +3479,7 @@ function saveContactForm(){
   saveStoredContacts(items);closeContactForm();renderContacts();
 }
 function editContact(id){
-  const c=getStoredContacts().find(x=>x.id===id);if(!c)return;document.getElementById('contactEditId').value=c.id;document.getElementById('contactName').value=c.name||'';document.getElementById('contactType').value=c.type||'';document.getElementById('contactStreet').value=c.street||'';document.getElementById('contactCity').value=c.city||'';document.getElementById('contactPhone').value=c.phone||'';document.getElementById('contactMobile').value=c.mobile||'';document.getElementById('contactEmail').value=c.email||'';document.getElementById('contactWebsite').value=c.website||'';document.getElementById('contactNote').value=c.note||'';document.getElementById('contactFormTitle').textContent='Kontakt bearbeiten';clearMsg('contactMsg');document.getElementById('contactFormBox').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'});
+  const c=getStoredContacts().find(x=>x.id===id);if(!c)return;const ph=splitContactPhone(c.phone),mob=splitContactPhone(c.mobile);document.getElementById('contactEditId').value=c.id;document.getElementById('contactName').value=c.name||'';document.getElementById('contactType').value=c.type||'';document.getElementById('contactStreet').value=c.street||'';document.getElementById('contactCity').value=c.city||'';document.getElementById('contactPhonePrefix').value=ph.prefix;document.getElementById('contactPhone').value=ph.number;document.getElementById('contactMobilePrefix').value=mob.prefix;document.getElementById('contactMobile').value=mob.number;document.getElementById('contactEmail').value=c.email||'';document.getElementById('contactWebsite').value=c.website||'';document.getElementById('contactNote').value=c.note||'';document.getElementById('contactFormTitle').textContent='Kontakt bearbeiten';clearMsg('contactMsg');setContactFormOpen(true);window.scrollTo({top:0,behavior:'smooth'});
 }
 function deleteContact(id){const c=getStoredContacts().find(x=>x.id===id);if(!c)return;if(!confirm('Kontakt „'+c.name+'“ wirklich löschen?'))return;saveStoredContacts(getStoredContacts().filter(x=>x.id!==id));renderContacts();}
 function renderContacts(){

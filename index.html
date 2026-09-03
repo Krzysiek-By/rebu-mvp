@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.11 TEST">
+<meta name="sekretarz-version" content="DE-v13.12 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -895,7 +895,7 @@ button{cursor:pointer}
       <div id="regMsg" class="hidden"></div>
 
       <button class="btn primary full" onclick="registerUser()">Konto erstellen</button>
-      <p class="tiny">Im aktuellen Prototyp wird noch kein echtes Konto auf einem Server angelegt.</p>
+      <p class="tiny">Dein Konto wird sicher über Supabase registriert.</p>
     </div>
   </div>
   <div class="page-id">DE-003</div>
@@ -927,8 +927,8 @@ button{cursor:pointer}
         <input id="verifyEmailDisplay" disabled>
       </div>
 
-      <button class="btn primary full" onclick="simulateEmailClick()">
-        Test: Bestätigungslink öffnen
+      <button class="btn primary full" onclick="goToLoginAfterEmail()">
+        Zur Anmeldung
       </button>
 
       <button class="btn secondary full" style="margin-top:10px" onclick="resendEmail()">
@@ -936,7 +936,7 @@ button{cursor:pointer}
       </button>
 
       <p class="tiny">
-        Testmodus: Dieser Button simuliert den Klick auf den Link aus der Bestätigungs-E-Mail.
+        Öffne den Bestätigungslink in deiner E-Mail. Danach kannst du dich hier anmelden.
       </p>
     </div>
   </div>
@@ -1000,13 +1000,13 @@ button{cursor:pointer}
       </div>
 
       <h2>Anmelden</h2>
-      <p>Melde dich mit E-Mail oder Telefonnummer an.</p>
+      <p>Melde dich mit deiner E-Mail-Adresse und deinem Passwort an.</p>
 
       <div id="recognizedAccount" class="success hidden"></div>
 
       <div class="field">
-        <label>E-Mail oder Telefonnummer</label>
-        <input id="loginId" placeholder="z. B. name@beispiel.de oder Telefonnummer">
+        <label>E-Mail-Adresse</label>
+        <input id="loginId" type="email" autocomplete="email" placeholder="name@beispiel.de">
       </div>
 
       <div class="field">
@@ -1049,17 +1049,17 @@ button{cursor:pointer}
       </div>
 
       <h2>Passwort zurücksetzen</h2>
-      <p>Gib deine E-Mail-Adresse oder Telefonnummer ein.</p>
+      <p>Gib deine E-Mail-Adresse ein.</p>
 
       <div class="field">
-        <label>E-Mail oder Telefonnummer</label>
-        <input id="recoveryId" placeholder="E-Mail oder Telefonnummer">
+        <label>E-Mail-Adresse</label>
+        <input id="recoveryId" type="email" autocomplete="email" placeholder="name@beispiel.de">
       </div>
 
       <div id="recoveryMsg" class="hidden"></div>
 
       <button class="btn primary full" onclick="sendRecovery()">Wiederherstellungslink senden</button>
-      <p class="tiny">Später wird die Wiederherstellung per sicherem Link oder Bestätigungscode erfolgen.</p>
+      <p class="tiny">Supabase sendet dir einen sicheren Link zur Passwort-Wiederherstellung.</p>
     </div>
   </div>
   <div class="page-id">DE-007</div>
@@ -1908,6 +1908,79 @@ let historyStack=['de001'];
 let currentPage='de001';
 let failedAttempts=0;
 const MAX_ATTEMPTS=3;
+
+const SUPABASE_URL='https://luhkjdkqzauhgljnvvzo.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_KzGUCGnq2Zi8RUL2JzibLA_rpW-Jn70';
+const SUPABASE_SESSION_KEY='sekretarzSupabaseSessionV1';
+const SUPABASE_USER_ID_KEY='sekretarzSupabaseUserIdV1';
+
+function supabaseHeaders(accessToken=''){
+  const headers={
+    'apikey':SUPABASE_PUBLISHABLE_KEY,
+    'Content-Type':'application/json'
+  };
+  if(accessToken) headers['Authorization']='Bearer '+accessToken;
+  return headers;
+}
+
+function saveSupabaseSession(payload){
+  try{
+    if(payload?.access_token){
+      localStorage.setItem(SUPABASE_SESSION_KEY,JSON.stringify(payload));
+      localStorage.setItem('sekretarzLoggedIn','1');
+    }
+    if(payload?.user?.id) localStorage.setItem(SUPABASE_USER_ID_KEY,payload.user.id);
+  }catch(e){}
+}
+
+function clearSupabaseSession(){
+  try{
+    localStorage.removeItem(SUPABASE_SESSION_KEY);
+    localStorage.removeItem(SUPABASE_USER_ID_KEY);
+    localStorage.removeItem('sekretarzLoggedIn');
+  }catch(e){}
+}
+
+function cacheAccountFromSupabaseUser(user, fallback={}){
+  if(!user) return null;
+  const m=user.user_metadata || {};
+  const account={
+    id:user.id || '',
+    firstName:m.firstName || fallback.firstName || '',
+    lastName:m.lastName || fallback.lastName || '',
+    street:m.street || fallback.street || '',
+    zip:m.zip || fallback.zip || '',
+    city:m.city || fallback.city || '',
+    email:(user.email || fallback.email || '').trim().toLowerCase(),
+    phone:m.phone || fallback.phone || ''
+  };
+  try{
+    localStorage.setItem('sekretarzDemoAccount',JSON.stringify(account));
+    localStorage.setItem(SUPABASE_USER_ID_KEY,account.id || '');
+    const oldProfile=getUserProfile();
+    localStorage.setItem(PROFILE_STORAGE_KEY,JSON.stringify({
+      ...oldProfile,
+      firstName:account.firstName,
+      lastName:account.lastName,
+      email:account.email,
+      phone:account.phone,
+      street:account.street,
+      zip:account.zip,
+      city:account.city
+    }));
+  }catch(e){}
+  return account;
+}
+
+function supabaseErrorMessage(error, fallback){
+  const raw=(error?.message || error?.msg || error?.error_description || error?.error || '').toString();
+  if(/already registered|already exists|user_already_exists/i.test(raw)) return 'Für diese E-Mail-Adresse besteht bereits ein Konto.';
+  if(/invalid login credentials/i.test(raw)) return 'E-Mail-Adresse oder Passwort ist falsch.';
+  if(/email not confirmed/i.test(raw)) return 'Bitte bestätige zuerst deine E-Mail-Adresse.';
+  if(/password/i.test(raw) && /weak|characters|digit|uppercase|lowercase/i.test(raw)) return 'Das Passwort erfüllt die Sicherheitsanforderungen noch nicht.';
+  if(/rate limit|too many/i.test(raw)) return 'Zu viele Versuche. Bitte kurz warten und erneut versuchen.';
+  return fallback || raw || 'Es ist ein Fehler aufgetreten.';
+}
 
 function hideAll(){
   ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015','de016'].forEach(id=>{
@@ -3263,7 +3336,7 @@ function startNewRegistration(){
   showDirect('de003');
 }
 
-function registerUser(){
+async function registerUser(){
   clearMsg('regMsg');
 
   const firstName=document.getElementById('regFirstName').value.trim();
@@ -3271,7 +3344,7 @@ function registerUser(){
   const street=document.getElementById('regStreet').value.trim();
   const zip=document.getElementById('regZip').value.trim();
   const city=document.getElementById('regCity').value.trim();
-  const email=document.getElementById('regEmail').value.trim();
+  const email=document.getElementById('regEmail').value.trim().toLowerCase();
   const prefix=document.getElementById('regPhonePrefix').value;
   const phoneRaw=document.getElementById('regPhone').value.trim();
   const p1=document.getElementById('regPassword').value;
@@ -3289,27 +3362,23 @@ function registerUser(){
   }
 
   const phoneDigits=phoneRaw.replace(/\D/g,'');
-
   if(phoneDigits.startsWith('0')){
     setMsg('regMsg','error','Bitte die Telefonnummer ohne führende 0 eingeben.');
     return;
   }
-
   if(phoneDigits.length<6){
     setMsg('regMsg','error','Bitte eine gültige Telefonnummer eingeben.');
     return;
   }
 
-  if(p1.length<8){
-    setMsg('regMsg','error','Das Passwort muss mindestens 8 Zeichen haben.');
+  if(p1.length<8 || !/[a-z]/.test(p1) || !/[A-Z]/.test(p1) || !/\d/.test(p1)){
+    setMsg('regMsg','error','Das Passwort braucht mindestens 8 Zeichen, eine Großbuchstabe, eine Kleinbuchstabe und eine Zahl.');
     return;
   }
-
   if(p1!==p2){
     setMsg('regMsg','error','Die Passwörter stimmen nicht überein.');
     return;
   }
-
   if(!terms){
     setMsg('regMsg','error','Bitte Nutzungsbedingungen und Datenschutz akzeptieren.');
     return;
@@ -3317,62 +3386,44 @@ function registerUser(){
 
   const fullPhone=prefix+' '+phoneDigits;
   const account={
-    firstName:firstName,
-    lastName:lastName,
-    street:street,
-    zip:zip,
-    city:city,
-    email:email.trim().toLowerCase(),
-    phone:fullPhone,
-    password:p1
+    firstName,lastName,street,zip,city,email,phone:fullPhone
   };
 
+  setMsg('regMsg','success','Konto wird sicher angelegt …');
+
   try{
-    localStorage.setItem('sekretarzDemoAccount',JSON.stringify(account));
-    const oldProfile=getUserProfile();
-    localStorage.setItem(PROFILE_STORAGE_KEY,JSON.stringify({
-      ...oldProfile,
-      firstName:account.firstName,
-      lastName:account.lastName,
-      email:account.email,
-      phone:account.phone,
-      street:account.street,
-      zip:account.zip,
-      city:account.city
-    }));
-
-    const savedAccount=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
-
-    if(!savedAccount ||
-       savedAccount.email!==account.email ||
-       savedAccount.phone!==account.phone ||
-       savedAccount.password!==account.password){
-      setMsg('regMsg','error','Das Testkonto konnte im Browser nicht korrekt gespeichert werden.');
+    const response=await fetch(SUPABASE_URL+'/auth/v1/signup',{
+      method:'POST',
+      headers:supabaseHeaders(),
+      body:JSON.stringify({
+        email,
+        password:p1,
+        data:{
+          firstName,lastName,street,zip,city,phone:fullPhone
+        },
+        options:{
+          emailRedirectTo:'https://sekretarz-app.vercel.app/'
+        }
+      })
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok || result?.error){
+      setMsg('regMsg','error',supabaseErrorMessage(result,'Konto konnte nicht angelegt werden.'));
       return;
     }
 
-    // Compatibility with older prototype builds.
-    localStorage.setItem('sekretarzDemoProfile',JSON.stringify(account));
-    localStorage.setItem('sekretarzDemoLoginPassword',p1);
-  }catch(err){
-    setMsg('regMsg','error','Das Testkonto konnte im Browser nicht gespeichert werden.');
-    return;
-  }
+    cacheAccountFromSupabaseUser(result.user,account);
+    if(result.session) saveSupabaseSession({...result.session,user:result.user});
 
-  setMsg(
-    'regMsg',
-    'success',
-    `Konto gespeichert. Bestätigungs-E-Mail wird vorbereitet.`
-  );
+    localStorage.setItem('sekretarzPendingEmail',email);
+    localStorage.setItem('sekretarzPendingPhone',fullPhone);
 
-  localStorage.setItem('sekretarzPendingEmail',account.email);
-  localStorage.setItem('sekretarzPendingPhone',fullPhone);
-
-  setTimeout(()=>{
     historyStack=['de001','de002','de003','de004'];
-    prepareEmailVerification(account.email);
+    prepareEmailVerification(email);
     showDirect('de004');
-  },700);
+  }catch(err){
+    setMsg('regMsg','error','Verbindung zu Supabase fehlgeschlagen. Bitte erneut versuchen.');
+  }
 }
 
 
@@ -3380,19 +3431,38 @@ let currentSmsCode='';
 
 function prepareEmailVerification(email){
   document.getElementById('verifyEmailDisplay').value=email || localStorage.getItem('sekretarzPendingEmail') || '';
-  document.getElementById('emailVerifyInfo').textContent='Bestätigungs-E-Mail wurde an '+document.getElementById('verifyEmailDisplay').value+' vorbereitet.';
+  document.getElementById('emailVerifyInfo').textContent='Bestätigungs-E-Mail wurde an '+document.getElementById('verifyEmailDisplay').value+' gesendet.';
 }
 
-function resendEmail(){
-  const email=document.getElementById('verifyEmailDisplay').value;
-  document.getElementById('emailVerifyInfo').textContent='Neue Bestätigungs-E-Mail wurde an '+email+' vorbereitet.';
+async function resendEmail(){
+  const email=document.getElementById('verifyEmailDisplay').value.trim().toLowerCase();
+  if(!email) return;
+  try{
+    const response=await fetch(SUPABASE_URL+'/auth/v1/resend',{
+      method:'POST',
+      headers:supabaseHeaders(),
+      body:JSON.stringify({
+        type:'signup',
+        email,
+        options:{emailRedirectTo:'https://sekretarz-app.vercel.app/'}
+      })
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok){
+      document.getElementById('emailVerifyInfo').textContent=supabaseErrorMessage(result,'E-Mail konnte nicht erneut gesendet werden.');
+      return;
+    }
+    document.getElementById('emailVerifyInfo').textContent='Neue Bestätigungs-E-Mail wurde an '+email+' gesendet.';
+  }catch(e){
+    document.getElementById('emailVerifyInfo').textContent='Verbindung fehlgeschlagen. Bitte erneut versuchen.';
+  }
 }
 
-function simulateEmailClick(){
-  const phone=localStorage.getItem('sekretarzPendingPhone') || '';
-  document.getElementById('verifyPhoneDisplay').value=phone;
-  sendSmsCode();
-  go('de005');
+function goToLoginAfterEmail(){
+  loggedIn=false;
+  historyStack=['de001','de002','de003','de004','de006'];
+  document.getElementById('loginId').value=localStorage.getItem('sekretarzPendingEmail') || '';
+  showDirect('de006');
 }
 
 function sendSmsCode(){
@@ -3436,93 +3506,116 @@ function verifySmsCode(){
 function refreshRecognizedAccount(){
   const box=document.getElementById('recognizedAccount');
   if(!box) return;
-
-  const account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
-
+  let account=null;
+  try{ account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null'); }catch(e){}
   if(account && account.email){
     box.className='success';
-    box.textContent='Konto erkannt: '+account.email;
+    box.textContent='Zuletzt verwendetes Konto: '+account.email;
   }else{
-    box.className='error';
-    box.textContent='Kein registriertes Testkonto in diesem Browser gefunden.';
+    box.className='success';
+    box.textContent='Melde dich mit deinem registrierten Sekretarz-Konto an.';
   }
 }
 
-function attemptLogin(){
+async function attemptLogin(){
   clearMsg('loginMsg');
 
-  const id=document.getElementById('loginId').value.trim();
+  const email=document.getElementById('loginId').value.trim().toLowerCase();
   const pw=document.getElementById('loginPassword').value;
 
-  const storedAccount=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
-
-  const normalizedEmail=id.trim().toLowerCase();
-  const normalizedPhone=id.replace(/\s+/g,'');
-  const normalizedStoredPhone=(storedAccount?.phone || '').replace(/\s+/g,'');
-
-  const demoValid=(normalizedEmail==='demo@sekretarz.app' || normalizedPhone==='+49123456789') && pw==='sekretarz';
-
-  const registeredValid=!!storedAccount &&
-    (
-      normalizedEmail===(storedAccount.email || '').trim().toLowerCase() ||
-      normalizedPhone===normalizedStoredPhone
-    ) &&
-    pw===storedAccount.password;
-
-  if(demoValid || registeredValid){
-    failedAttempts=0;
-    loggedIn=true;
-    try{ localStorage.setItem('sekretarzLoggedIn','1'); }catch(e){}
-    renderDashboardCases();
-    renderToday();
-    historyStack=['de011'];
-    showDirect('de011');
+  if(!email || !pw){
+    setMsg('loginMsg','error','Bitte E-Mail-Adresse und Passwort eingeben.');
+    return;
+  }
+  if(!email.includes('@')){
+    setMsg('loginMsg','error','Bitte eine gültige E-Mail-Adresse eingeben.');
     return;
   }
 
-  failedAttempts++;
+  try{
+    const response=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:supabaseHeaders(),
+      body:JSON.stringify({email,password:pw})
+    });
+    const result=await response.json().catch(()=>({}));
 
-  const remaining=MAX_ATTEMPTS-failedAttempts;
-
-  if(remaining>0){
-    setMsg(
-      'loginMsg',
-      'error',
-      `Anmeldung fehlgeschlagen. Noch ${remaining} ${remaining===1?'Versuch':'Versuche'} möglich.`
-    );
-  } else {
-    setMsg(
-      'loginMsg',
-      'error',
-      'Drei falsche Anmeldeversuche. Die Passwort-Wiederherstellung wird gestartet.'
-    );
-    setTimeout(()=>{
+    if(response.ok && result?.access_token && result?.user){
       failedAttempts=0;
-      document.getElementById('recoveryId').value=id;
-      go('de007');
-    },1000);
+      loggedIn=true;
+      saveSupabaseSession(result);
+      cacheAccountFromSupabaseUser(result.user,{email});
+      renderDashboardCases();
+      renderToday();
+      historyStack=['de011'];
+      showDirect('de011');
+      return;
+    }
+
+    failedAttempts++;
+    const remaining=MAX_ATTEMPTS-failedAttempts;
+    const msg=supabaseErrorMessage(result,'Anmeldung fehlgeschlagen.');
+
+    if(remaining>0){
+      setMsg('loginMsg','error',msg+' Noch '+remaining+' '+(remaining===1?'Versuch':'Versuche')+' möglich.');
+    }else{
+      setMsg('loginMsg','error','Drei falsche Anmeldeversuche. Die Passwort-Wiederherstellung wird gestartet.');
+      setTimeout(()=>{
+        failedAttempts=0;
+        document.getElementById('recoveryId').value=email;
+        go('de007');
+      },1000);
+    }
+  }catch(e){
+    setMsg('loginMsg','error','Verbindung zu Supabase fehlgeschlagen. Bitte erneut versuchen.');
   }
 }
 
-function sendRecovery(){
+async function sendRecovery(){
   clearMsg('recoveryMsg');
-  const id=document.getElementById('recoveryId').value.trim();
+  const email=document.getElementById('recoveryId').value.trim().toLowerCase();
 
-  if(!id){
-    setMsg('recoveryMsg','error','Bitte E-Mail-Adresse oder Telefonnummer eingeben.');
+  if(!email || !email.includes('@')){
+    setMsg('recoveryMsg','error','Bitte eine gültige E-Mail-Adresse eingeben.');
     return;
   }
 
-  setMsg(
-    'recoveryMsg',
-    'success',
-    'Wiederherstellung vorbereitet. Im echten System wird jetzt ein sicherer Link oder Bestätigungscode gesendet.'
-  );
+  try{
+    const response=await fetch(SUPABASE_URL+'/auth/v1/recover',{
+      method:'POST',
+      headers:supabaseHeaders(),
+      body:JSON.stringify({
+        email,
+        options:{redirectTo:'https://sekretarz-app.vercel.app/'}
+      })
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok){
+      setMsg('recoveryMsg','error',supabaseErrorMessage(result,'Wiederherstellungs-E-Mail konnte nicht gesendet werden.'));
+      return;
+    }
+    setMsg('recoveryMsg','success','Wiederherstellungs-E-Mail wurde gesendet.');
+  }catch(e){
+    setMsg('recoveryMsg','error','Verbindung zu Supabase fehlgeschlagen. Bitte erneut versuchen.');
+  }
 }
 
-function logout(){
+async function logout(){
+  let token='';
+  try{
+    const s=JSON.parse(localStorage.getItem(SUPABASE_SESSION_KEY) || 'null');
+    token=s?.access_token || '';
+  }catch(e){}
+  if(token){
+    try{
+      await fetch(SUPABASE_URL+'/auth/v1/logout',{
+        method:'POST',
+        headers:supabaseHeaders(token)
+      });
+    }catch(e){}
+  }
   loggedIn=false;
-  try{ localStorage.removeItem('sekretarzLoggedIn'); }catch(e){}
+  clearSupabaseSession();
   historyStack=['de001','de002'];
   showDirect('de002');
 }
@@ -3827,8 +3920,10 @@ const CASES_STORAGE_PREFIX='sekretarzCasesUserV2:';
 
 function getCasesStorageKey(){
   try{
+    const userId=(localStorage.getItem(SUPABASE_USER_ID_KEY) || '').trim();
+    if(userId) return CASES_STORAGE_PREFIX+encodeURIComponent(userId);
     const account=JSON.parse(localStorage.getItem('sekretarzDemoAccount') || 'null');
-    const identity=(account?.email || account?.phone || '').trim().toLowerCase();
+    const identity=(account?.id || account?.email || account?.phone || '').trim().toLowerCase();
     if(identity) return CASES_STORAGE_PREFIX+encodeURIComponent(identity);
   }catch(e){}
   return CASES_STORAGE_KEY;

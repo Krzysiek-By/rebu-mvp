@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.16 TEST">
+<meta name="sekretarz-version" content="DE-v13.17 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -2012,9 +2012,10 @@ function supabaseErrorMessage(error, fallback){
   if(/already registered|already exists|user_already_exists/i.test(raw)) return 'Für diese E-Mail-Adresse besteht bereits ein Konto.';
   if(/invalid login credentials/i.test(raw)) return 'E-Mail-Adresse oder Passwort ist falsch.';
   if(/email not confirmed/i.test(raw)) return 'Bitte bestätige zuerst deine E-Mail-Adresse.';
+  if(/new password should be different|same password|password.*different from.*old/i.test(raw)) return 'Das neue Passwort muss sich von deinem bisherigen Passwort unterscheiden.';
   if(/password/i.test(raw) && /weak|characters|digit|uppercase|lowercase/i.test(raw)) return 'Das Passwort erfüllt die Sicherheitsanforderungen noch nicht.';
   if(/rate limit|too many/i.test(raw)) return 'Zu viele Versuche. Bitte kurz warten und erneut versuchen.';
-  return fallback || raw || 'Es ist ein Fehler aufgetreten.';
+  return fallback || 'Es ist ein Fehler aufgetreten. Bitte versuche es erneut.';
 }
 
 function hideAll(){
@@ -3702,10 +3703,7 @@ async function saveNewPassword(){
     });
     const result=await response.json().catch(()=>({}));
     if(!response.ok){
-      const rawDetail=(result?.message || result?.msg || result?.error_description || result?.error || '').toString();
-      const codeDetail=(result?.code || result?.error_code || '').toString();
-      const detail=[rawDetail, codeDetail ? 'Code: '+codeDetail : '', 'HTTP '+response.status].filter(Boolean).join(' · ');
-      setMsg('newPasswordMsg','error', detail || 'Das neue Passwort konnte nicht gespeichert werden.');
+      setMsg('newPasswordMsg','error',supabaseErrorMessage(result,'Das neue Passwort konnte nicht gespeichert werden. Bitte versuche es erneut.'));
       return;
     }
     sessionStorage.removeItem('sekretarzRecoveryAccessToken');

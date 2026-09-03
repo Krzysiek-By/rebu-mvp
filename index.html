@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.25 TEST">
+<meta name="sekretarz-version" content="DE-v13.26 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1866,8 +1866,8 @@ button{cursor:pointer}
     </div>
     <div class="contacts-card">
       <div class="contacts-head">
-        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.25</div></div>
-        <button class="btn primary" onclick="newContact()">＋ Kontakt</button>
+        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.26</div></div>
+        <button id="addContactBtn" class="btn primary" onclick="newContact()">＋ Kontakt</button>
       </div>
       <div id="contactFormBox" class="contact-form hidden">
         <h2 id="contactFormTitle">Neuer Kontakt</h2>
@@ -3461,9 +3461,10 @@ function joinContactPhone(prefix,number){
   return String(prefix||'+49')+' '+n.replace(/^0+/, '');
 }
 function setContactFormOpen(open){
-  const form=document.getElementById('contactFormBox'), list=document.getElementById('contactsList');
+  const form=document.getElementById('contactFormBox'), list=document.getElementById('contactsList'), addBtn=document.getElementById('addContactBtn');
   if(form)form.classList.toggle('hidden',!open);
   if(list)list.classList.toggle('hidden',open);
+  if(addBtn)addBtn.classList.toggle('hidden',open);
 }
 function newContact(){
   ['contactEditId','contactName','contactStreet','contactCity','contactPhone','contactMobile','contactEmail','contactWebsite','contactNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});

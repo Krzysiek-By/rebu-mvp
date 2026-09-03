@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.20 TEST">
+<meta name="sekretarz-version" content="DE-v13.21 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -3399,7 +3399,19 @@ function importContactsFromCases(){
   getStoredCases().forEach(c=>{const x=c?.contact;if(!x?.name)return;const fp=contactFingerprint(x);if(fps.has(fp))return;items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:x.name||'',type:x.type||'',street:x.street||'',city:x.city||'',phone:x.phone||'',mobile:x.mobile||'',email:x.email||'',website:x.website||'',note:'',createdAt:new Date().toISOString()});fps.add(fp);changed=true;});
   if(changed) saveStoredContacts(items);
 }
-function openContacts(){importContactsFromCases();closeContactForm();renderContacts();historyStack=['de011','de016','de018'];showDirect('de018');}
+function openContacts(){
+  importContactsFromCases();
+  closeContactForm();
+  renderContacts();
+  if(currentPage==='de016'){
+    if(historyStack[historyStack.length-1]!=='de016') historyStack.push('de016');
+    historyStack.push('de018');
+  }else{
+    if(historyStack[historyStack.length-1]!==currentPage) historyStack.push(currentPage);
+    historyStack.push('de018');
+  }
+  showDirect('de018');
+}
 function newContact(){
   ['contactEditId','contactName','contactStreet','contactCity','contactPhone','contactMobile','contactEmail','contactWebsite','contactNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('contactType').value='';document.getElementById('contactFormTitle').textContent='Neuer Kontakt';clearMsg('contactMsg');document.getElementById('contactFormBox').classList.remove('hidden');

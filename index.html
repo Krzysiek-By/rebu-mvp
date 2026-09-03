@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.14 TEST">
+<meta name="sekretarz-version" content="DE-v13.15 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -3695,7 +3695,10 @@ async function saveNewPassword(){
     });
     const result=await response.json().catch(()=>({}));
     if(!response.ok){
-      setMsg('newPasswordMsg','error',supabaseErrorMessage(result,'Das neue Passwort konnte nicht gespeichert werden.'));
+      const rawDetail=(result?.message || result?.msg || result?.error_description || result?.error || '').toString();
+      const codeDetail=(result?.code || result?.error_code || '').toString();
+      const detail=[rawDetail, codeDetail ? 'Code: '+codeDetail : '', 'HTTP '+response.status].filter(Boolean).join(' · ');
+      setMsg('newPasswordMsg','error', detail || 'Das neue Passwort konnte nicht gespeichert werden.');
       return;
     }
     sessionStorage.removeItem('sekretarzRecoveryAccessToken');

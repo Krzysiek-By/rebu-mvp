@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.15 TEST">
+<meta name="sekretarz-version" content="DE-v13.16 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -3635,10 +3635,11 @@ async function sendRecovery(){
 
 function handleRecoveryCallback(){
   try{
-    const hashParams=new URLSearchParams((window.location.hash || '').replace(/^#/,''));
+    const hashParams=new URLSearchParams((window.location.hash || '').replace(/^#/,'') );
     const searchParams=new URLSearchParams(window.location.search || '');
     const type=hashParams.get('type') || searchParams.get('type') || '';
     const accessToken=hashParams.get('access_token') || searchParams.get('access_token') || '';
+    const storedRecoveryToken=sessionStorage.getItem('sekretarzRecoveryAccessToken') || '';
     const isRecovery=(type==='recovery') || (searchParams.get('recovery')==='1');
 
     if(isRecovery && accessToken){
@@ -3646,6 +3647,12 @@ function handleRecoveryCallback(){
       historyStack=['de017'];
       showDirect('de017');
       try{ history.replaceState(null,'',window.location.pathname+'?recovery=1'); }catch(e){}
+      return true;
+    }
+
+    if(isRecovery && storedRecoveryToken){
+      historyStack=['de017'];
+      showDirect('de017');
       return true;
     }
 

@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.26 TEST">
+<meta name="sekretarz-version" content="DE-v13.27 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1866,7 +1866,7 @@ button{cursor:pointer}
     </div>
     <div class="contacts-card">
       <div class="contacts-head">
-        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.26</div></div>
+        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.27</div></div>
         <button id="addContactBtn" class="btn primary" onclick="newContact()">＋ Kontakt</button>
       </div>
       <div id="contactFormBox" class="contact-form hidden">
@@ -3417,19 +3417,67 @@ function getStoredContacts(){
 }
 function saveStoredContacts(items){try{localStorage.setItem(getContactsStorageKey(),JSON.stringify(items));return true;}catch(e){return false;}}
 function normalizeContactValue(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,' ');}
+function normalizePhoneValue(v){return String(v||'').replace(/\D+/g,'');}
 function contactFingerprint(c){return [c.name,c.street,c.city,c.phone,c.mobile,c.email].map(normalizeContactValue).join('|');}
+function sameContactIdentity(a,b){
+  const an=normalizeContactValue(a?.name), bn=normalizeContactValue(b?.name);
+  if(!an || an!==bn) return false;
+  const ae=normalizeContactValue(a?.email), be=normalizeContactValue(b?.email);
+  if(ae && be && ae===be) return true;
+  const as=normalizeContactValue(a?.street), bs=normalizeContactValue(b?.street);
+  const ac=normalizeContactValue(a?.city), bc=normalizeContactValue(b?.city);
+  if(as && bs && ac && bc && as===bs && ac===bc) return true;
+  const ap=normalizePhoneValue(a?.phone), bp=normalizePhoneValue(b?.phone);
+  if(ap && bp && ap===bp) return true;
+  const am=normalizePhoneValue(a?.mobile), bm=normalizePhoneValue(b?.mobile);
+  if(am && bm && am===bm) return true;
+  return false;
+}
+function mergeContactData(base,incoming){
+  const out={...base};
+  const fields=['name','type','street','city','phone','mobile','email','website','note'];
+  const incomingEdited=!!incoming?.updatedAt, baseEdited=!!base?.updatedAt;
+  fields.forEach(k=>{
+    const a=String(out[k]||'').trim(), b=String(incoming?.[k]||'').trim();
+    if(!a && b) out[k]=incoming[k];
+    else if(a && b && a!==b && incomingEdited && !baseEdited) out[k]=incoming[k];
+  });
+  if(incoming?.updatedAt && (!out.updatedAt || incoming.updatedAt>out.updatedAt)) out.updatedAt=incoming.updatedAt;
+  if(!out.createdAt && incoming?.createdAt) out.createdAt=incoming.createdAt;
+  return out;
+}
+function cleanupContactDuplicates(items){
+  const result=[]; let changed=false;
+  items.forEach(item=>{
+    const i=result.findIndex(x=>sameContactIdentity(x,item));
+    if(i<0) result.push(item);
+    else { result[i]=mergeContactData(result[i],item); changed=true; }
+  });
+  return {items:result,changed};
+}
 function upsertAddressBookContact(contact){
   if(!contact || !String(contact.name||'').trim()) return null;
-  const items=getStoredContacts(); const fp=contactFingerprint(contact);
-  let existing=items.find(x=>contactFingerprint(x)===fp);
-  if(existing){Object.assign(existing,contact,{updatedAt:new Date().toISOString()});saveStoredContacts(items);return existing;}
+  let items=getStoredContacts();
+  let existing=items.find(x=>sameContactIdentity(x,contact));
+  if(existing){
+    const merged=mergeContactData(existing,{...contact,updatedAt:new Date().toISOString()});
+    Object.assign(existing,merged);
+    const cleaned=cleanupContactDuplicates(items);items=cleaned.items;
+    saveStoredContacts(items);return existing;
+  }
   const item={id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:contact.name||'',type:contact.type||'',street:contact.street||'',city:contact.city||'',phone:contact.phone||'',mobile:contact.mobile||'',email:contact.email||'',website:contact.website||'',note:contact.note||'',createdAt:new Date().toISOString()};
-  items.unshift(item);saveStoredContacts(items);return item;
+  items.unshift(item);const cleaned=cleanupContactDuplicates(items);saveStoredContacts(cleaned.items);return item;
 }
+function getContactsImportFlagKey(){return 'sekretarzContactsImportedV1:'+encodeURIComponent(getContactsStorageKey());}
 function importContactsFromCases(){
-  const items=getStoredContacts(); const fps=new Set(items.map(contactFingerprint)); let changed=false;
-  getStoredCases().forEach(c=>{const x=c?.contact;if(!x?.name)return;const fp=contactFingerprint(x);if(fps.has(fp))return;items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:x.name||'',type:x.type||'',street:x.street||'',city:x.city||'',phone:x.phone||'',mobile:x.mobile||'',email:x.email||'',website:x.website||'',note:'',createdAt:new Date().toISOString()});fps.add(fp);changed=true;});
-  if(changed) saveStoredContacts(items);
+  let already=false;try{already=localStorage.getItem(getContactsImportFlagKey())==='1';}catch(e){}
+  let items=getStoredContacts();
+  if(!already){
+    getStoredCases().forEach(c=>{const x=c?.contact;if(!x?.name)return;const existing=items.find(y=>sameContactIdentity(y,x));if(existing)Object.assign(existing,mergeContactData(existing,x));else items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:x.name||'',type:x.type||'',street:x.street||'',city:x.city||'',phone:x.phone||'',mobile:x.mobile||'',email:x.email||'',website:x.website||'',note:'',createdAt:new Date().toISOString()});});
+    try{localStorage.setItem(getContactsImportFlagKey(),'1');}catch(e){}
+  }
+  const cleaned=cleanupContactDuplicates(items);
+  if(!already || cleaned.changed) saveStoredContacts(cleaned.items);
 }
 function openContacts(){
   importContactsFromCases();
@@ -3474,10 +3522,14 @@ function closeContactForm(){setContactFormOpen(false);}
 function readAddressBookForm(){return {name:document.getElementById('contactName').value.trim(),type:document.getElementById('contactType').value,street:document.getElementById('contactStreet').value.trim(),city:document.getElementById('contactCity').value.trim(),phone:joinContactPhone(document.getElementById('contactPhonePrefix').value,document.getElementById('contactPhone').value),mobile:joinContactPhone(document.getElementById('contactMobilePrefix').value,document.getElementById('contactMobile').value),email:document.getElementById('contactEmail').value.trim(),website:document.getElementById('contactWebsite').value.trim(),note:document.getElementById('contactNote').value.trim()};}
 function saveContactForm(){
   clearMsg('contactMsg');const data=readAddressBookForm();if(!data.name){setMsg('contactMsg','error','Bitte einen Namen eingeben.');return;}
-  const items=getStoredContacts();const id=document.getElementById('contactEditId').value;
+  let items=getStoredContacts();const id=document.getElementById('contactEditId').value;
   if(id){const i=items.findIndex(x=>x.id===id);if(i>=0)items[i]={...items[i],...data,updatedAt:new Date().toISOString()};}
-  else items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),...data,createdAt:new Date().toISOString()});
-  saveStoredContacts(items);closeContactForm();renderContacts();
+  else{
+    const existing=items.find(x=>sameContactIdentity(x,data));
+    if(existing)Object.assign(existing,mergeContactData(existing,{...data,updatedAt:new Date().toISOString()}));
+    else items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),...data,createdAt:new Date().toISOString()});
+  }
+  items=cleanupContactDuplicates(items).items;saveStoredContacts(items);closeContactForm();renderContacts();
 }
 function editContact(id){
   const c=getStoredContacts().find(x=>x.id===id);if(!c)return;const ph=splitContactPhone(c.phone),mob=splitContactPhone(c.mobile);document.getElementById('contactEditId').value=c.id;document.getElementById('contactName').value=c.name||'';document.getElementById('contactType').value=c.type||'';document.getElementById('contactStreet').value=c.street||'';document.getElementById('contactCity').value=c.city||'';document.getElementById('contactPhonePrefix').value=ph.prefix;document.getElementById('contactPhone').value=ph.number;document.getElementById('contactMobilePrefix').value=mob.prefix;document.getElementById('contactMobile').value=mob.number;document.getElementById('contactEmail').value=c.email||'';document.getElementById('contactWebsite').value=c.website||'';document.getElementById('contactNote').value=c.note||'';document.getElementById('contactFormTitle').textContent='Kontakt bearbeiten';clearMsg('contactMsg');setContactFormOpen(true);window.scrollTo({top:0,behavior:'smooth'});

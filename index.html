@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.18 TEST">
+<meta name="sekretarz-version" content="DE-v13.19 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -752,6 +752,19 @@ button{cursor:pointer}
   color:#2f7a43;
   border-color:#b9dfc2;
 }
+
+/* Kontakte / Adressbuch v1 */
+.contacts-wrap{max-width:760px;margin:0 auto;padding:18px 18px 105px}
+.contacts-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+.contacts-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.contacts-head h1{margin:0 0 5px;font-size:30px}.contacts-head p{margin:0;color:var(--muted);line-height:1.4}
+.contacts-list{display:grid;gap:10px;margin-top:16px}.contact-entry{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff}
+.contact-entry-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.contact-entry h3{margin:0 0 4px;font-size:18px}.contact-entry p{margin:3px 0;color:var(--muted);line-height:1.4}
+.contact-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.contact-actions button{padding:9px 12px;border-radius:11px;border:1px solid var(--line);background:#fff;font-weight:700}.contact-actions .danger{color:#b42318}
+.contact-form{border:1px solid var(--line);border-radius:17px;padding:15px;margin-top:14px;background:#f9fbff}.contact-form h2{margin:0 0 12px;font-size:20px}.contact-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.contact-form-grid .wide{grid-column:1/-1}
+.contacts-empty{padding:18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;margin-top:14px}
+@media(max-width:620px){.contact-form-grid{grid-template-columns:1fr}.contact-form-grid .wide{grid-column:auto}.contacts-head{display:block}.contacts-head .btn{margin-top:12px;width:100%}}
+
 </style>
 </head>
 <body>
@@ -1355,8 +1368,16 @@ button{cursor:pointer}
                 <input id="casePlacePhone" placeholder="+49 ...">
               </div>
               <div class="field" style="margin:0">
+                <label>Mobil</label>
+                <input id="casePlaceMobile" placeholder="+49 ...">
+              </div>
+              <div class="field" style="margin:0">
                 <label>E-Mail</label>
                 <input id="casePlaceEmail" type="email" placeholder="praxis@example.de">
+              </div>
+              <div class="field" style="margin:0">
+                <label>Webseite</label>
+                <input id="casePlaceWebsite" type="url" placeholder="https://example.de">
               </div>
             </div>
             <div class="nav-preview">
@@ -1756,6 +1777,15 @@ button{cursor:pointer}
             </span>
             <span class="more-arrow">›</span>
           </button>
+
+          <button class="more-item" onclick="openContacts()">
+            <span class="more-item-icon">⌾</span>
+            <span class="more-item-main">
+              <b>Kontakte / Adressbuch</b>
+              <small>Firmen, Praxen, Behörden und persönliche Kontakte.</small>
+            </span>
+            <span class="more-arrow">›</span>
+          </button>
         </div>
       </div>
 
@@ -1824,6 +1854,42 @@ button{cursor:pointer}
     </nav>
   </div>
   <div class="page-id">DE-016</div>
+</section>
+
+
+<!-- DE-018 -->
+<section id="de018" class="page hidden">
+  <div class="contacts-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="openMore()">← Zurück</button>
+      <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+    </div>
+    <div class="contacts-card">
+      <div class="contacts-head">
+        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p></div>
+        <button class="btn primary" onclick="newContact()">＋ Kontakt</button>
+      </div>
+      <div id="contactFormBox" class="contact-form hidden">
+        <h2 id="contactFormTitle">Neuer Kontakt</h2>
+        <input id="contactEditId" type="hidden">
+        <div class="contact-form-grid">
+          <div class="field wide" style="margin:0"><label>Name / Firma / Person</label><input id="contactName" placeholder="z. B. Autowerkstatt Much"></div>
+          <div class="field" style="margin:0"><label>Kontaktart</label><select id="contactType"><option value="">Nicht festgelegt</option><option>Arzt / Praxis</option><option>Firma</option><option>Behörde</option><option>Versicherung</option><option>Vermieter / Hausverwaltung</option><option>Privatkontakt</option><option>Sonstiges</option></select></div>
+          <div class="field" style="margin:0"><label>Straße und Hausnummer</label><input id="contactStreet" placeholder="Musterstraße 12"></div>
+          <div class="field" style="margin:0"><label>PLZ / Ort</label><input id="contactCity" placeholder="83646 Bad Tölz"></div>
+          <div class="field" style="margin:0"><label>Telefon</label><input id="contactPhone" placeholder="+49 ..."></div>
+          <div class="field" style="margin:0"><label>Mobil</label><input id="contactMobile" placeholder="+49 ..."></div>
+          <div class="field" style="margin:0"><label>E-Mail</label><input id="contactEmail" type="email" placeholder="kontakt@example.de"></div>
+          <div class="field" style="margin:0"><label>Webseite</label><input id="contactWebsite" type="url" placeholder="https://example.de"></div>
+          <div class="field wide" style="margin:0"><label>Notiz (optional)</label><input id="contactNote" placeholder="z. B. unsere Werkstatt"></div>
+        </div>
+        <div id="contactMsg" class="msg"></div>
+        <div class="contact-actions"><button class="btn primary" onclick="saveContactForm()">Speichern</button><button onclick="closeContactForm()">Abbrechen</button></div>
+      </div>
+      <div id="contactsList" class="contacts-list"></div>
+    </div>
+  </div>
+  <div class="page-id">DE-018</div>
 </section>
 
 <!-- DE-013 -->
@@ -3308,6 +3374,7 @@ function loadProfile(){
 }
 
 
+\nconst CONTACTS_STORAGE_PREFIX='sekretarzContactsUserV1:';\nfunction getContactsStorageKey(){\n  const caseKey=getCasesStorageKey();\n  return CONTACTS_STORAGE_PREFIX+encodeURIComponent(caseKey);\n}\nfunction getStoredContacts(){\n  try{const v=JSON.parse(localStorage.getItem(getContactsStorageKey())||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}\n}\nfunction saveStoredContacts(items){try{localStorage.setItem(getContactsStorageKey(),JSON.stringify(items));return true;}catch(e){return false;}}\nfunction normalizeContactValue(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,' ');}\nfunction contactFingerprint(c){return [c.name,c.street,c.city,c.phone,c.mobile,c.email].map(normalizeContactValue).join('|');}\nfunction upsertAddressBookContact(contact){\n  if(!contact || !String(contact.name||'').trim()) return null;\n  const items=getStoredContacts(); const fp=contactFingerprint(contact);\n  let existing=items.find(x=>contactFingerprint(x)===fp);\n  if(existing){Object.assign(existing,contact,{updatedAt:new Date().toISOString()});saveStoredContacts(items);return existing;}\n  const item={id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:contact.name||'',type:contact.type||'',street:contact.street||'',city:contact.city||'',phone:contact.phone||'',mobile:contact.mobile||'',email:contact.email||'',website:contact.website||'',note:contact.note||'',createdAt:new Date().toISOString()};\n  items.unshift(item);saveStoredContacts(items);return item;\n}\nfunction importContactsFromCases(){\n  const items=getStoredContacts(); const fps=new Set(items.map(contactFingerprint)); let changed=false;\n  getStoredCases().forEach(c=>{const x=c?.contact;if(!x?.name)return;const fp=contactFingerprint(x);if(fps.has(fp))return;items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:x.name||'',type:x.type||'',street:x.street||'',city:x.city||'',phone:x.phone||'',mobile:x.mobile||'',email:x.email||'',website:x.website||'',note:'',createdAt:new Date().toISOString()});fps.add(fp);changed=true;});\n  if(changed) saveStoredContacts(items);\n}\nfunction openContacts(){importContactsFromCases();closeContactForm();renderContacts();historyStack=['de011','de016','de018'];showDirect('de018');}\nfunction newContact(){\n  ['contactEditId','contactName','contactStreet','contactCity','contactPhone','contactMobile','contactEmail','contactWebsite','contactNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});\n  document.getElementById('contactType').value='';document.getElementById('contactFormTitle').textContent='Neuer Kontakt';clearMsg('contactMsg');document.getElementById('contactFormBox').classList.remove('hidden');\n}\nfunction closeContactForm(){const b=document.getElementById('contactFormBox');if(b)b.classList.add('hidden');}\nfunction readAddressBookForm(){return {name:document.getElementById('contactName').value.trim(),type:document.getElementById('contactType').value,street:document.getElementById('contactStreet').value.trim(),city:document.getElementById('contactCity').value.trim(),phone:document.getElementById('contactPhone').value.trim(),mobile:document.getElementById('contactMobile').value.trim(),email:document.getElementById('contactEmail').value.trim(),website:document.getElementById('contactWebsite').value.trim(),note:document.getElementById('contactNote').value.trim()};}\nfunction saveContactForm(){\n  clearMsg('contactMsg');const data=readAddressBookForm();if(!data.name){setMsg('contactMsg','error','Bitte einen Namen eingeben.');return;}\n  const items=getStoredContacts();const id=document.getElementById('contactEditId').value;\n  if(id){const i=items.findIndex(x=>x.id===id);if(i>=0)items[i]={...items[i],...data,updatedAt:new Date().toISOString()};}\n  else items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),...data,createdAt:new Date().toISOString()});\n  saveStoredContacts(items);closeContactForm();renderContacts();\n}\nfunction editContact(id){\n  const c=getStoredContacts().find(x=>x.id===id);if(!c)return;document.getElementById('contactEditId').value=c.id;document.getElementById('contactName').value=c.name||'';document.getElementById('contactType').value=c.type||'';document.getElementById('contactStreet').value=c.street||'';document.getElementById('contactCity').value=c.city||'';document.getElementById('contactPhone').value=c.phone||'';document.getElementById('contactMobile').value=c.mobile||'';document.getElementById('contactEmail').value=c.email||'';document.getElementById('contactWebsite').value=c.website||'';document.getElementById('contactNote').value=c.note||'';document.getElementById('contactFormTitle').textContent='Kontakt bearbeiten';clearMsg('contactMsg');document.getElementById('contactFormBox').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'});\n}\nfunction deleteContact(id){const c=getStoredContacts().find(x=>x.id===id);if(!c)return;if(!confirm('Kontakt „'+c.name+'“ wirklich löschen?'))return;saveStoredContacts(getStoredContacts().filter(x=>x.id!==id));renderContacts();}\nfunction renderContacts(){\n  const box=document.getElementById('contactsList');if(!box)return;const items=getStoredContacts();if(!items.length){box.innerHTML='<div class="contacts-empty">Noch keine Kontakte gespeichert.</div>';return;}\n  box.innerHTML=items.map(c=>{const addr=[c.street,c.city].filter(Boolean).join(', ');const rows=[];if(c.type)rows.push(escapeHtml(c.type));if(addr)rows.push(escapeHtml(addr));if(c.phone)rows.push('Telefon: '+escapeHtml(c.phone));if(c.mobile)rows.push('Mobil: '+escapeHtml(c.mobile));if(c.email)rows.push('E-Mail: '+escapeHtml(c.email));if(c.website)rows.push('Webseite: '+escapeHtml(c.website));if(c.note)rows.push('Notiz: '+escapeHtml(c.note));return '<div class="contact-entry"><div class="contact-entry-top"><div><h3>'+escapeHtml(c.name)+'</h3><p>'+rows.join('<br>')+'</p></div></div><div class="contact-actions"><button onclick="editContact(\''+c.id+'\')">Bearbeiten</button><button class="danger" onclick="deleteContact(\''+c.id+'\')">Löschen</button></div></div>';}).join('');\n}\n
 function openMore(){
   if(currentPage==='de011') historyStack=['de011','de016'];
   else if(currentPage==='de008') historyStack=['de011','de008','de016'];
@@ -4179,7 +4246,9 @@ function readContactData(){
     street:(document.getElementById('casePlaceStreet')?.value || '').trim(),
     city:(document.getElementById('casePlaceCity')?.value || '').trim(),
     phone:(document.getElementById('casePlacePhone')?.value || '').trim(),
-    email:(document.getElementById('casePlaceEmail')?.value || '').trim()
+    mobile:(document.getElementById('casePlaceMobile')?.value || '').trim(),
+    email:(document.getElementById('casePlaceEmail')?.value || '').trim(),
+    website:(document.getElementById('casePlaceWebsite')?.value || '').trim()
   };
 }
 
@@ -4190,7 +4259,9 @@ function fillContactData(contact){
   document.getElementById('casePlaceStreet').value=contact.street || '';
   document.getElementById('casePlaceCity').value=contact.city || '';
   document.getElementById('casePlacePhone').value=contact.phone || '';
+  document.getElementById('casePlaceMobile').value=contact.mobile || '';
   document.getElementById('casePlaceEmail').value=contact.email || '';
+  document.getElementById('casePlaceWebsite').value=contact.website || '';
 }
 
 function renderCurrentCaseLocation(){
@@ -4205,7 +4276,9 @@ function renderCurrentCaseLocation(){
   const addr=[c.street,c.city].filter(Boolean).join(', ');
   if(addr) lines.push(escapeHtml(addr));
   if(c.phone) lines.push('Telefon: '+escapeHtml(c.phone));
+  if(c.mobile) lines.push('Mobil: '+escapeHtml(c.mobile));
   if(c.email) lines.push('E-Mail: '+escapeHtml(c.email));
+  if(c.website) lines.push('Webseite: '+escapeHtml(c.website));
 
   if(lines.length){
     content.innerHTML=lines.join('<br>');
@@ -4443,6 +4516,7 @@ function saveCaseForm(){
   }
 
   const contact=readContactData();
+  if(contact.name) upsertAddressBookContact(contact);
 
   const sourceSettings={
     email:!!document.getElementById('sourceEmail')?.checked,

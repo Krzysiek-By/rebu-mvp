@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.17 TEST">
+<meta name="sekretarz-version" content="DE-v13.18 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1321,8 +1321,9 @@ button{cursor:pointer}
 
 
         <div class="field wide">
-          <div class="contact-card">
-            <h3>Ort / Kontakt zur Angelegenheit</h3>
+          <details class="contact-card" id="caseContactDetails">
+            <summary><b>Ort oder Kontakt hinzufügen</b> <span style="color:var(--muted);font-weight:400">(optional)</span></summary>
+            <div style="height:12px"></div>
             <div class="contact-grid">
               <div class="field" style="margin:0">
                 <label>Name / Praxis / Firma</label>
@@ -1363,7 +1364,7 @@ button{cursor:pointer}
               <b>„Soll ich dich jetzt dorthin navigieren?“</b>
               Falls Adresse oder Kontaktdaten fehlen, soll er sie beim Nutzer erfragen oder passende öffentliche Daten im Internet vorschlagen.
             </div>
-          </div>
+          </details>
         </div>
 
         <!-- SIMPLE REMINDER -->
@@ -4254,6 +4255,8 @@ function openNewCase(){
   document.getElementById('caseDescription').value='';
   document.getElementById('caseNextStep').value='';
   fillContactData(null);
+  const contactDetails=document.getElementById('caseContactDetails');
+  if(contactDetails) contactDetails.open=false;
   setCaseCareType('reminder');
   clearMsg('caseFormMsg');
   updateCasePreview();
@@ -4302,6 +4305,11 @@ function editCurrentCase(){
   document.getElementById('caseNextStep').value=currentCaseData.nextStep || '';
 
   fillContactData(currentCaseData.contact || null);
+  const contactDetails=document.getElementById('caseContactDetails');
+  if(contactDetails){
+    const c=currentCaseData.contact || {};
+    contactDetails.open=!!(c.name || c.type || c.street || c.city || c.phone || c.email);
+  }
 
   const srcSettings=currentCaseData.sourceSettings || {};
   const sourceEmail=document.getElementById('sourceEmail');

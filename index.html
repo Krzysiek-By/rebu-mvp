@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.19 TEST">
+<meta name="sekretarz-version" content="DE-v13.20 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -3374,7 +3374,54 @@ function loadProfile(){
 }
 
 
-\nconst CONTACTS_STORAGE_PREFIX='sekretarzContactsUserV1:';\nfunction getContactsStorageKey(){\n  const caseKey=getCasesStorageKey();\n  return CONTACTS_STORAGE_PREFIX+encodeURIComponent(caseKey);\n}\nfunction getStoredContacts(){\n  try{const v=JSON.parse(localStorage.getItem(getContactsStorageKey())||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}\n}\nfunction saveStoredContacts(items){try{localStorage.setItem(getContactsStorageKey(),JSON.stringify(items));return true;}catch(e){return false;}}\nfunction normalizeContactValue(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,' ');}\nfunction contactFingerprint(c){return [c.name,c.street,c.city,c.phone,c.mobile,c.email].map(normalizeContactValue).join('|');}\nfunction upsertAddressBookContact(contact){\n  if(!contact || !String(contact.name||'').trim()) return null;\n  const items=getStoredContacts(); const fp=contactFingerprint(contact);\n  let existing=items.find(x=>contactFingerprint(x)===fp);\n  if(existing){Object.assign(existing,contact,{updatedAt:new Date().toISOString()});saveStoredContacts(items);return existing;}\n  const item={id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:contact.name||'',type:contact.type||'',street:contact.street||'',city:contact.city||'',phone:contact.phone||'',mobile:contact.mobile||'',email:contact.email||'',website:contact.website||'',note:contact.note||'',createdAt:new Date().toISOString()};\n  items.unshift(item);saveStoredContacts(items);return item;\n}\nfunction importContactsFromCases(){\n  const items=getStoredContacts(); const fps=new Set(items.map(contactFingerprint)); let changed=false;\n  getStoredCases().forEach(c=>{const x=c?.contact;if(!x?.name)return;const fp=contactFingerprint(x);if(fps.has(fp))return;items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:x.name||'',type:x.type||'',street:x.street||'',city:x.city||'',phone:x.phone||'',mobile:x.mobile||'',email:x.email||'',website:x.website||'',note:'',createdAt:new Date().toISOString()});fps.add(fp);changed=true;});\n  if(changed) saveStoredContacts(items);\n}\nfunction openContacts(){importContactsFromCases();closeContactForm();renderContacts();historyStack=['de011','de016','de018'];showDirect('de018');}\nfunction newContact(){\n  ['contactEditId','contactName','contactStreet','contactCity','contactPhone','contactMobile','contactEmail','contactWebsite','contactNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});\n  document.getElementById('contactType').value='';document.getElementById('contactFormTitle').textContent='Neuer Kontakt';clearMsg('contactMsg');document.getElementById('contactFormBox').classList.remove('hidden');\n}\nfunction closeContactForm(){const b=document.getElementById('contactFormBox');if(b)b.classList.add('hidden');}\nfunction readAddressBookForm(){return {name:document.getElementById('contactName').value.trim(),type:document.getElementById('contactType').value,street:document.getElementById('contactStreet').value.trim(),city:document.getElementById('contactCity').value.trim(),phone:document.getElementById('contactPhone').value.trim(),mobile:document.getElementById('contactMobile').value.trim(),email:document.getElementById('contactEmail').value.trim(),website:document.getElementById('contactWebsite').value.trim(),note:document.getElementById('contactNote').value.trim()};}\nfunction saveContactForm(){\n  clearMsg('contactMsg');const data=readAddressBookForm();if(!data.name){setMsg('contactMsg','error','Bitte einen Namen eingeben.');return;}\n  const items=getStoredContacts();const id=document.getElementById('contactEditId').value;\n  if(id){const i=items.findIndex(x=>x.id===id);if(i>=0)items[i]={...items[i],...data,updatedAt:new Date().toISOString()};}\n  else items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),...data,createdAt:new Date().toISOString()});\n  saveStoredContacts(items);closeContactForm();renderContacts();\n}\nfunction editContact(id){\n  const c=getStoredContacts().find(x=>x.id===id);if(!c)return;document.getElementById('contactEditId').value=c.id;document.getElementById('contactName').value=c.name||'';document.getElementById('contactType').value=c.type||'';document.getElementById('contactStreet').value=c.street||'';document.getElementById('contactCity').value=c.city||'';document.getElementById('contactPhone').value=c.phone||'';document.getElementById('contactMobile').value=c.mobile||'';document.getElementById('contactEmail').value=c.email||'';document.getElementById('contactWebsite').value=c.website||'';document.getElementById('contactNote').value=c.note||'';document.getElementById('contactFormTitle').textContent='Kontakt bearbeiten';clearMsg('contactMsg');document.getElementById('contactFormBox').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'});\n}\nfunction deleteContact(id){const c=getStoredContacts().find(x=>x.id===id);if(!c)return;if(!confirm('Kontakt „'+c.name+'“ wirklich löschen?'))return;saveStoredContacts(getStoredContacts().filter(x=>x.id!==id));renderContacts();}\nfunction renderContacts(){\n  const box=document.getElementById('contactsList');if(!box)return;const items=getStoredContacts();if(!items.length){box.innerHTML='<div class="contacts-empty">Noch keine Kontakte gespeichert.</div>';return;}\n  box.innerHTML=items.map(c=>{const addr=[c.street,c.city].filter(Boolean).join(', ');const rows=[];if(c.type)rows.push(escapeHtml(c.type));if(addr)rows.push(escapeHtml(addr));if(c.phone)rows.push('Telefon: '+escapeHtml(c.phone));if(c.mobile)rows.push('Mobil: '+escapeHtml(c.mobile));if(c.email)rows.push('E-Mail: '+escapeHtml(c.email));if(c.website)rows.push('Webseite: '+escapeHtml(c.website));if(c.note)rows.push('Notiz: '+escapeHtml(c.note));return '<div class="contact-entry"><div class="contact-entry-top"><div><h3>'+escapeHtml(c.name)+'</h3><p>'+rows.join('<br>')+'</p></div></div><div class="contact-actions"><button onclick="editContact(\''+c.id+'\')">Bearbeiten</button><button class="danger" onclick="deleteContact(\''+c.id+'\')">Löschen</button></div></div>';}).join('');\n}\n
+
+const CONTACTS_STORAGE_PREFIX='sekretarzContactsUserV1:';
+function getContactsStorageKey(){
+  const caseKey=getCasesStorageKey();
+  return CONTACTS_STORAGE_PREFIX+encodeURIComponent(caseKey);
+}
+function getStoredContacts(){
+  try{const v=JSON.parse(localStorage.getItem(getContactsStorageKey())||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}
+}
+function saveStoredContacts(items){try{localStorage.setItem(getContactsStorageKey(),JSON.stringify(items));return true;}catch(e){return false;}}
+function normalizeContactValue(v){return String(v||'').trim().toLowerCase().replace(/\s+/g,' ');}
+function contactFingerprint(c){return [c.name,c.street,c.city,c.phone,c.mobile,c.email].map(normalizeContactValue).join('|');}
+function upsertAddressBookContact(contact){
+  if(!contact || !String(contact.name||'').trim()) return null;
+  const items=getStoredContacts(); const fp=contactFingerprint(contact);
+  let existing=items.find(x=>contactFingerprint(x)===fp);
+  if(existing){Object.assign(existing,contact,{updatedAt:new Date().toISOString()});saveStoredContacts(items);return existing;}
+  const item={id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:contact.name||'',type:contact.type||'',street:contact.street||'',city:contact.city||'',phone:contact.phone||'',mobile:contact.mobile||'',email:contact.email||'',website:contact.website||'',note:contact.note||'',createdAt:new Date().toISOString()};
+  items.unshift(item);saveStoredContacts(items);return item;
+}
+function importContactsFromCases(){
+  const items=getStoredContacts(); const fps=new Set(items.map(contactFingerprint)); let changed=false;
+  getStoredCases().forEach(c=>{const x=c?.contact;if(!x?.name)return;const fp=contactFingerprint(x);if(fps.has(fp))return;items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name:x.name||'',type:x.type||'',street:x.street||'',city:x.city||'',phone:x.phone||'',mobile:x.mobile||'',email:x.email||'',website:x.website||'',note:'',createdAt:new Date().toISOString()});fps.add(fp);changed=true;});
+  if(changed) saveStoredContacts(items);
+}
+function openContacts(){importContactsFromCases();closeContactForm();renderContacts();historyStack=['de011','de016','de018'];showDirect('de018');}
+function newContact(){
+  ['contactEditId','contactName','contactStreet','contactCity','contactPhone','contactMobile','contactEmail','contactWebsite','contactNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('contactType').value='';document.getElementById('contactFormTitle').textContent='Neuer Kontakt';clearMsg('contactMsg');document.getElementById('contactFormBox').classList.remove('hidden');
+}
+function closeContactForm(){const b=document.getElementById('contactFormBox');if(b)b.classList.add('hidden');}
+function readAddressBookForm(){return {name:document.getElementById('contactName').value.trim(),type:document.getElementById('contactType').value,street:document.getElementById('contactStreet').value.trim(),city:document.getElementById('contactCity').value.trim(),phone:document.getElementById('contactPhone').value.trim(),mobile:document.getElementById('contactMobile').value.trim(),email:document.getElementById('contactEmail').value.trim(),website:document.getElementById('contactWebsite').value.trim(),note:document.getElementById('contactNote').value.trim()};}
+function saveContactForm(){
+  clearMsg('contactMsg');const data=readAddressBookForm();if(!data.name){setMsg('contactMsg','error','Bitte einen Namen eingeben.');return;}
+  const items=getStoredContacts();const id=document.getElementById('contactEditId').value;
+  if(id){const i=items.findIndex(x=>x.id===id);if(i>=0)items[i]={...items[i],...data,updatedAt:new Date().toISOString()};}
+  else items.unshift({id:'contact-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),...data,createdAt:new Date().toISOString()});
+  saveStoredContacts(items);closeContactForm();renderContacts();
+}
+function editContact(id){
+  const c=getStoredContacts().find(x=>x.id===id);if(!c)return;document.getElementById('contactEditId').value=c.id;document.getElementById('contactName').value=c.name||'';document.getElementById('contactType').value=c.type||'';document.getElementById('contactStreet').value=c.street||'';document.getElementById('contactCity').value=c.city||'';document.getElementById('contactPhone').value=c.phone||'';document.getElementById('contactMobile').value=c.mobile||'';document.getElementById('contactEmail').value=c.email||'';document.getElementById('contactWebsite').value=c.website||'';document.getElementById('contactNote').value=c.note||'';document.getElementById('contactFormTitle').textContent='Kontakt bearbeiten';clearMsg('contactMsg');document.getElementById('contactFormBox').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'});
+}
+function deleteContact(id){const c=getStoredContacts().find(x=>x.id===id);if(!c)return;if(!confirm('Kontakt „'+c.name+'“ wirklich löschen?'))return;saveStoredContacts(getStoredContacts().filter(x=>x.id!==id));renderContacts();}
+function renderContacts(){
+  const box=document.getElementById('contactsList');if(!box)return;const items=getStoredContacts();if(!items.length){box.innerHTML='<div class="contacts-empty">Noch keine Kontakte gespeichert.</div>';return;}
+  box.innerHTML=items.map(c=>{const addr=[c.street,c.city].filter(Boolean).join(', ');const rows=[];if(c.type)rows.push(escapeHtml(c.type));if(addr)rows.push(escapeHtml(addr));if(c.phone)rows.push('Telefon: '+escapeHtml(c.phone));if(c.mobile)rows.push('Mobil: '+escapeHtml(c.mobile));if(c.email)rows.push('E-Mail: '+escapeHtml(c.email));if(c.website)rows.push('Webseite: '+escapeHtml(c.website));if(c.note)rows.push('Notiz: '+escapeHtml(c.note));return '<div class="contact-entry"><div class="contact-entry-top"><div><h3>'+escapeHtml(c.name)+'</h3><p>'+rows.join('<br>')+'</p></div></div><div class="contact-actions"><button onclick="editContact(\''+c.id+'\')">Bearbeiten</button><button class="danger" onclick="deleteContact(\''+c.id+'\')">Löschen</button></div></div>';}).join('');
+}
+
 function openMore(){
   if(currentPage==='de011') historyStack=['de011','de016'];
   else if(currentPage==='de008') historyStack=['de011','de008','de016'];

@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.22 TEST">
+<meta name="sekretarz-version" content="DE-v13.23 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -2140,6 +2140,37 @@ document.addEventListener('click',function(e){
 
 
 function back(){
+  // DE-018 (Kontakte) and DE-016 (Mehr) use explicit return targets.
+  // This avoids any loop caused by a stale/duplicated historyStack.
+  if(currentPage==='de018'){
+    try{
+      sessionStorage.removeItem('sekretarzContactsReturnPage');
+      localStorage.removeItem('sekretarzContactsReturnPage');
+    }catch(e){}
+    while(historyStack.length && historyStack[historyStack.length-1]==='de018') historyStack.pop();
+    if(historyStack[historyStack.length-1]!=='de016') historyStack.push('de016');
+    showDirect('de016');
+    return;
+  }
+
+  if(currentPage==='de016'){
+    let target='de011';
+    try{
+      target=sessionStorage.getItem('sekretarzMoreReturnPage') || localStorage.getItem('sekretarzMoreReturnPage') || 'de011';
+      sessionStorage.removeItem('sekretarzMoreReturnPage');
+      localStorage.removeItem('sekretarzMoreReturnPage');
+    }catch(e){}
+    if(!['de008','de011','de012','de014'].includes(target)) target='de011';
+    if(target==='de008') historyStack=['de011','de008'];
+    else if(target==='de012') historyStack=['de011','de012'];
+    else if(target==='de014') historyStack=['de011','de014'];
+    else historyStack=['de011'];
+    if(target==='de011') renderToday();
+    if(target==='de012') renderInbox();
+    if(target==='de014') renderCalendar();
+    showDirect(target);
+    return;
+  }
   if(currentPage==='de013'){
     try{
       const profileReturnPage=sessionStorage.getItem('sekretarzProfileReturnPage') || localStorage.getItem('sekretarzProfileReturnPage');
@@ -3404,12 +3435,16 @@ function openContacts(){
   importContactsFromCases();
   closeContactForm();
   renderContacts();
+  try{
+    sessionStorage.setItem('sekretarzContactsReturnPage','de016');
+    localStorage.setItem('sekretarzContactsReturnPage','de016');
+  }catch(e){}
   if(currentPage==='de016'){
     if(historyStack[historyStack.length-1]!=='de016') historyStack.push('de016');
-    historyStack.push('de018');
+    if(historyStack[historyStack.length-1]!=='de018') historyStack.push('de018');
   }else{
     if(historyStack[historyStack.length-1]!==currentPage) historyStack.push(currentPage);
-    historyStack.push('de018');
+    if(historyStack[historyStack.length-1]!=='de018') historyStack.push('de018');
   }
   showDirect('de018');
 }
@@ -3436,12 +3471,16 @@ function renderContacts(){
 }
 
 function openMore(){
-  if(currentPage==='de011') historyStack=['de011','de016'];
-  else if(currentPage==='de008') historyStack=['de011','de008','de016'];
-  else if(currentPage==='de012') historyStack=['de011','de012','de016'];
-  else if(currentPage==='de014') historyStack=['de011','de014','de016'];
-  else if(!historyStack.includes('de011')) historyStack=['de011','de016'];
-  else if(historyStack[historyStack.length-1]!=='de016') historyStack.push('de016');
+  const origin=(currentPage && currentPage!=='de016' && currentPage!=='de018') ? currentPage : 'de011';
+  try{
+    sessionStorage.setItem('sekretarzMoreReturnPage',origin);
+    localStorage.setItem('sekretarzMoreReturnPage',origin);
+  }catch(e){}
+  if(origin==='de011') historyStack=['de011','de016'];
+  else if(origin==='de008') historyStack=['de011','de008','de016'];
+  else if(origin==='de012') historyStack=['de011','de012','de016'];
+  else if(origin==='de014') historyStack=['de011','de014','de016'];
+  else historyStack=[origin,'de016'];
   showDirect('de016');
 }
 

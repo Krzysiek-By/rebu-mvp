@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.12 TEST">
+<meta name="sekretarz-version" content="DE-v13.13 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1065,6 +1065,41 @@ button{cursor:pointer}
   <div class="page-id">DE-007</div>
 </section>
 
+<!-- DE-017 -->
+<section id="de017" class="page hidden">
+  <div class="center-wrap">
+    <div class="auth">
+      <div class="auth-top">
+        <button class="backbtn" onclick="goStart()">← Zurück</button>
+        <div class="brand">
+          <button class="logo" aria-label="Startseite" onclick="goStart()"></button>
+          <div class="brand-text">Sekretarz</div>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <h2>Neues Passwort festlegen</h2>
+      <p>Gib dein neues Passwort zweimal ein.</p>
+
+      <div class="field">
+        <label>Neues Passwort</label>
+        <input id="newPassword1" type="password" autocomplete="new-password" placeholder="Mindestens 8 Zeichen">
+      </div>
+
+      <div class="field">
+        <label>Neues Passwort wiederholen</label>
+        <input id="newPassword2" type="password" autocomplete="new-password" placeholder="Passwort erneut eingeben">
+      </div>
+
+      <div id="newPasswordMsg" class="hidden"></div>
+
+      <button class="btn primary full" onclick="saveNewPassword()">Neues Passwort speichern</button>
+      <p class="tiny">Mindestens 8 Zeichen, mit Großbuchstabe, Kleinbuchstabe und Zahl.</p>
+    </div>
+  </div>
+  <div class="page-id">DE-017</div>
+</section>
+
 <!-- DE-008 -->
 <section id="de008" class="page hidden">
   <div class="app-shell">
@@ -1983,7 +2018,7 @@ function supabaseErrorMessage(error, fallback){
 }
 
 function hideAll(){
-  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015','de016'].forEach(id=>{
+  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015','de016','de017'].forEach(id=>{
     const page=document.getElementById(id);
     if(page) page.classList.add('hidden');
   });
@@ -3600,6 +3635,68 @@ async function sendRecovery(){
   }
 }
 
+function handleRecoveryCallback(){
+  try{
+    const hashParams=new URLSearchParams((window.location.hash || '').replace(/^#/,''));
+    const type=hashParams.get('type');
+    const accessToken=hashParams.get('access_token');
+    if(type==='recovery' && accessToken){
+      sessionStorage.setItem('sekretarzRecoveryAccessToken',accessToken);
+      historyStack=['de017'];
+      showDirect('de017');
+      try{ history.replaceState(null,'',window.location.pathname+window.location.search); }catch(e){}
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+async function saveNewPassword(){
+  clearMsg('newPasswordMsg');
+  const p1=document.getElementById('newPassword1').value;
+  const p2=document.getElementById('newPassword2').value;
+
+  if(p1.length<8){
+    setMsg('newPasswordMsg','error','Das Passwort muss mindestens 8 Zeichen haben.');
+    return;
+  }
+  if(!/[a-z]/.test(p1) || !/[A-Z]/.test(p1) || !/[0-9]/.test(p1)){
+    setMsg('newPasswordMsg','error','Das Passwort braucht Großbuchstabe, Kleinbuchstabe und Zahl.');
+    return;
+  }
+  if(p1!==p2){
+    setMsg('newPasswordMsg','error','Die beiden Passwörter stimmen nicht überein.');
+    return;
+  }
+
+  const token=sessionStorage.getItem('sekretarzRecoveryAccessToken') || '';
+  if(!token){
+    setMsg('newPasswordMsg','error','Der Wiederherstellungslink ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.');
+    return;
+  }
+
+  try{
+    const response=await fetch(SUPABASE_URL+'/auth/v1/user',{
+      method:'PUT',
+      headers:supabaseHeaders(token),
+      body:JSON.stringify({password:p1})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok){
+      setMsg('newPasswordMsg','error',supabaseErrorMessage(result,'Das neue Passwort konnte nicht gespeichert werden.'));
+      return;
+    }
+    sessionStorage.removeItem('sekretarzRecoveryAccessToken');
+    clearSupabaseSession();
+    setMsg('newPasswordMsg','success','Passwort geändert. Du kannst dich jetzt mit dem neuen Passwort anmelden.');
+    document.getElementById('newPassword1').value='';
+    document.getElementById('newPassword2').value='';
+    setTimeout(()=>{ historyStack=['de001','de002','de006']; showDirect('de006'); },1200);
+  }catch(e){
+    setMsg('newPasswordMsg','error','Verbindung zu Supabase fehlgeschlagen. Bitte erneut versuchen.');
+  }
+}
+
 async function logout(){
   let token='';
   try{
@@ -4516,6 +4613,7 @@ window.addEventListener('pageshow',()=>{
   }catch(e){}
 
   try{
+    if(handleRecoveryCallback()) return;
     sanitizeNavigationState();
     restoreAppState();
   }catch(e){

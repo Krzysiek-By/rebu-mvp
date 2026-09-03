@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.21 TEST">
+<meta name="sekretarz-version" content="DE-v13.22 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -2086,7 +2086,7 @@ function supabaseErrorMessage(error, fallback){
 }
 
 function hideAll(){
-  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015','de016','de017'].forEach(id=>{
+  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015','de016','de017','de018'].forEach(id=>{
     const page=document.getElementById(id);
     if(page) page.classList.add('hidden');
   });
@@ -2175,6 +2175,7 @@ function back(){
     if(target==='de013') loadProfile();
     if(target==='de014') renderCalendar();
     if(target==='de015') renderCalendarConnect();
+    if(target==='de018'){ importContactsFromCases(); closeContactForm(); renderContacts(); }
     showDirect(target);
   } else {
     const persistedLogin=localStorage.getItem('sekretarzLoggedIn')==='1';
@@ -4710,7 +4711,7 @@ function restoreAppState(){
       target='de006';
     }
 
-    if(['de008','de009','de010','de011','de012','de013','de014','de015','de016'].includes(target) && !persistedLogin){
+    if(['de008','de009','de010','de011','de012','de013','de014','de015','de016','de018'].includes(target) && !persistedLogin){
       target='de006';
     }
 
@@ -4746,6 +4747,7 @@ function restoreAppState(){
     else if(target==='de014') historyStack=['de011','de014'];
     else if(target==='de015') historyStack=['de011','de014','de015'];
     else if(target==='de016') historyStack=['de011','de016'];
+    else if(target==='de018') historyStack=['de011','de016','de018'];
     else historyStack=[target];
 
     if(target==='de011') renderToday();
@@ -4753,6 +4755,7 @@ function restoreAppState(){
     if(target==='de013') loadProfile();
     if(target==='de014') renderCalendar();
     if(target==='de015') renderCalendarConnect();
+    if(target==='de018'){ importContactsFromCases(); closeContactForm(); renderContacts(); }
     showDirect(target);
     if(target==='de010' && currentCaseData && localStorage.getItem('sekretarzEditModeV1')==='1') editCurrentCase();
   }catch(e){

@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.33 TEST">
+<meta name="sekretarz-version" content="DE-v13.34 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -4147,8 +4147,56 @@ function isControlDateOverdue(data){
   return !!date && todayLocalISO()>date;
 }
 
+function isControlDateDueToday(data){
+  const date=String(data?.controlDate || '');
+  return !!date && todayLocalISO()===date;
+}
+
 function needsControlDate(data){
   return data?.careType==='ai' && String(data?.aiActionType || '')==='wait' && !String(data?.controlDate || '');
+}
+
+function getDueControlCases(){
+  return getStoredCases().filter(c=>c?.careType==='ai' && isControlDateOverdue(c));
+}
+
+function markControlNotificationShown(c){
+  if(!c?.id || !c?.controlDate) return;
+  const key='sekretarzControlNotice:'+c.id+':'+c.controlDate;
+  try{ localStorage.setItem(key,'1'); }catch(e){}
+}
+
+function wasControlNotificationShown(c){
+  if(!c?.id || !c?.controlDate) return false;
+  const key='sekretarzControlNotice:'+c.id+':'+c.controlDate;
+  try{ return localStorage.getItem(key)==='1'; }catch(e){ return false; }
+}
+
+async function surfaceDueControlCases(){
+  const due=getDueControlCases();
+  if(!due.length) return;
+
+  renderToday();
+  renderSecretaryStateCounts();
+
+  const c=due.find(x=>!wasControlNotificationShown(x));
+  if(!c) return;
+
+  if('Notification' in window && Notification.permission==='granted'){
+    try{
+      const reg=await navigator.serviceWorker?.ready;
+      if(reg){
+        await reg.showNotification('Sekretarz – Kontrolltermin',{
+          body:(c.title || 'Angelegenheit')+': Ist die erwartete Antwort inzwischen eingegangen?',
+          icon:'/icon-192.png',
+          badge:'/icon-192.png',
+          tag:'control-'+String(c.id),
+          data:{caseId:c.id || ''}
+        });
+      }
+    }catch(e){ console.warn('Kontrolltermin-Benachrichtigung:',e); }
+  }
+  markControlNotificationShown(c);
 }
 
 function renderAICenter(data){
@@ -4172,7 +4220,7 @@ function renderAICenter(data){
 
     let nextValue=data?.preparedNextStep || data?.nextStep || 'Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.';
     if(data?.controlDate && String(data?.aiActionType || '')==='wait' && !isControlDateOverdue(data)){
-      nextValue += ' Kontrolltermin: '+formatControlDate(data.controlDate)+'.';
+      nextValue += ' Kontrolltermin: '+formatControlDate(data.controlDate)+'. Wenn bis dahin keine Antwort vorliegt, fragt der Sekretär am nächsten Tag automatisch nach.';
     }
     if(nextText) nextText.textContent=nextValue;
 
@@ -5219,6 +5267,13 @@ function colorizeDashboardCases(){
     }
   });
 }
+
+window.addEventListener('pageshow',()=>{
+  setTimeout(()=>{ surfaceDueControlCases(); },700);
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') setTimeout(()=>{ surfaceDueControlCases(); },300);
+});
 
 // Dashboard rendering is handled by the guarded pageshow boot above.
 

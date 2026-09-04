@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.31 TEST">
+<meta name="sekretarz-version" content="DE-v13.32 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -4110,9 +4110,9 @@ function renderAICenter(data){
 
   if(data?.careType==='ai'){
     if(situation){
-      situation.textContent=(data.status==='Warte auf Antwort')
+      situation.textContent=data?.aiAnalysis || ((data.status==='Warte auf Antwort')
         ? 'Diese Angelegenheit ist aktiv unter KI-Betreuung. Aktuell warten wir auf eine Antwort. Der Sekretär soll neue Informationen automatisch in den Verlauf einordnen und den nächsten Schritt vorbereiten.'
-        : 'Diese Angelegenheit wird aktiv durch den Sekretär begleitet. Der aktuelle Stand wird laufend mit neuen Informationen ergänzt.';
+        : 'Diese Angelegenheit wird aktiv durch den Sekretär begleitet. Der aktuelle Stand wird laufend mit neuen Informationen ergänzt.');
     }
     if(nextTitle) nextTitle.textContent=data?.preparedNextStep ? 'Vorbereiteter nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
     if(nextText) nextText.textContent=data?.preparedNextStep || data?.nextStep || 'Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.';
@@ -4151,9 +4151,58 @@ function answerAIQuestion(hasInfo){
   }
 }
 
-function saveAIUserNote(){
+async function requestAIAnalysis(caseData){
+  const response=await fetch('/api/ai-case',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({caseData})
+  });
+  let payload={};
+  try{ payload=await response.json(); }catch(e){}
+  if(!response.ok){
+    const code=payload?.error || 'ai_request_failed';
+    if(code==='missing_openai_key') throw new Error('OPENAI_API_KEY fehlt auf dem Server.');
+    throw new Error(payload?.message || 'Die KI-Analyse konnte nicht ausgeführt werden.');
+  }
+  return payload;
+}
+
+async function applyFreshAIAnalysis(showResult=true){
+  if(!currentCaseData || currentCaseData.careType!=='ai') return;
+  const result=document.getElementById('aiActionResult');
+  const questionResult=document.getElementById('aiQuestionResult');
+  if(showResult && result){
+    result.textContent='KI analysiert die gesamte Angelegenheit …';
+    result.classList.remove('hidden');
+  }
+  try{
+    const ai=await requestAIAnalysis(currentCaseData);
+    currentCaseData.aiAnalysis=String(ai.analysis || '').trim();
+    currentCaseData.preparedNextStep=String(ai.nextStep || '').trim();
+    currentCaseData.aiActionType=String(ai.actionType || 'other').trim();
+    currentCaseData.aiReason=String(ai.reason || '').trim();
+    currentCaseData.aiUpdatedAt=new Date().toISOString();
+    currentCaseData=upsertStoredCase(currentCaseData);
+    renderAICenter(currentCaseData);
+    if(result){
+      result.textContent='KI-Analyse aktualisiert.';
+      result.classList.remove('hidden');
+    }
+    if(questionResult && !questionResult.classList.contains('hidden')){
+      questionResult.textContent='Neue Information gespeichert. Die KI hat die Angelegenheit neu bewertet.';
+    }
+  }catch(error){
+    if(result){
+      result.textContent='KI-Analyse nicht möglich: '+(error?.message || 'Unbekannter Fehler');
+      result.classList.remove('hidden');
+    }
+  }
+}
+
+async function saveAIUserNote(){
   const note=document.getElementById('aiUserNote');
   const btn=document.getElementById('aiSaveNoteBtn');
+  const result=document.getElementById('aiQuestionResult');
   const text=(note?.value || '').trim();
   if(!text || !currentCaseData) return;
 
@@ -4172,43 +4221,16 @@ function saveAIUserNote(){
   note.value='';
   note.classList.add('hidden');
   btn.classList.add('hidden');
-}
-
-function prepareNextStep(){
-  if(!currentCaseData) return;
-  const box=document.getElementById('aiNextStepText');
-  const title=document.getElementById('aiNextStepTitle');
-  const result=document.getElementById('aiActionResult');
-  if(!box) return;
-
-  const haystack=[currentCaseData.title,currentCaseData.desc,currentCaseData.nextStep]
-    .filter(Boolean).join(' ').toLowerCase();
-  const contact=currentCaseData.contact || {};
-  const contactName=(contact.name || '').trim();
-  const hasEmail=!!String(contact.email || '').trim();
-  let step='';
-
-  if(/krankenkasse|erstatt|teilzahlung|nachzahl/.test(haystack)){
-    const target=contactName ? ' an '+contactName : '';
-    step='Eine E-Mail'+target+' vorbereiten: um eine schriftliche Begründung für die Teilzahlung bitten und die Prüfung sowie gegebenenfalls Nachzahlung des offenen Betrags verlangen.';
-  }else if(currentCaseData.status==='Warte auf Antwort'){
-    step='Einen Follow-up-Termin setzen und, falls bis dahin keine Antwort eingeht, eine kurze Erinnerung vorbereiten.';
-  }else if(contactName && hasEmail){
-    step='Eine E-Mail an '+contactName+' vorbereiten, den bisherigen Stand knapp zusammenfassen und um den nächsten konkreten Schritt bzw. eine Antwort bitten.';
-  }else if(contactName){
-    step='Die nächste Kontaktaufnahme mit '+contactName+' vorbereiten und festlegen, welche Information oder Entscheidung benötigt wird.';
-  }else{
-    step='Den bisherigen Stand zusammenfassen und als nächsten Schritt die zuständige Kontaktstelle sowie die konkrete Anfrage festlegen.';
-  }
-
-  currentCaseData.preparedNextStep=step;
-  currentCaseData=upsertStoredCase(currentCaseData);
-  if(title) title.textContent='Vorbereiteter nächster Schritt';
-  box.textContent=step;
   if(result){
-    result.textContent='Nächster Schritt wurde vorbereitet.';
+    result.textContent='Information gespeichert. KI analysiert die Angelegenheit neu …';
     result.classList.remove('hidden');
   }
+  await applyFreshAIAnalysis(false);
+}
+
+async function prepareNextStep(){
+  if(!currentCaseData) return;
+  await applyFreshAIAnalysis(true);
 }
 
 
@@ -4284,7 +4306,11 @@ function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careTy
     }
   }catch(e){}
 
-  currentCaseData={id,title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact,dateDisplay:date};
+  const storedCase=id ? findStoredCaseById(id) : null;
+  currentCaseData={
+    ...(storedCase || {}),
+    id,title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact,dateDisplay:date
+  };
 
   try{
     if(id){
@@ -4762,7 +4788,11 @@ function saveCaseForm(){
     contact,
     dateDisplay,
     history:Array.isArray(currentCaseData?.history) ? currentCaseData.history : [],
-    preparedNextStep:currentCaseData?.preparedNextStep || ''
+    preparedNextStep:currentCaseData?.preparedNextStep || '',
+    aiAnalysis:currentCaseData?.aiAnalysis || '',
+    aiActionType:currentCaseData?.aiActionType || '',
+    aiReason:currentCaseData?.aiReason || '',
+    aiUpdatedAt:currentCaseData?.aiUpdatedAt || ''
   };
 
   const isEditing=!!(editingCaseOriginalTitle || editingCaseId);

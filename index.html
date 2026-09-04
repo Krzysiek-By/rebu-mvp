@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.42 TEST">
+<meta name="sekretarz-version" content="DE-v13.44 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -2109,48 +2109,98 @@ function getSupabaseSession(){
   try{return JSON.parse(localStorage.getItem(SUPABASE_SESSION_KEY)||'null');}catch(e){return null;}
 }
 
+async function refreshSupabaseSession(){
+  const current=getSupabaseSession();
+  const refreshToken=current?.refresh_token || '';
+  if(!refreshToken) return null;
+
+  const response=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{
+    method:'POST',
+    headers:supabaseHeaders(),
+    body:JSON.stringify({refresh_token:refreshToken})
+  });
+  const result=await response.json().catch(()=>({}));
+
+  if(!response.ok || !result?.access_token){
+    clearSupabaseSession();
+    return null;
+  }
+
+  if(!result.user && current?.user) result.user=current.user;
+  saveSupabaseSession(result);
+  return result;
+}
+
+async function supabaseAuthedFetch(url, options={}){
+  let session=getSupabaseSession();
+  if(!session?.access_token) throw new Error('supabase_session_missing');
+
+  const makeRequest=(token)=>fetch(url,{
+    ...options,
+    headers:{...(options.headers||{}),...supabaseHeaders(token)}
+  });
+
+  let response=await makeRequest(session.access_token);
+  if(response.ok) return response;
+
+  let detail=await response.text().catch(()=> '');
+  const expired=response.status===401 || detail.includes('PGRST303') || detail.toLowerCase().includes('expired');
+
+  if(expired){
+    session=await refreshSupabaseSession();
+    if(!session?.access_token) throw new Error('supabase_session_expired');
+    response=await makeRequest(session.access_token);
+    if(response.ok) return response;
+    detail=await response.text().catch(()=> '');
+  }
+
+  throw new Error('Supabase '+response.status+(detail ? ': '+detail.slice(0,500) : ''));
+}
+
 async function syncPushSubscriptionToSupabase(subscription){
   const session=getSupabaseSession();
   const userId=session?.user?.id || localStorage.getItem(SUPABASE_USER_ID_KEY) || '';
-  const token=session?.access_token || '';
-  if(!subscription || !userId || !token) return false;
+  if(!subscription || !userId) return false;
+
   const payload=subscription.toJSON ? subscription.toJSON() : subscription;
-  const response=await fetch(SUPABASE_URL+'/rest/v1/secretary_push_subscriptions?on_conflict=endpoint',{
-    method:'POST',
-    headers:{...supabaseHeaders(token),'Prefer':'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify({
-      user_id:userId,
-      endpoint:payload.endpoint,
-      subscription:payload,
-      updated_at:new Date().toISOString()
-    })
-  });
-  if(!response.ok){
-    const detail=await response.text().catch(()=> '');
-    throw new Error('Supabase '+response.status+(detail ? ': '+detail.slice(0,500) : ''));
-  }
+  await supabaseAuthedFetch(
+    SUPABASE_URL+'/rest/v1/secretary_push_subscriptions?on_conflict=endpoint',
+    {
+      method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({
+        user_id:userId,
+        endpoint:payload.endpoint,
+        subscription:payload,
+        updated_at:new Date().toISOString(),
+        last_seen_at:new Date().toISOString()
+      })
+    }
+  );
   return true;
 }
 
 async function syncControlPointToSupabase(caseData){
   const session=getSupabaseSession();
   const userId=session?.user?.id || localStorage.getItem(SUPABASE_USER_ID_KEY) || '';
-  const token=session?.access_token || '';
-  if(!caseData?.id || !caseData?.controlDate || !userId || !token) return false;
-  const response=await fetch(SUPABASE_URL+'/rest/v1/secretary_control_points?on_conflict=user_id,case_id',{
-    method:'POST',
-    headers:{...supabaseHeaders(token),'Prefer':'resolution=merge-duplicates,return=minimal'},
-    body:JSON.stringify({
-      user_id:userId,
-      case_id:String(caseData.id),
-      case_title:String(caseData.title||'Angelegenheit'),
-      control_date:caseData.controlDate,
-      resolved_at:null,
-      notified_at:null,
-      updated_at:new Date().toISOString()
-    })
-  });
-  if(!response.ok) throw new Error('control_point_sync_failed');
+  if(!caseData?.id || !caseData?.controlDate || !userId) return false;
+
+  await supabaseAuthedFetch(
+    SUPABASE_URL+'/rest/v1/secretary_control_points?on_conflict=user_id,case_id',
+    {
+      method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({
+        user_id:userId,
+        case_id:String(caseData.id),
+        case_title:String(caseData.title||'Angelegenheit'),
+        control_date:caseData.controlDate,
+        resolved_at:null,
+        notified_at:null,
+        updated_at:new Date().toISOString()
+      })
+    }
+  );
   return true;
 }
 

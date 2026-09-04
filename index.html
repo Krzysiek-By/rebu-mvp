@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.40 TEST">
+<meta name="sekretarz-version" content="DE-v13.41 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -780,7 +780,7 @@ button{cursor:pointer}
   vertical-align:middle;
 }
 .ai-unread-title{font-weight:800 !important;}
-.ai-unread-text{font-weight:700 !important;}
+.ai-unread-text{font-weight:400 !important;}
 </style>
 </head>
 <body>
@@ -4396,6 +4396,14 @@ async function surfaceDueControlCases(){
   markControlNotificationShown(c);
 }
 
+function markAIResultRead(){
+  if(!currentCaseData || !currentCaseData.aiUnread) return;
+  currentCaseData.aiUnread=false;
+  currentCaseData.aiReadAt=new Date().toISOString();
+  currentCaseData=upsertStoredCase(currentCaseData);
+  renderAICenter(currentCaseData);
+}
+
 function renderAICenter(data){
   const situation=document.getElementById('aiSituationText');
   const situationTitle=document.getElementById('aiSituationTitle');
@@ -4423,6 +4431,22 @@ function renderAICenter(data){
     if(nextTitle) nextTitle.classList.toggle('ai-unread-title',aiUnread);
     if(situation) situation.classList.toggle('ai-unread-text',aiUnread);
     if(nextText) nextText.classList.toggle('ai-unread-text',aiUnread);
+    let readBtn=document.getElementById('aiMarkReadBtn');
+    if(aiUnread && nextText && nextText.parentElement){
+      if(!readBtn){
+        readBtn=document.createElement('button');
+        readBtn.id='aiMarkReadBtn';
+        readBtn.type='button';
+        readBtn.className='secondary-btn';
+        readBtn.style.marginTop='12px';
+        readBtn.textContent='Als gelesen markieren';
+        readBtn.onclick=markAIResultRead;
+        nextText.parentElement.appendChild(readBtn);
+      }
+      readBtn.classList.remove('hidden');
+    }else if(readBtn){
+      readBtn.classList.add('hidden');
+    }
 
     if(situation){
       situation.textContent=data?.aiAnalysis || ((data.status==='Warte auf Antwort')
@@ -5356,15 +5380,6 @@ function restoreCaseById(id){
   );
   if(currentCaseData) currentCaseData.history=Array.isArray(data.history) ? data.history : [];
   renderAICenter(currentCaseData);
-  if(currentCaseData?.careType==='ai' && currentCaseData?.aiUnread){
-    const openedCaseId=String(currentCaseData.id || '');
-    setTimeout(()=>{
-      if(!currentCaseData || String(currentCaseData.id || '')!==openedCaseId || !currentCaseData.aiUnread) return;
-      currentCaseData.aiUnread=false;
-      currentCaseData=upsertStoredCase(currentCaseData);
-      renderAICenter(currentCaseData);
-    },2500);
-  }
   return true;
 }
 

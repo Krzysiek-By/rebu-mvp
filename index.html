@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.38 TEST">
+<meta name="sekretarz-version" content="DE-v13.39 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1859,8 +1859,8 @@ button{cursor:pointer}
           <button class="more-item" type="button" onclick="sendSecretaryTestPush()">
             <span class="more-item-icon">✓</span>
             <span class="more-item-main">
-              <b>Test-Push senden</b>
-              <small id="secretaryTestPushStatus">Prüft den Push-Kanal vom Server bis zu diesem Gerät.</small>
+              <b>Server-Test-Push senden</b>
+              <small id="secretaryTestPushStatus">Sendet die Testnachricht wirklich über /api/test-push vom Server an dieses Gerät.</small>
             </span>
             <span class="more-badge">Test</span>
           </button>
@@ -4267,13 +4267,43 @@ async function enableSecretaryPush(){
 
 async function sendSecretaryTestPush(){
   const status=document.getElementById('secretaryTestPushStatus');
-  if(status) status.textContent='Test-Push wird gesendet …';
+  if(status) status.textContent='Server-Push wird gesendet …';
+
+  if(!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)){
+    if(status) status.textContent='Web Push wird auf diesem Gerät nicht unterstützt.';
+    return;
+  }
+
   try{
-    await testSystemNotification();
-    if(status) status.textContent='Test wurde ausgelöst. Prüfe jetzt die Mitteilung auf diesem Gerät.';
+    let permission=Notification.permission;
+    if(permission!=='granted') permission=await Notification.requestPermission();
+    if(permission!=='granted'){
+      if(status) status.textContent='Benachrichtigungen wurden nicht erlaubt.';
+      return;
+    }
+
+    const reg=await navigator.serviceWorker.ready;
+    let subscription=await reg.pushManager.getSubscription();
+    if(!subscription){
+      subscription=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(SEKRETARZ_VAPID_PUBLIC_KEY)
+      });
+    }
+
+    const response=await fetch('/api/test-push',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({subscription})
+    });
+    const result=await response.json().catch(()=>({}));
+
+    if(!response.ok) throw new Error(result.error || 'push_failed');
+
+    if(status) status.textContent='Server hat den Web Push erfolgreich angenommen. Die Nachricht sollte jetzt erscheinen.';
   }catch(e){
-    console.error('Test-Push:',e);
-    if(status) status.textContent='Test-Push konnte nicht ausgelöst werden.';
+    console.error('Server-Test-Push:',e);
+    if(status) status.textContent='Server-Push fehlgeschlagen: '+String(e?.message || e);
   }
 }
 

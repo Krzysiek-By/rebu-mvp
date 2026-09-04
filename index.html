@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.30 TEST">
+<meta name="sekretarz-version" content="DE-v13.31 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1256,6 +1256,7 @@ button{cursor:pointer}
           <h3>Was soll ich jetzt tun?</h3>
           <div class="ai-actions">
             <button class="btn primary" onclick="prepareNextStep()">Nächsten Schritt vorbereiten</button>
+            <div id="aiActionResult" class="success hidden" style="grid-column:1/-1;margin:0"></div>
             <button class="btn secondary" onclick="editCurrentCase()">Bearbeiten</button>
             <button class="btn secondary" onclick="goDashboard()">Zum Dashboard</button>
             <button class="btn secondary" onclick="markCaseDone()">Als erledigt markieren</button>
@@ -1867,7 +1868,7 @@ button{cursor:pointer}
     </div>
     <div class="contacts-card">
       <div class="contacts-head">
-        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.30</div></div>
+        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.31</div></div>
         <button id="addContactBtn" class="btn primary" onclick="newContact()">＋ Kontakt</button>
       </div>
       <div id="contactFormBox" class="contact-form hidden">
@@ -4113,8 +4114,8 @@ function renderAICenter(data){
         ? 'Diese Angelegenheit ist aktiv unter KI-Betreuung. Aktuell warten wir auf eine Antwort. Der Sekretär soll neue Informationen automatisch in den Verlauf einordnen und den nächsten Schritt vorbereiten.'
         : 'Diese Angelegenheit wird aktiv durch den Sekretär begleitet. Der aktuelle Stand wird laufend mit neuen Informationen ergänzt.';
     }
-    if(nextTitle) nextTitle.textContent=data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten';
-    if(nextText) nextText.textContent=data?.nextStep || 'Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.';
+    if(nextTitle) nextTitle.textContent=data?.preparedNextStep ? 'Vorbereiteter nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
+    if(nextText) nextText.textContent=data?.preparedNextStep || data?.nextStep || 'Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.';
     if(question) question.textContent='Gab es seit dem letzten Kontakt ein Telefonat, eine Nachricht oder eine andere wichtige Information?';
   }else{
     if(situation) situation.textContent='Dies ist eine einfache Erinnerung. Es ist keine laufende KI-Analyse erforderlich.';
@@ -4148,7 +4149,6 @@ function answerAIQuestion(hasInfo){
     result.textContent='Keine neuen Informationen. Du kannst jetzt den nächsten Schritt vorbereiten.';
     result.classList.remove('hidden');
   }
-  prepareNextStep();
 }
 
 function saveAIUserNote(){
@@ -4177,12 +4177,37 @@ function saveAIUserNote(){
 function prepareNextStep(){
   if(!currentCaseData) return;
   const box=document.getElementById('aiNextStepText');
+  const title=document.getElementById('aiNextStepTitle');
+  const result=document.getElementById('aiActionResult');
   if(!box) return;
 
-  if(currentCaseData.status==='Warte auf Antwort'){
-    box.textContent='Wenn keine neue Antwort eingeht, soll der Sekretär einen Follow-up-Termin setzen und eine passende Erinnerung oder Antwort vorbereiten.';
+  const haystack=[currentCaseData.title,currentCaseData.desc,currentCaseData.nextStep]
+    .filter(Boolean).join(' ').toLowerCase();
+  const contact=currentCaseData.contact || {};
+  const contactName=(contact.name || '').trim();
+  const hasEmail=!!String(contact.email || '').trim();
+  let step='';
+
+  if(/krankenkasse|erstatt|teilzahlung|nachzahl/.test(haystack)){
+    const target=contactName ? ' an '+contactName : '';
+    step='Eine E-Mail'+target+' vorbereiten: um eine schriftliche Begründung für die Teilzahlung bitten und die Prüfung sowie gegebenenfalls Nachzahlung des offenen Betrags verlangen.';
+  }else if(currentCaseData.status==='Warte auf Antwort'){
+    step='Einen Follow-up-Termin setzen und, falls bis dahin keine Antwort eingeht, eine kurze Erinnerung vorbereiten.';
+  }else if(contactName && hasEmail){
+    step='Eine E-Mail an '+contactName+' vorbereiten, den bisherigen Stand knapp zusammenfassen und um den nächsten konkreten Schritt bzw. eine Antwort bitten.';
+  }else if(contactName){
+    step='Die nächste Kontaktaufnahme mit '+contactName+' vorbereiten und festlegen, welche Information oder Entscheidung benötigt wird.';
   }else{
-    box.textContent='Der Sekretär prüft den aktuellen Stand und schlägt den nächsten konkreten Schritt vor.';
+    step='Den bisherigen Stand zusammenfassen und als nächsten Schritt die zuständige Kontaktstelle sowie die konkrete Anfrage festlegen.';
+  }
+
+  currentCaseData.preparedNextStep=step;
+  currentCaseData=upsertStoredCase(currentCaseData);
+  if(title) title.textContent='Vorbereiteter nächster Schritt';
+  box.textContent=step;
+  if(result){
+    result.textContent='Nächster Schritt wurde vorbereitet.';
+    result.classList.remove('hidden');
   }
 }
 
@@ -4736,7 +4761,8 @@ function saveCaseForm(){
     sourceSettings,
     contact,
     dateDisplay,
-    history:Array.isArray(currentCaseData?.history) ? currentCaseData.history : []
+    history:Array.isArray(currentCaseData?.history) ? currentCaseData.history : [],
+    preparedNextStep:currentCaseData?.preparedNextStep || ''
   };
 
   const isEditing=!!(editingCaseOriginalTitle || editingCaseId);

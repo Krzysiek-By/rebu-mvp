@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.39 TEST">
+<meta name="sekretarz-version" content="DE-v13.40 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -765,6 +765,22 @@ button{cursor:pointer}
 .contacts-empty{padding:18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;margin-top:14px}
 @media(max-width:620px){.contact-form-grid{grid-template-columns:1fr}.contact-form-grid .wide{grid-column:auto}.contacts-head{display:block}.contacts-head .btn{margin-top:12px;width:100%}}
 
+
+.ai-new-badge{
+  display:inline-flex;
+  align-items:center;
+  margin-left:8px;
+  padding:2px 7px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.35;
+  background:#111827;
+  color:#fff;
+  vertical-align:middle;
+}
+.ai-unread-title{font-weight:800 !important;}
+.ai-unread-text{font-weight:700 !important;}
 </style>
 </head>
 <body>
@@ -1205,13 +1221,13 @@ button{cursor:pointer}
       <div id="aiCaseCenter" class="ai-center" style="margin-top:16px">
         <div class="ai-block purple">
           <div class="ai-kicker">Sekretär-Analyse</div>
-          <h3>Was ist gerade los?</h3>
+          <h3 id="aiSituationTitle">Was ist gerade los?<span id="aiSituationNewBadge" class="ai-new-badge hidden">Neu</span></h3>
           <p id="aiSituationText">Noch keine Analyse vorhanden.</p>
         </div>
 
         <div class="ai-block blue">
           <div class="ai-kicker">Nächster sinnvoller Schritt</div>
-          <h3 id="aiNextStepTitle">Nächsten Schritt vorbereiten</h3>
+          <h3 id="aiNextStepTitle">Nächsten Schritt vorbereiten<span id="aiNextStepNewBadge" class="ai-new-badge hidden">Neu</span></h3>
           <p id="aiNextStepText">Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.</p>
         </div>
 
@@ -4382,8 +4398,11 @@ async function surfaceDueControlCases(){
 
 function renderAICenter(data){
   const situation=document.getElementById('aiSituationText');
+  const situationTitle=document.getElementById('aiSituationTitle');
+  const situationNewBadge=document.getElementById('aiSituationNewBadge');
   const nextText=document.getElementById('aiNextStepText');
   const nextTitle=document.getElementById('aiNextStepTitle');
+  const nextNewBadge=document.getElementById('aiNextStepNewBadge');
   const question=document.getElementById('aiQuestionText');
   const questionTitle=document.getElementById('aiQuestionTitle');
   const defaultRow=document.getElementById('aiDefaultAnswerRow');
@@ -4397,13 +4416,25 @@ function renderAICenter(data){
   }
 
   if(data?.careType==='ai'){
+    const aiUnread=!!data?.aiUnread;
+    if(situationNewBadge) situationNewBadge.classList.toggle('hidden',!aiUnread);
+    if(nextNewBadge) nextNewBadge.classList.toggle('hidden',!aiUnread);
+    if(situationTitle) situationTitle.classList.toggle('ai-unread-title',aiUnread);
+    if(nextTitle) nextTitle.classList.toggle('ai-unread-title',aiUnread);
+    if(situation) situation.classList.toggle('ai-unread-text',aiUnread);
+    if(nextText) nextText.classList.toggle('ai-unread-text',aiUnread);
+
     if(situation){
       situation.textContent=data?.aiAnalysis || ((data.status==='Warte auf Antwort')
         ? 'Diese Angelegenheit ist aktiv unter KI-Betreuung. Aktuell warten wir auf eine Antwort. Der Sekretär soll neue Informationen automatisch in den Verlauf einordnen und den nächsten Schritt vorbereiten.'
         : 'Diese Angelegenheit wird aktiv durch den Sekretär begleitet. Der aktuelle Stand wird laufend mit neuen Informationen ergänzt.');
     }
 
-    if(nextTitle) nextTitle.textContent=data?.preparedNextStep ? 'Vorbereiteter nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
+    if(nextTitle){
+      const titleText=data?.preparedNextStep ? 'Vorbereiteter nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
+      if(nextTitle.firstChild && nextTitle.firstChild.nodeType===Node.TEXT_NODE) nextTitle.firstChild.nodeValue=titleText;
+      else nextTitle.insertBefore(document.createTextNode(titleText),nextTitle.firstChild);
+    }
 
     let nextValue=data?.preparedNextStep || data?.nextStep || 'Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.';
     if(data?.controlDate && String(data?.aiActionType || '')==='wait' && !isControlDateOverdue(data)){
@@ -4612,6 +4643,8 @@ async function applyFreshAIAnalysis(showResult=true){
     currentCaseData.aiActionType=String(ai.actionType || 'other').trim();
     currentCaseData.aiReason=String(ai.reason || '').trim();
     currentCaseData.aiUpdatedAt=new Date().toISOString();
+    currentCaseData.aiUnread=true;
+    currentCaseData.aiUnreadAt=currentCaseData.aiUpdatedAt;
     currentCaseData=upsertStoredCase(currentCaseData);
     renderAICenter(currentCaseData);
     if(result){
@@ -5236,6 +5269,8 @@ function saveCaseForm(){
     history:Array.isArray(currentCaseData?.history) ? currentCaseData.history : [],
     preparedNextStep:currentCaseData?.preparedNextStep || '',
     aiAnalysis:currentCaseData?.aiAnalysis || '',
+    aiUnread:!!currentCaseData?.aiUnread,
+    aiUnreadAt:currentCaseData?.aiUnreadAt || '',
     aiActionType:currentCaseData?.aiActionType || '',
     aiReason:currentCaseData?.aiReason || '',
     aiUpdatedAt:currentCaseData?.aiUpdatedAt || '',
@@ -5321,6 +5356,15 @@ function restoreCaseById(id){
   );
   if(currentCaseData) currentCaseData.history=Array.isArray(data.history) ? data.history : [];
   renderAICenter(currentCaseData);
+  if(currentCaseData?.careType==='ai' && currentCaseData?.aiUnread){
+    const openedCaseId=String(currentCaseData.id || '');
+    setTimeout(()=>{
+      if(!currentCaseData || String(currentCaseData.id || '')!==openedCaseId || !currentCaseData.aiUnread) return;
+      currentCaseData.aiUnread=false;
+      currentCaseData=upsertStoredCase(currentCaseData);
+      renderAICenter(currentCaseData);
+    },2500);
+  }
   return true;
 }
 

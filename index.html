@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.37 TEST">
+<meta name="sekretarz-version" content="DE-v13.38 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1854,6 +1854,15 @@ button{cursor:pointer}
               <small id="secretaryPushStatus">Für Hinweise auch außerhalb des aktuellen Bildschirms.</small>
             </span>
             <span id="secretaryPushBadge" class="more-badge">Prüfen</span>
+          </button>
+
+          <button class="more-item" type="button" onclick="sendSecretaryTestPush()">
+            <span class="more-item-icon">✓</span>
+            <span class="more-item-main">
+              <b>Test-Push senden</b>
+              <small id="secretaryTestPushStatus">Prüft den Push-Kanal vom Server bis zu diesem Gerät.</small>
+            </span>
+            <span class="more-badge">Test</span>
           </button>
         </div>
       </div>
@@ -4252,6 +4261,19 @@ async function enableSecretaryPush(){
     }
   }catch(e){
     renderSecretaryNotificationSettings();
+  }
+}
+
+
+async function sendSecretaryTestPush(){
+  const status=document.getElementById('secretaryTestPushStatus');
+  if(status) status.textContent='Test-Push wird gesendet …';
+  try{
+    await testSystemNotification();
+    if(status) status.textContent='Test wurde ausgelöst. Prüfe jetzt die Mitteilung auf diesem Gerät.';
+  }catch(e){
+    console.error('Test-Push:',e);
+    if(status) status.textContent='Test-Push konnte nicht ausgelöst werden.';
   }
 }
 

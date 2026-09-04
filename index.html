@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.28 TEST">
+<meta name="sekretarz-version" content="DE-v13.29 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1866,7 +1866,7 @@ button{cursor:pointer}
     </div>
     <div class="contacts-card">
       <div class="contacts-head">
-        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.28</div></div>
+        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.29</div></div>
         <button id="addContactBtn" class="btn primary" onclick="newContact()">＋ Kontakt</button>
       </div>
       <div id="contactFormBox" class="contact-form hidden">
@@ -3422,15 +3422,25 @@ function contactFingerprint(c){return [c.name,c.street,c.city,c.phone,c.mobile,c
 function sameContactIdentity(a,b){
   const an=normalizeContactValue(a?.name), bn=normalizeContactValue(b?.name);
   if(!an || an!==bn) return false;
+
   const ae=normalizeContactValue(a?.email), be=normalizeContactValue(b?.email);
-  if(ae && be && ae===be) return true;
   const as=normalizeContactValue(a?.street), bs=normalizeContactValue(b?.street);
   const ac=normalizeContactValue(a?.city), bc=normalizeContactValue(b?.city);
-  if(as && bs && ac && bc && as===bs && ac===bc) return true;
   const ap=normalizePhoneValue(a?.phone), bp=normalizePhoneValue(b?.phone);
-  if(ap && bp && ap===bp) return true;
   const am=normalizePhoneValue(a?.mobile), bm=normalizePhoneValue(b?.mobile);
+
+  if(ae && be && ae===be) return true;
+  if(as && bs && ac && bc && as===bs && ac===bc) return true;
+  if(ap && bp && ap===bp) return true;
   if(am && bm && am===bm) return true;
+
+  const aHasIdentity=!!(ae || (as&&ac) || ap || am);
+  const bHasIdentity=!!(be || (bs&&bc) || bp || bm);
+
+  // Ten sam zapis nazwy + jeden z wpisów jest jeszcze „pusty” kontaktowo:
+  // traktujemy jako ten sam kontakt i uzupełniamy go, zamiast tworzyć duplikat.
+  if(!aHasIdentity || !bHasIdentity) return true;
+
   return false;
 }
 function mergeContactData(base,incoming){

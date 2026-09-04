@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.41 TEST">
+<meta name="sekretarz-version" content="DE-v13.42 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -2103,6 +2103,52 @@ function clearSupabaseSession(){
     localStorage.removeItem(SUPABASE_USER_ID_KEY);
     localStorage.removeItem('sekretarzLoggedIn');
   }catch(e){}
+}
+
+function getSupabaseSession(){
+  try{return JSON.parse(localStorage.getItem(SUPABASE_SESSION_KEY)||'null');}catch(e){return null;}
+}
+
+async function syncPushSubscriptionToSupabase(subscription){
+  const session=getSupabaseSession();
+  const userId=session?.user?.id || localStorage.getItem(SUPABASE_USER_ID_KEY) || '';
+  const token=session?.access_token || '';
+  if(!subscription || !userId || !token) return false;
+  const payload=subscription.toJSON ? subscription.toJSON() : subscription;
+  const response=await fetch(SUPABASE_URL+'/rest/v1/secretary_push_subscriptions?on_conflict=endpoint',{
+    method:'POST',
+    headers:{...supabaseHeaders(token),'Prefer':'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify({
+      user_id:userId,
+      endpoint:payload.endpoint,
+      subscription:payload,
+      updated_at:new Date().toISOString()
+    })
+  });
+  if(!response.ok) throw new Error('push_subscription_sync_failed');
+  return true;
+}
+
+async function syncControlPointToSupabase(caseData){
+  const session=getSupabaseSession();
+  const userId=session?.user?.id || localStorage.getItem(SUPABASE_USER_ID_KEY) || '';
+  const token=session?.access_token || '';
+  if(!caseData?.id || !caseData?.controlDate || !userId || !token) return false;
+  const response=await fetch(SUPABASE_URL+'/rest/v1/secretary_control_points?on_conflict=user_id,case_id',{
+    method:'POST',
+    headers:{...supabaseHeaders(token),'Prefer':'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify({
+      user_id:userId,
+      case_id:String(caseData.id),
+      case_title:String(caseData.title||'Angelegenheit'),
+      control_date:caseData.controlDate,
+      resolved_at:null,
+      notified_at:null,
+      updated_at:new Date().toISOString()
+    })
+  });
+  if(!response.ok) throw new Error('control_point_sync_failed');
+  return true;
 }
 
 function cacheAccountFromSupabaseUser(user, fallback={}){
@@ -4273,6 +4319,15 @@ async function enableSecretaryPush(){
     const permission=await Notification.requestPermission();
     renderSecretaryNotificationSettings();
     if(permission==='granted'){
+      const reg=await navigator.serviceWorker.ready;
+      let subscription=await reg.pushManager.getSubscription();
+      if(!subscription){
+        subscription=await reg.pushManager.subscribe({
+          userVisibleOnly:true,
+          applicationServerKey:urlBase64ToUint8Array(SEKRETARZ_VAPID_PUBLIC_KEY)
+        });
+      }
+      await syncPushSubscriptionToSupabase(subscription);
       await secretaryNotify('Sekretarz','Push-Mitteilungen sind jetzt aktiviert.',null);
     }
   }catch(e){
@@ -4306,6 +4361,8 @@ async function sendSecretaryTestPush(){
         applicationServerKey:urlBase64ToUint8Array(SEKRETARZ_VAPID_PUBLIC_KEY)
       });
     }
+
+    await syncPushSubscriptionToSupabase(subscription);
 
     const response=await fetch('/api/test-push',{
       method:'POST',
@@ -4582,7 +4639,7 @@ function simulateControlDateOverdue(){
   );
 }
 
-function saveAIControlDate(){
+async function saveAIControlDate(){
   const input=document.getElementById('aiControlDateInput');
   const result=document.getElementById('aiQuestionResult');
   const value=String(input?.value || '').trim();
@@ -4616,6 +4673,15 @@ function saveAIControlDate(){
     currentCaseData.status='Warte auf Antwort';
   }
   currentCaseData=upsertStoredCase(currentCaseData);
+  try{
+    await syncControlPointToSupabase(currentCaseData);
+  }catch(e){
+    console.error('Kontrolltermin-Sync:',e);
+    if(result){
+      result.textContent='Kontrolltermin lokal gespeichert, aber die Server-Synchronisierung ist fehlgeschlagen.';
+      result.classList.remove('hidden');
+    }
+  }
   renderAICenter(currentCaseData);
   renderDashboardCases();
   renderToday();

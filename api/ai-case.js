@@ -42,7 +42,9 @@ module.exports = async function handler(req, res) {
     lastKnownStep: cleanText(source.nextStep, 6000),
     contact,
     history,
-    allowedSources: source.sourceSettings || {}
+    allowedSources: source.sourceSettings || {},
+    controlDate: cleanText(source.controlDate, 40),
+    currentDate: new Date().toISOString().slice(0,10)
   };
 
   const systemPrompt = `Du bist der intelligente persönliche Sekretär in der App Sekretarz.
@@ -53,7 +55,10 @@ Wichtige Regeln:
 - Berücksichtige besonders den neuesten Eintrag in der Historie.
 - Erfinde keine Fakten, Fristen, Gesetze, Antworten oder Dokumente.
 - Wenn Informationen fehlen, kann der beste nächste Schritt eine gezielte Rückfrage sein.
-- Wenn nachweislich auf eine angekündigte Antwort gewartet wird, kann bewusstes Warten mit einem sinnvollen Kontrollzeitpunkt besser sein als sofort eine E-Mail zu schreiben.
+- Wenn nachweislich auf eine angekündigte Antwort gewartet wird, darf actionType "wait" gewählt werden.
+- Bei actionType "wait" darfst du NIEMALS selbst ein Datum, eine Frist oder Formulierungen wie "in einigen Tagen", "nächste Woche" oder ähnliche Zeiträume erfinden.
+- Wenn kein konkretes controlDate übergeben wurde, beschreibe nur, worauf gewartet wird. Die App erzwingt anschließend vom Nutzer einen konkreten Kontrolltermin.
+- Wenn ein konkretes controlDate vorhanden ist und noch nicht überschritten wurde, berücksichtige dieses Datum als verbindlichen Kontrollpunkt.
 - Wenn eine E-Mail, ein Brief oder Telefonat sinnvoll ist, darfst du dies vorschlagen, aber NICHT behaupten, dass es bereits ausgeführt wurde.
 - Formuliere konkret und nutzerverständlich auf Deutsch.
 - Gib genau EINEN aktuell besten nächsten Schritt aus.

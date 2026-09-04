@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.27 TEST">
+<meta name="sekretarz-version" content="DE-v13.28 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1866,7 +1866,7 @@ button{cursor:pointer}
     </div>
     <div class="contacts-card">
       <div class="contacts-head">
-        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.27</div></div>
+        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.28</div></div>
         <button id="addContactBtn" class="btn primary" onclick="newContact()">＋ Kontakt</button>
       </div>
       <div id="contactFormBox" class="contact-form hidden">
@@ -3536,7 +3536,7 @@ function editContact(id){
 }
 function deleteContact(id){const c=getStoredContacts().find(x=>x.id===id);if(!c)return;if(!confirm('Kontakt „'+c.name+'“ wirklich löschen?'))return;saveStoredContacts(getStoredContacts().filter(x=>x.id!==id));renderContacts();}
 function renderContacts(){
-  const box=document.getElementById('contactsList');if(!box)return;const items=getStoredContacts();if(!items.length){box.innerHTML='<div class="contacts-empty">Noch keine Kontakte gespeichert.</div>';return;}
+  const box=document.getElementById('contactsList');if(!box)return;const items=getStoredContacts().slice().sort((a,b)=>String(a?.name||'').localeCompare(String(b?.name||''),'de',{sensitivity:'base',numeric:true}));if(!items.length){box.innerHTML='<div class="contacts-empty">Noch keine Kontakte gespeichert.</div>';return;}
   box.innerHTML=items.map(c=>{const addr=[c.street,c.city].filter(Boolean).join(', ');const rows=[];if(c.type)rows.push(escapeHtml(c.type));if(addr)rows.push(escapeHtml(addr));if(c.phone)rows.push('Telefon: '+escapeHtml(c.phone));if(c.mobile)rows.push('Mobil: '+escapeHtml(c.mobile));if(c.email)rows.push('E-Mail: '+escapeHtml(c.email));if(c.website)rows.push('Webseite: '+escapeHtml(c.website));if(c.note)rows.push('Notiz: '+escapeHtml(c.note));return '<div class="contact-entry"><div class="contact-entry-top"><div><h3>'+escapeHtml(c.name)+'</h3><p>'+rows.join('<br>')+'</p></div></div><div class="contact-actions"><button onclick="editContact(\''+c.id+'\')">Bearbeiten</button><button class="danger" onclick="deleteContact(\''+c.id+'\')">Löschen</button></div></div>';}).join('');
 }
 

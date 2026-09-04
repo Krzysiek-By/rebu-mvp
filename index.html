@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.29 TEST">
+<meta name="sekretarz-version" content="DE-v13.30 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1226,6 +1226,7 @@ button{cursor:pointer}
             </div>
             <textarea id="aiUserNote" class="hidden" rows="3" placeholder="Fasse kurz zusammen, was passiert ist."></textarea>
             <button id="aiSaveNoteBtn" class="btn primary hidden" onclick="saveAIUserNote()">Zur Historie hinzufügen</button>
+            <div id="aiQuestionResult" class="success hidden" style="margin:0"></div>
           </div>
         </div>
 
@@ -1866,7 +1867,7 @@ button{cursor:pointer}
     </div>
     <div class="contacts-card">
       <div class="contacts-head">
-        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.29</div></div>
+        <div><h1>Kontakte</h1><p>Dein Adressbuch für Firmen, Praxen, Behörden und Personen.</p><div style="margin-top:6px;font-size:12px;font-weight:800;color:#6b7280">TEST v13.30</div></div>
         <button id="addContactBtn" class="btn primary" onclick="newContact()">＋ Kontakt</button>
       </div>
       <div id="contactFormBox" class="contact-form hidden">
@@ -4129,10 +4130,25 @@ function renderAICenter(data){
 function answerAIQuestion(hasInfo){
   const note=document.getElementById('aiUserNote');
   const btn=document.getElementById('aiSaveNoteBtn');
+  const result=document.getElementById('aiQuestionResult');
   if(!note || !btn) return;
-  note.classList.toggle('hidden',!hasInfo);
-  btn.classList.toggle('hidden',!hasInfo);
-  if(hasInfo) note.focus();
+
+  if(hasInfo){
+    note.classList.remove('hidden');
+    btn.classList.remove('hidden');
+    if(result){ result.textContent=''; result.classList.add('hidden'); }
+    note.focus();
+    return;
+  }
+
+  note.value='';
+  note.classList.add('hidden');
+  btn.classList.add('hidden');
+  if(result){
+    result.textContent='Keine neuen Informationen. Du kannst jetzt den nächsten Schritt vorbereiten.';
+    result.classList.remove('hidden');
+  }
+  prepareNextStep();
 }
 
 function saveAIUserNote(){

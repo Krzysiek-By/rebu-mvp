@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.35 TEST">
+<meta name="sekretarz-version" content="DE-v13.36 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1221,8 +1221,8 @@ button{cursor:pointer}
           <div class="ai-question-box">
             <p id="aiQuestionText">Gab es seit dem letzten Kontakt ein Telefonat oder eine andere wichtige Information?</p>
             <div id="aiDefaultAnswerRow" class="ai-answer-row">
-              <button class="btn secondary" onclick="answerAIQuestion(false)">Nein</button>
-              <button class="btn primary" onclick="answerAIQuestion(true)">Ja, ergänzen</button>
+              <button type="button" class="btn secondary" onclick="answerAIQuestion(false); return false;">Nein</button>
+              <button type="button" class="btn primary" onclick="answerAIQuestion(true); return false;">Ja, ergänzen</button>
             </div>
 
             <div id="aiControlDateBox" class="hidden" style="display:grid;gap:9px">
@@ -1232,7 +1232,7 @@ button{cursor:pointer}
               <button class="btn primary" onclick="saveAIControlDate()">Kontrolltermin speichern</button>
             </div>
 
-            <button id="aiTestOverdueBtn" class="btn secondary hidden" onclick="simulateControlDateOverdue()" style="margin-top:8px">
+            <button type="button" id="aiTestOverdueBtn" class="btn secondary hidden" onclick="simulateControlDateOverdue(); return false;" style="margin-top:8px">
               TEST: Kontrolltermin überschreiten
             </button>
 
@@ -4277,11 +4277,11 @@ async function answerAIQuestion(hasInfo){
   const note=document.getElementById('aiUserNote');
   const btn=document.getElementById('aiSaveNoteBtn');
   const result=document.getElementById('aiQuestionResult');
-  if(!note || !btn) return;
 
   const overdue=isControlDateOverdue(currentCaseData);
 
   if(hasInfo){
+    if(!note || !btn) return;
     note.classList.remove('hidden');
     btn.classList.remove('hidden');
     note.placeholder=overdue
@@ -4292,9 +4292,11 @@ async function answerAIQuestion(hasInfo){
     return;
   }
 
-  note.value='';
-  note.classList.add('hidden');
-  btn.classList.add('hidden');
+  if(note){
+    note.value='';
+    note.classList.add('hidden');
+  }
+  if(btn) btn.classList.add('hidden');
 
   if(overdue && currentCaseData){
     const history=getCaseHistory(currentCaseData);

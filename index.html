@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.34 TEST">
+<meta name="sekretarz-version" content="DE-v13.35 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1231,6 +1231,10 @@ button{cursor:pointer}
               <div class="helper">Ohne konkretes Datum wird ein Warte-Schritt nicht abgeschlossen.</div>
               <button class="btn primary" onclick="saveAIControlDate()">Kontrolltermin speichern</button>
             </div>
+
+            <button id="aiTestOverdueBtn" class="btn secondary hidden" onclick="simulateControlDateOverdue()" style="margin-top:8px">
+              TEST: Kontrolltermin überschreiten
+            </button>
 
             <textarea id="aiUserNote" class="hidden" rows="3" placeholder="Fasse kurz zusammen, was passiert ist."></textarea>
             <button id="aiSaveNoteBtn" class="btn primary hidden" onclick="saveAIUserNote()">Zur Historie hinzufügen</button>
@@ -4143,6 +4147,7 @@ function todayLocalISO(){
 }
 
 function isControlDateOverdue(data){
+  if(data?.testControlOverdue===true) return true;
   const date=String(data?.controlDate || '');
   return !!date && todayLocalISO()>date;
 }
@@ -4208,6 +4213,12 @@ function renderAICenter(data){
   const defaultRow=document.getElementById('aiDefaultAnswerRow');
   const controlBox=document.getElementById('aiControlDateBox');
   const controlInput=document.getElementById('aiControlDateInput');
+  const testOverdueBtn=document.getElementById('aiTestOverdueBtn');
+
+  if(testOverdueBtn){
+    const canTest=data?.careType==='ai' && !!data?.controlDate && String(data?.aiActionType || '')==='wait' && !isControlDateOverdue(data);
+    testOverdueBtn.classList.toggle('hidden',!canTest);
+  }
 
   if(data?.careType==='ai'){
     if(situation){
@@ -4295,6 +4306,7 @@ async function answerAIQuestion(hasInfo){
     currentCaseData.history=history;
     currentCaseData.controlDate='';
     currentCaseData.controlDateSetAt='';
+    currentCaseData.testControlOverdue=false;
     currentCaseData.status='Zu erledigen';
     currentCaseData=upsertStoredCase(currentCaseData);
 
@@ -4308,6 +4320,21 @@ async function answerAIQuestion(hasInfo){
 
   if(result){
     result.textContent='Keine neuen Informationen. Du kannst jetzt den nächsten Schritt vorbereiten.';
+    result.classList.remove('hidden');
+  }
+}
+
+function simulateControlDateOverdue(){
+  if(!currentCaseData || !currentCaseData.controlDate) return;
+  currentCaseData.testControlOverdue=true;
+  currentCaseData=upsertStoredCase(currentCaseData);
+  renderAICenter(currentCaseData);
+  renderToday();
+  renderSecretaryStateCounts();
+
+  const result=document.getElementById('aiQuestionResult');
+  if(result){
+    result.textContent='TEST aktiv: Der Kontrolltermin wird jetzt als überschritten behandelt. Das echte Datum bleibt gespeichert.';
     result.classList.remove('hidden');
   }
 }
@@ -4340,6 +4367,7 @@ function saveAIControlDate(){
 
   currentCaseData.controlDate=value;
   currentCaseData.controlDateSetAt=new Date().toISOString();
+  currentCaseData.testControlOverdue=false;
   currentCaseData.history=history;
   if(String(currentCaseData.aiActionType || '')==='wait'){
     currentCaseData.status='Warte auf Antwort';
@@ -4421,6 +4449,7 @@ async function saveAIUserNote(){
   if(isControlDateOverdue(currentCaseData)){
     currentCaseData.controlDate='';
     currentCaseData.controlDateSetAt='';
+    currentCaseData.testControlOverdue=false;
     currentCaseData.status='Zu erledigen';
   }
   const saved=upsertStoredCase(currentCaseData);
@@ -5003,7 +5032,8 @@ function saveCaseForm(){
     aiReason:currentCaseData?.aiReason || '',
     aiUpdatedAt:currentCaseData?.aiUpdatedAt || '',
     controlDate:currentCaseData?.controlDate || '',
-    controlDateSetAt:currentCaseData?.controlDateSetAt || ''
+    controlDateSetAt:currentCaseData?.controlDateSetAt || '',
+    testControlOverdue:currentCaseData?.testControlOverdue === true
   };
 
   const isEditing=!!(editingCaseOriginalTitle || editingCaseId);

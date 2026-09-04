@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.32 TEST">
+<meta name="sekretarz-version" content="DE-v13.33 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1217,13 +1217,21 @@ button{cursor:pointer}
 
         <div class="ai-block yellow">
           <div class="ai-kicker">Frage an dich</div>
-          <h3>Fehlen Informationen?</h3>
+          <h3 id="aiQuestionTitle">Fehlen Informationen?</h3>
           <div class="ai-question-box">
             <p id="aiQuestionText">Gab es seit dem letzten Kontakt ein Telefonat oder eine andere wichtige Information?</p>
-            <div class="ai-answer-row">
+            <div id="aiDefaultAnswerRow" class="ai-answer-row">
               <button class="btn secondary" onclick="answerAIQuestion(false)">Nein</button>
               <button class="btn primary" onclick="answerAIQuestion(true)">Ja, ergänzen</button>
             </div>
+
+            <div id="aiControlDateBox" class="hidden" style="display:grid;gap:9px">
+              <label for="aiControlDateInput" style="font-weight:800">Konkreter Kontrolltermin</label>
+              <input id="aiControlDateInput" type="date" style="width:100%;padding:13px;border:1px solid #d9dfeb;border-radius:12px;background:#fff">
+              <div class="helper">Ohne konkretes Datum wird ein Warte-Schritt nicht abgeschlossen.</div>
+              <button class="btn primary" onclick="saveAIControlDate()">Kontrolltermin speichern</button>
+            </div>
+
             <textarea id="aiUserNote" class="hidden" rows="3" placeholder="Fasse kurz zusammen, was passiert ist."></textarea>
             <button id="aiSaveNoteBtn" class="btn primary hidden" onclick="saveAIUserNote()">Zur Historie hinzufügen</button>
             <div id="aiQuestionResult" class="success hidden" style="margin:0"></div>
@@ -2926,6 +2934,7 @@ function getSecretaryStateCounts(){
   cases.forEach(c=>{
     const status=(c.status||'').toLowerCase();
     if(status.includes('erledigt')) done++;
+    else if(isControlDateOverdue(c)) need++;
     else if(status.includes('dringend') || status.includes('nicht erledigt')) alert++;
     else if(status.includes('warte') || c.careType==='ai') care++;
     else need++;
@@ -3207,6 +3216,7 @@ let todayFilter=null;
 function getTodayCaseState(c){
   const status=String(c.status||'').toLowerCase();
   if(status.includes('erledigt')) return 'done';
+  if(isControlDateOverdue(c)) return 'need';
   if(status.includes('dringend') || status.includes('nicht erledigt')) return 'alert';
   if(status.includes('warte') || c.careType==='ai') return 'care';
   return 'need';
@@ -3295,11 +3305,26 @@ function renderToday(){
       items.push({icon:'✓',title:'Keine Einträge',text:emptyText[todayFilter]});
     }
   }else{
-    const urgent=cases.find(c=>c.status==='Dringend' || c.status==='Nicht erledigt');
-    if(urgent) items.push({icon:'!',title:urgent.title,text:'Diese Angelegenheit braucht deine Aufmerksamkeit.'});
+    const overdueControl=cases.find(c=>isControlDateOverdue(c));
+    if(overdueControl) items.push({
+      icon:'?',
+      title:overdueControl.title,
+      text:'Kontrolltermin überschritten. Ist die erwartete Antwort inzwischen eingegangen?',
+      caseId:overdueControl.id || ''
+    });
 
-    const waiting=cases.find(c=>c.status==='Warte auf Antwort');
-    if(waiting) items.push({icon:'↻',title:waiting.title,text:'Noch keine Antwort. Dein Sekretär behält die Angelegenheit im Blick.'});
+    const urgent=cases.find(c=>c.status==='Dringend' || c.status==='Nicht erledigt');
+    if(urgent) items.push({icon:'!',title:urgent.title,text:'Diese Angelegenheit braucht deine Aufmerksamkeit.',caseId:urgent.id || ''});
+
+    const waiting=cases.find(c=>c.status==='Warte auf Antwort' && !isControlDateOverdue(c));
+    if(waiting) items.push({
+      icon:'↻',
+      title:waiting.title,
+      text:waiting.controlDate
+        ? 'Warte auf Antwort · Kontrolltermin '+formatControlDate(waiting.controlDate)+'.'
+        : 'Noch keine Antwort. Dein Sekretär behält die Angelegenheit im Blick.',
+      caseId:waiting.id || ''
+    });
 
     const reminder=cases.find(c=>c.careType==='reminder' && c.status!=='Erledigt');
     if(reminder) items.push({icon:'◷',title:reminder.title,text:reminder.dateDisplay || 'Erinnerung ist aktiv.'});
@@ -3346,7 +3371,7 @@ function renderToday(){
   }
 
   list.innerHTML=items.slice(0,4).map(item=>{
-    const isClickableCase=((todayFilter==='done' || todayFilter==='need') && item.caseId);
+    const isClickableCase=!!item.caseId;
     const attrs=isClickableCase
       ? ' role="button" tabindex="0" onclick="openTodayCase(\''+escapeHtml(item.caseId)+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openTodayCase(\''+escapeHtml(item.caseId)+'\');}" style="cursor:pointer"'
       : '';
@@ -4102,11 +4127,39 @@ function renderReminderCenter(data){
   }
 }
 
+function formatControlDate(value){
+  if(!value) return '';
+  const parts=String(value).split('-');
+  if(parts.length!==3) return String(value);
+  return parts[2]+'.'+parts[1]+'.'+parts[0];
+}
+
+function todayLocalISO(){
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=String(now.getMonth()+1).padStart(2,'0');
+  const d=String(now.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+d;
+}
+
+function isControlDateOverdue(data){
+  const date=String(data?.controlDate || '');
+  return !!date && todayLocalISO()>date;
+}
+
+function needsControlDate(data){
+  return data?.careType==='ai' && String(data?.aiActionType || '')==='wait' && !String(data?.controlDate || '');
+}
+
 function renderAICenter(data){
   const situation=document.getElementById('aiSituationText');
   const nextText=document.getElementById('aiNextStepText');
   const nextTitle=document.getElementById('aiNextStepTitle');
   const question=document.getElementById('aiQuestionText');
+  const questionTitle=document.getElementById('aiQuestionTitle');
+  const defaultRow=document.getElementById('aiDefaultAnswerRow');
+  const controlBox=document.getElementById('aiControlDateBox');
+  const controlInput=document.getElementById('aiControlDateInput');
 
   if(data?.careType==='ai'){
     if(situation){
@@ -4114,29 +4167,67 @@ function renderAICenter(data){
         ? 'Diese Angelegenheit ist aktiv unter KI-Betreuung. Aktuell warten wir auf eine Antwort. Der Sekretär soll neue Informationen automatisch in den Verlauf einordnen und den nächsten Schritt vorbereiten.'
         : 'Diese Angelegenheit wird aktiv durch den Sekretär begleitet. Der aktuelle Stand wird laufend mit neuen Informationen ergänzt.');
     }
+
     if(nextTitle) nextTitle.textContent=data?.preparedNextStep ? 'Vorbereiteter nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
-    if(nextText) nextText.textContent=data?.preparedNextStep || data?.nextStep || 'Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.';
-    if(question) question.textContent='Gab es seit dem letzten Kontakt ein Telefonat, eine Nachricht oder eine andere wichtige Information?';
+
+    let nextValue=data?.preparedNextStep || data?.nextStep || 'Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.';
+    if(data?.controlDate && String(data?.aiActionType || '')==='wait' && !isControlDateOverdue(data)){
+      nextValue += ' Kontrolltermin: '+formatControlDate(data.controlDate)+'.';
+    }
+    if(nextText) nextText.textContent=nextValue;
+
+    if(isControlDateOverdue(data)){
+      if(questionTitle) questionTitle.textContent='Kontrolltermin erreicht';
+      if(question) question.textContent='Ist die erwartete Antwort inzwischen eingegangen?';
+      if(defaultRow) defaultRow.classList.remove('hidden');
+      if(controlBox) controlBox.classList.add('hidden');
+    }else if(needsControlDate(data)){
+      if(questionTitle) questionTitle.textContent='Kontrolltermin festlegen';
+      if(question) question.textContent='Bis wann möchtest du spätestens auf die angekündigte Antwort warten?';
+      if(defaultRow) defaultRow.classList.add('hidden');
+      if(controlBox) controlBox.classList.remove('hidden');
+      if(controlInput){
+        controlInput.min=todayLocalISO();
+        if(!controlInput.value) controlInput.value='';
+      }
+    }else{
+      if(questionTitle) questionTitle.textContent=data?.controlDate ? 'Kontrolltermin gespeichert' : 'Fehlen Informationen?';
+      if(question){
+        question.textContent=data?.controlDate
+          ? 'Ich behalte den Kontrolltermin '+formatControlDate(data.controlDate)+' im Blick. Gab es vorher schon eine neue Nachricht, einen Anruf oder eine andere wichtige Information?'
+          : 'Gab es seit dem letzten Kontakt ein Telefonat, eine Nachricht oder eine andere wichtige Information?';
+      }
+      if(defaultRow) defaultRow.classList.remove('hidden');
+      if(controlBox) controlBox.classList.add('hidden');
+    }
   }else{
     if(situation) situation.textContent='Dies ist eine einfache Erinnerung. Es ist keine laufende KI-Analyse erforderlich.';
     if(nextTitle) nextTitle.textContent='Erinnerung';
     if(nextText) nextText.textContent='Der Sekretär erinnert zur gespeicherten Zeit und verfolgt die Bestätigung.';
+    if(questionTitle) questionTitle.textContent='Fehlen Informationen?';
     if(question) question.textContent='Möchtest du zu dieser Aufgabe noch etwas ergänzen?';
+    if(defaultRow) defaultRow.classList.remove('hidden');
+    if(controlBox) controlBox.classList.add('hidden');
   }
 
   renderAIPlan(data);
   renderTimeline(data);
 }
 
-function answerAIQuestion(hasInfo){
+async function answerAIQuestion(hasInfo){
   const note=document.getElementById('aiUserNote');
   const btn=document.getElementById('aiSaveNoteBtn');
   const result=document.getElementById('aiQuestionResult');
   if(!note || !btn) return;
 
+  const overdue=isControlDateOverdue(currentCaseData);
+
   if(hasInfo){
     note.classList.remove('hidden');
     btn.classList.remove('hidden');
+    note.placeholder=overdue
+      ? 'Fasse kurz zusammen, welche Antwort eingegangen ist.'
+      : 'Fasse kurz zusammen, was passiert ist.';
     if(result){ result.textContent=''; result.classList.add('hidden'); }
     note.focus();
     return;
@@ -4145,8 +4236,73 @@ function answerAIQuestion(hasInfo){
   note.value='';
   note.classList.add('hidden');
   btn.classList.add('hidden');
+
+  if(overdue && currentCaseData){
+    const history=getCaseHistory(currentCaseData);
+    history.push({
+      type:'Kontrolltermin',
+      text:'Bis zum festgelegten Kontrolltermin ist keine angekündigte Antwort eingegangen.',
+      date:new Date().toLocaleString('de-DE')
+    });
+    currentCaseData.history=history;
+    currentCaseData.controlDate='';
+    currentCaseData.controlDateSetAt='';
+    currentCaseData.status='Zu erledigen';
+    currentCaseData=upsertStoredCase(currentCaseData);
+
+    if(result){
+      result.textContent='Keine Antwort eingegangen. Die KI bewertet jetzt den nächsten Schritt neu …';
+      result.classList.remove('hidden');
+    }
+    await applyFreshAIAnalysis(false);
+    return;
+  }
+
   if(result){
     result.textContent='Keine neuen Informationen. Du kannst jetzt den nächsten Schritt vorbereiten.';
+    result.classList.remove('hidden');
+  }
+}
+
+function saveAIControlDate(){
+  const input=document.getElementById('aiControlDateInput');
+  const result=document.getElementById('aiQuestionResult');
+  const value=String(input?.value || '').trim();
+  if(!currentCaseData || !value) {
+    if(result){
+      result.textContent='Bitte einen konkreten Kontrolltermin wählen.';
+      result.classList.remove('hidden');
+    }
+    return;
+  }
+  if(value<todayLocalISO()){
+    if(result){
+      result.textContent='Der Kontrolltermin darf nicht in der Vergangenheit liegen.';
+      result.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const history=getCaseHistory(currentCaseData);
+  history.push({
+    type:'Kontrolltermin',
+    text:'Kontrolltermin festgelegt: '+formatControlDate(value)+'.',
+    date:new Date().toLocaleString('de-DE')
+  });
+
+  currentCaseData.controlDate=value;
+  currentCaseData.controlDateSetAt=new Date().toISOString();
+  currentCaseData.history=history;
+  if(String(currentCaseData.aiActionType || '')==='wait'){
+    currentCaseData.status='Warte auf Antwort';
+  }
+  currentCaseData=upsertStoredCase(currentCaseData);
+  renderAICenter(currentCaseData);
+  renderDashboardCases();
+  renderToday();
+
+  if(result){
+    result.textContent='Kontrolltermin gespeichert: '+formatControlDate(value)+'.';
     result.classList.remove('hidden');
   }
 }
@@ -4214,6 +4370,11 @@ async function saveAIUserNote(){
   });
 
   currentCaseData.history=history;
+  if(isControlDateOverdue(currentCaseData)){
+    currentCaseData.controlDate='';
+    currentCaseData.controlDateSetAt='';
+    currentCaseData.status='Zu erledigen';
+  }
   const saved=upsertStoredCase(currentCaseData);
   currentCaseData=saved;
   renderTimeline(saved);
@@ -4792,7 +4953,9 @@ function saveCaseForm(){
     aiAnalysis:currentCaseData?.aiAnalysis || '',
     aiActionType:currentCaseData?.aiActionType || '',
     aiReason:currentCaseData?.aiReason || '',
-    aiUpdatedAt:currentCaseData?.aiUpdatedAt || ''
+    aiUpdatedAt:currentCaseData?.aiUpdatedAt || '',
+    controlDate:currentCaseData?.controlDate || '',
+    controlDateSetAt:currentCaseData?.controlDateSetAt || ''
   };
 
   const isEditing=!!(editingCaseOriginalTitle || editingCaseId);

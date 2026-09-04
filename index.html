@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.36 TEST">
+<meta name="sekretarz-version" content="DE-v13.37 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1836,6 +1836,29 @@ button{cursor:pointer}
       </div>
 
       <div class="more-section">
+        <h3>Benachrichtigungen</h3>
+        <div class="more-list">
+          <button class="more-item" type="button" onclick="toggleSecretaryNotifications()">
+            <span class="more-item-icon">◉</span>
+            <span class="more-item-main">
+              <b>Aktivitätsmeldungen</b>
+              <small id="secretaryNotifStatus">Standardmäßig eingeschaltet. Änderungen in KI-Fällen werden gemeldet.</small>
+            </span>
+            <span id="secretaryNotifBadge" class="more-badge">Ein</span>
+          </button>
+
+          <button class="more-item" type="button" onclick="enableSecretaryPush()">
+            <span class="more-item-icon">↗</span>
+            <span class="more-item-main">
+              <b>Push-Mitteilungen</b>
+              <small id="secretaryPushStatus">Für Hinweise auch außerhalb des aktuellen Bildschirms.</small>
+            </span>
+            <span id="secretaryPushBadge" class="more-badge">Prüfen</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="more-section">
         <h3>Hilfe & Einstellungen</h3>
         <div class="more-list">
           <button class="more-item" type="button" disabled>
@@ -3593,6 +3616,7 @@ function openMore(){
   else if(origin==='de014') historyStack=['de011','de014','de016'];
   else historyStack=[origin,'de016'];
   showDirect('de016');
+  setTimeout(renderSecretaryNotificationSettings,0);
 }
 
 function openProfile(){
@@ -4131,6 +4155,106 @@ function renderReminderCenter(data){
   }
 }
 
+
+const SECRETARY_NOTIF_KEY='sekretarzSecretaryNotificationsV1';
+const SECRETARY_ACTIVITY_KEY='sekretarzSecretaryActivityV1';
+
+function secretaryNotificationsEnabled(){
+  try{
+    const v=localStorage.getItem(SECRETARY_NOTIF_KEY);
+    return v===null ? true : v==='1';
+  }catch(e){ return true; }
+}
+
+function setSecretaryNotificationsEnabled(enabled){
+  try{ localStorage.setItem(SECRETARY_NOTIF_KEY,enabled?'1':'0'); }catch(e){}
+  renderSecretaryNotificationSettings();
+}
+
+function getSecretaryActivity(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(SECRETARY_ACTIVITY_KEY)||'[]');
+    return Array.isArray(raw)?raw:[];
+  }catch(e){ return []; }
+}
+
+function addSecretaryActivity(title,body,caseData){
+  const items=getSecretaryActivity();
+  items.unshift({
+    id:'activity-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+    title:String(title||'Sekretarz'),
+    body:String(body||''),
+    caseId:caseData?.id||'',
+    caseTitle:caseData?.title||'',
+    createdAt:new Date().toISOString()
+  });
+  try{ localStorage.setItem(SECRETARY_ACTIVITY_KEY,JSON.stringify(items.slice(0,200))); }catch(e){}
+}
+
+async function secretaryNotify(title,body,caseData,{push=true}={}){
+  addSecretaryActivity(title,body,caseData);
+  if(!secretaryNotificationsEnabled() || !push) return;
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  try{
+    const reg=await navigator.serviceWorker?.ready;
+    if(reg){
+      await reg.showNotification(title,{
+        body,
+        icon:'/icon-192.png',
+        badge:'/icon-192.png',
+        tag:'secretary-'+String(caseData?.id||'general')+'-'+Date.now(),
+        data:{caseId:caseData?.id||''}
+      });
+    }
+  }catch(e){ console.warn('Sekretarz Push:',e); }
+}
+
+function renderSecretaryNotificationSettings(){
+  const enabled=secretaryNotificationsEnabled();
+  const status=document.getElementById('secretaryNotifStatus');
+  const badge=document.getElementById('secretaryNotifBadge');
+  const pushStatus=document.getElementById('secretaryPushStatus');
+  const pushBadge=document.getElementById('secretaryPushBadge');
+
+  if(status) status.textContent=enabled
+    ? 'Eingeschaltet. Wichtige Änderungen in KI-Fällen werden gemeldet.'
+    : 'Ausgeschaltet. Änderungen werden nicht als Push gemeldet.';
+  if(badge) badge.textContent=enabled?'Ein':'Aus';
+
+  let p='Nicht verfügbar';
+  if('Notification' in window){
+    if(Notification.permission==='granted') p='Aktiv';
+    else if(Notification.permission==='denied') p='Blockiert';
+    else p='Noch nicht erlaubt';
+  }
+  if(pushBadge) pushBadge.textContent=p;
+  if(pushStatus){
+    pushStatus.textContent=p==='Aktiv'
+      ? 'Push-Mitteilungen sind auf diesem Gerät erlaubt.'
+      : 'Einmal aktivieren, damit Sekretarz Mitteilungen anzeigen darf.';
+  }
+}
+
+function toggleSecretaryNotifications(){
+  setSecretaryNotificationsEnabled(!secretaryNotificationsEnabled());
+}
+
+async function enableSecretaryPush(){
+  if(!('Notification' in window)){
+    alert('Push-Mitteilungen werden auf diesem Gerät nicht unterstützt.');
+    return;
+  }
+  try{
+    const permission=await Notification.requestPermission();
+    renderSecretaryNotificationSettings();
+    if(permission==='granted'){
+      await secretaryNotify('Sekretarz','Push-Mitteilungen sind jetzt aktiviert.',null);
+    }
+  }catch(e){
+    renderSecretaryNotificationSettings();
+  }
+}
+
 function formatControlDate(value){
   if(!value) return '';
   const parts=String(value).split('-');
@@ -4316,6 +4440,11 @@ async function answerAIQuestion(hasInfo){
       result.textContent='Keine Antwort eingegangen. Die KI bewertet jetzt den nächsten Schritt neu …';
       result.classList.remove('hidden');
     }
+    secretaryNotify(
+      'Sekretarz – keine Antwort',
+      (currentCaseData.title||'Angelegenheit')+': Zum Kontrolltermin ist keine Antwort eingegangen. KI bewertet neu.',
+      currentCaseData
+    );
     await applyFreshAIAnalysis(false);
     return;
   }
@@ -4339,6 +4468,11 @@ function simulateControlDateOverdue(){
     result.textContent='TEST aktiv: Der Kontrolltermin wird jetzt als überschritten behandelt. Das echte Datum bleibt gespeichert.';
     result.classList.remove('hidden');
   }
+  secretaryNotify(
+    'Sekretarz – Kontrolltermin erreicht',
+    (currentCaseData.title||'Angelegenheit')+': Der Kontrolltermin ist erreicht. Ist die erwartete Antwort eingegangen?',
+    currentCaseData
+  );
 }
 
 function saveAIControlDate(){
@@ -4383,6 +4517,11 @@ function saveAIControlDate(){
     result.textContent='Kontrolltermin gespeichert: '+formatControlDate(value)+'.';
     result.classList.remove('hidden');
   }
+  secretaryNotify(
+    'Sekretarz – Kontrolltermin',
+    (currentCaseData.title||'Angelegenheit')+': Kontrolltermin auf '+formatControlDate(value)+' gesetzt.',
+    currentCaseData
+  );
 }
 
 async function requestAIAnalysis(caseData){
@@ -4409,6 +4548,11 @@ async function applyFreshAIAnalysis(showResult=true){
     result.textContent='KI analysiert die gesamte Angelegenheit …';
     result.classList.remove('hidden');
   }
+  secretaryNotify(
+    'Sekretarz – KI arbeitet',
+    (currentCaseData.title||'Angelegenheit')+': KI-Analyse wurde gestartet.',
+    currentCaseData
+  );
   try{
     const ai=await requestAIAnalysis(currentCaseData);
     currentCaseData.aiAnalysis=String(ai.analysis || '').trim();
@@ -4425,6 +4569,11 @@ async function applyFreshAIAnalysis(showResult=true){
     if(questionResult && !questionResult.classList.contains('hidden')){
       questionResult.textContent='Neue Information gespeichert. Die KI hat die Angelegenheit neu bewertet.';
     }
+    secretaryNotify(
+      'Sekretarz – neuer Stand',
+      (currentCaseData.title||'Angelegenheit')+': KI hat die Sache neu bewertet. Nächster Schritt ist vorbereitet.',
+      currentCaseData
+    );
   }catch(error){
     if(result){
       result.textContent='KI-Analyse nicht möglich: '+(error?.message || 'Unbekannter Fehler');
@@ -4465,6 +4614,11 @@ async function saveAIUserNote(){
     result.textContent='Information gespeichert. KI analysiert die Angelegenheit neu …';
     result.classList.remove('hidden');
   }
+  secretaryNotify(
+    'Sekretarz – neue Information',
+    (currentCaseData.title||'Angelegenheit')+': Neue Information gespeichert. KI bewertet die Sache neu.',
+    currentCaseData
+  );
   await applyFreshAIAnalysis(false);
 }
 
@@ -5301,7 +5455,7 @@ function colorizeDashboardCases(){
 }
 
 window.addEventListener('pageshow',()=>{
-  setTimeout(()=>{ surfaceDueControlCases(); },700);
+  setTimeout(()=>{ surfaceDueControlCases(); renderSecretaryNotificationSettings(); },700);
 });
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible') setTimeout(()=>{ surfaceDueControlCases(); },300);

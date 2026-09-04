@@ -2125,7 +2125,10 @@ async function syncPushSubscriptionToSupabase(subscription){
       updated_at:new Date().toISOString()
     })
   });
-  if(!response.ok) throw new Error('push_subscription_sync_failed');
+  if(!response.ok){
+    const detail=await response.text().catch(()=> '');
+    throw new Error('Supabase '+response.status+(detail ? ': '+detail.slice(0,500) : ''));
+  }
   return true;
 }
 

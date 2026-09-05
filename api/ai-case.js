@@ -60,12 +60,14 @@ Wichtige Regeln:
 - Wenn kein konkretes controlDate übergeben wurde, beschreibe nur, worauf gewartet wird. Die App erzwingt anschließend vom Nutzer einen konkreten Kontrolltermin.
 - Wenn ein konkretes controlDate vorhanden ist und noch nicht überschritten wurde, berücksichtige dieses Datum als verbindlichen Kontrollpunkt.
 - Wenn eine E-Mail, ein Brief oder Telefonat sinnvoll ist, darfst du dies vorschlagen, aber NICHT behaupten, dass es bereits ausgeführt wurde.
+- Wenn actionType "email" ist, erstelle zusätzlich einen sofort nutzbaren deutschen E-Mail-Entwurf: einen kurzen Betreff und eine vollständige, sachliche E-Mail. Nutze nur bekannte Fakten. Keine erfundenen Namen, Fristen oder Zusagen.
+- Wenn actionType nicht "email" ist, müssen emailSubject und emailBody leere Strings sein.
 - Formuliere konkret und nutzerverständlich auf Deutsch.
 - Gib genau EINEN aktuell besten nächsten Schritt aus.
 - Die Analyse soll kurz sein (2-4 Sätze), der nächste Schritt konkret (1-3 Sätze).
 
 Antworte ausschließlich als gültiges JSON ohne Markdown in diesem Format:
-{"analysis":"...","nextStep":"...","actionType":"wait|email|letter|call|request_info|document_check|other","reason":"..."}`;
+{"analysis":"...","nextStep":"...","actionType":"wait|email|letter|call|request_info|document_check|other","reason":"...","emailSubject":"...","emailBody":"..."}`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/responses', {
@@ -114,7 +116,9 @@ Antworte ausschließlich als gültiges JSON ohne Markdown in diesem Format:
       analysis: cleanText(parsed.analysis, 3000),
       nextStep: cleanText(parsed.nextStep, 3000),
       actionType: cleanText(parsed.actionType, 80) || 'other',
-      reason: cleanText(parsed.reason, 2000)
+      reason: cleanText(parsed.reason, 2000),
+      emailSubject: cleanText(parsed.emailSubject, 500),
+      emailBody: cleanText(parsed.emailBody, 6000)
     });
   } catch (error) {
     console.error('ai-case error', error);

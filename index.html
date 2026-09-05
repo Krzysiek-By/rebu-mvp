@@ -1275,10 +1275,6 @@ button{cursor:pointer}
               <button class="btn primary" onclick="saveAIControlDate()">Kontrolltermin speichern</button>
             </div>
 
-            <button type="button" id="aiTestOverdueBtn" class="btn secondary hidden" onclick="simulateControlDateOverdue(); return false;" style="margin-top:8px">
-              TEST: Kontrolltermin überschreiten
-            </button>
-
             <textarea id="aiUserNote" class="hidden" rows="3" placeholder="Fasse kurz zusammen, was passiert ist."></textarea>
             <button id="aiSaveNoteBtn" class="btn primary hidden" onclick="saveAIUserNote()">Zur Historie hinzufügen</button>
             <div id="aiQuestionResult" class="success hidden" style="margin:0"></div>
@@ -4553,17 +4549,11 @@ function renderAICenter(data){
   const defaultRow=document.getElementById('aiDefaultAnswerRow');
   const controlBox=document.getElementById('aiControlDateBox');
   const controlInput=document.getElementById('aiControlDateInput');
-  const testOverdueBtn=document.getElementById('aiTestOverdueBtn');
   const emailDraftBlock=document.getElementById('aiEmailDraftBlock');
   const emailSubject=document.getElementById('aiEmailSubject');
   const emailBody=document.getElementById('aiEmailBody');
   const emailDraftNewBadge=document.getElementById('aiEmailDraftNewBadge');
   const emailDraftStatus=document.getElementById('aiEmailDraftStatus');
-
-  if(testOverdueBtn){
-    const canTest=data?.careType==='ai' && !!data?.controlDate && String(data?.aiActionType || '')==='wait' && !isControlDateOverdue(data);
-    testOverdueBtn.classList.toggle('hidden',!canTest);
-  }
 
   if(data?.careType==='ai'){
     const aiUnread=!!data?.aiUnread;
@@ -4597,7 +4587,7 @@ function renderAICenter(data){
     }
 
     if(nextTitle){
-      const titleText=data?.preparedNextStep ? 'Vorbereiteter nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
+      const titleText=data?.preparedNextStep ? 'Vorgeschlagener nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
       if(nextTitle.firstChild && nextTitle.firstChild.nodeType===Node.TEXT_NODE) nextTitle.firstChild.nodeValue=titleText;
       else nextTitle.insertBefore(document.createTextNode(titleText),nextTitle.firstChild);
     }
@@ -4687,6 +4677,10 @@ async function answerAIQuestion(hasInfo){
   if(btn) btn.classList.add('hidden');
 
   if(overdue && currentCaseData){
+    if(result){
+      result.textContent='Keine Antwort eingegangen. KI analysiert jetzt die gesamte Angelegenheit …';
+      result.classList.remove('hidden');
+    }
     const history=getCaseHistory(currentCaseData);
     history.push({
       type:'Kontrolltermin',
@@ -4717,187 +4711,6 @@ async function answerAIQuestion(hasInfo){
     result.textContent='Keine neuen Informationen. Du kannst jetzt den nächsten Schritt vorbereiten.';
     result.classList.remove('hidden');
   }
-}
-
-function simulateControlDateOverdue(){
-  if(!currentCaseData || !currentCaseData.controlDate) return;
-  currentCaseData.testControlOverdue=true;
-  currentCaseData=upsertStoredCase(currentCaseData);
-  renderAICenter(currentCaseData);
-  renderToday();
-  renderSecretaryStateCounts();
-
-  const result=document.getElementById('aiQuestionResult');
-  if(result){
-    result.textContent='TEST aktiv: Der Kontrolltermin wird jetzt als überschritten behandelt. Das echte Datum bleibt gespeichert.';
-    result.classList.remove('hidden');
-  }
-  secretaryNotify(
-    'Sekretarz – Kontrolltermin erreicht',
-    (currentCaseData.title||'Angelegenheit')+': Der Kontrolltermin ist erreicht. Ist die erwartete Antwort eingegangen?',
-    currentCaseData
-  );
-}
-
-async function saveAIControlDate(){
-  const input=document.getElementById('aiControlDateInput');
-  const result=document.getElementById('aiQuestionResult');
-  const value=String(input?.value || '').trim();
-  if(!currentCaseData || !value) {
-    if(result){
-      result.textContent='Bitte einen konkreten Kontrolltermin wählen.';
-      result.classList.remove('hidden');
-    }
-    return;
-  }
-  if(value<todayLocalISO()){
-    if(result){
-      result.textContent='Der Kontrolltermin darf nicht in der Vergangenheit liegen.';
-      result.classList.remove('hidden');
-    }
-    return;
-  }
-
-  const history=getCaseHistory(currentCaseData);
-  history.push({
-    type:'Kontrolltermin',
-    text:'Kontrolltermin festgelegt: '+formatControlDate(value)+'.',
-    date:new Date().toLocaleString('de-DE')
-  });
-
-  currentCaseData.controlDate=value;
-  currentCaseData.controlDateSetAt=new Date().toISOString();
-  currentCaseData.testControlOverdue=false;
-  currentCaseData.history=history;
-  if(String(currentCaseData.aiActionType || '')==='wait'){
-    currentCaseData.status='Warte auf Antwort';
-  }
-  currentCaseData=upsertStoredCase(currentCaseData);
-  try{
-    await syncControlPointToSupabase(currentCaseData);
-  }catch(e){
-    console.error('Kontrolltermin-Sync:',e);
-    if(result){
-      result.textContent='Kontrolltermin lokal gespeichert, aber die Server-Synchronisierung ist fehlgeschlagen.';
-      result.classList.remove('hidden');
-    }
-  }
-  renderAICenter(currentCaseData);
-  renderDashboardCases();
-  renderToday();
-
-  if(result){
-    result.textContent='Kontrolltermin gespeichert: '+formatControlDate(value)+'.';
-    result.classList.remove('hidden');
-  }
-  secretaryNotify(
-    'Sekretarz – Kontrolltermin',
-    (currentCaseData.title||'Angelegenheit')+': Kontrolltermin auf '+formatControlDate(value)+' gesetzt.',
-    currentCaseData
-  );
-}
-
-async function requestAIAnalysis(caseData){
-  const response=await fetch('/api/ai-case',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({caseData})
-  });
-  let payload={};
-  try{ payload=await response.json(); }catch(e){}
-  if(!response.ok){
-    const code=payload?.error || 'ai_request_failed';
-    if(code==='missing_openai_key') throw new Error('OPENAI_API_KEY fehlt auf dem Server.');
-    throw new Error(payload?.message || 'Die KI-Analyse konnte nicht ausgeführt werden.');
-  }
-  return payload;
-}
-
-async function applyFreshAIAnalysis(showResult=true){
-  if(!currentCaseData || currentCaseData.careType!=='ai') return;
-  const result=document.getElementById('aiActionResult');
-  const questionResult=document.getElementById('aiQuestionResult');
-  if(showResult && result){
-    result.textContent='KI analysiert die gesamte Angelegenheit …';
-    result.classList.remove('hidden');
-  }
-  secretaryNotify(
-    'Sekretarz – KI arbeitet',
-    (currentCaseData.title||'Angelegenheit')+': KI-Analyse wurde gestartet.',
-    currentCaseData
-  );
-  try{
-    const ai=await requestAIAnalysis(currentCaseData);
-    currentCaseData.aiAnalysis=String(ai.analysis || '').trim();
-    currentCaseData.preparedNextStep=String(ai.nextStep || '').trim();
-    currentCaseData.aiActionType=String(ai.actionType || 'other').trim();
-    currentCaseData.aiReason=String(ai.reason || '').trim();
-    currentCaseData.aiEmailSubject=String(ai.emailSubject || '').trim();
-    currentCaseData.aiEmailBody=String(ai.emailBody || '').trim();
-    currentCaseData.aiEmailDraftAccepted=false;
-    currentCaseData.aiUpdatedAt=new Date().toISOString();
-    currentCaseData.aiUnread=true;
-    currentCaseData.aiUnreadAt=currentCaseData.aiUpdatedAt;
-    currentCaseData=upsertStoredCase(currentCaseData);
-    renderAICenter(currentCaseData);
-    if(result){
-      result.textContent='KI-Analyse aktualisiert.';
-      result.classList.remove('hidden');
-    }
-    if(questionResult && !questionResult.classList.contains('hidden')){
-      questionResult.textContent='Neue Information gespeichert. Die KI hat die Angelegenheit neu bewertet.';
-    }
-    secretaryNotify(
-      'Sekretarz – neuer Stand',
-      (currentCaseData.title||'Angelegenheit')+': KI hat die Sache neu bewertet. Nächster Schritt ist vorbereitet.',
-      currentCaseData
-    );
-  }catch(error){
-    if(result){
-      result.textContent='KI-Analyse nicht möglich: '+(error?.message || 'Unbekannter Fehler');
-      result.classList.remove('hidden');
-    }
-  }
-}
-
-async function saveAIUserNote(){
-  const note=document.getElementById('aiUserNote');
-  const btn=document.getElementById('aiSaveNoteBtn');
-  const result=document.getElementById('aiQuestionResult');
-  const text=(note?.value || '').trim();
-  if(!text || !currentCaseData) return;
-
-  const history=getCaseHistory(currentCaseData);
-  history.push({
-    type:'Deine Notiz',
-    text,
-    date:new Date().toLocaleString('de-DE')
-  });
-
-  currentCaseData.history=history;
-  if(isControlDateOverdue(currentCaseData)){
-    currentCaseData.controlDate='';
-    currentCaseData.controlDateSetAt='';
-    currentCaseData.testControlOverdue=false;
-    currentCaseData.status='Zu erledigen';
-  }
-  const saved=upsertStoredCase(currentCaseData);
-  currentCaseData=saved;
-  renderTimeline(saved);
-
-  note.value='';
-  note.classList.add('hidden');
-  btn.classList.add('hidden');
-  if(result){
-    result.textContent='Information gespeichert. KI analysiert die Angelegenheit neu …';
-    result.classList.remove('hidden');
-  }
-  secretaryNotify(
-    'Sekretarz – neue Information',
-    (currentCaseData.title||'Angelegenheit')+': Neue Information gespeichert. KI bewertet die Sache neu.',
-    currentCaseData
-  );
-  await applyFreshAIAnalysis(false);
 }
 
 function editEmailDraft(){

@@ -781,6 +781,14 @@ button{cursor:pointer}
 }
 .ai-unread-title{font-weight:800 !important;}
 .ai-unread-text{font-weight:400 !important;}
+
+.ai-draft-block{margin-top:14px}
+.ai-draft-field{margin-top:10px;padding:12px 14px;border:1px solid #d9dfeb;border-radius:12px;background:#fff}
+.ai-draft-label{display:block;margin-bottom:5px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#6f7b92}
+.ai-draft-value{white-space:pre-wrap;line-height:1.55;color:var(--navy)}
+.ai-draft-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.ai-draft-actions .btn{flex:1;min-width:145px}
+.ai-draft-edit{width:100%;min-height:150px;padding:12px;border:1px solid #cfd8e8;border-radius:12px;font:inherit;line-height:1.5;background:#fff;color:var(--navy)}
 </style>
 </head>
 <body>
@@ -1231,6 +1239,25 @@ button{cursor:pointer}
           <p id="aiNextStepText">Der Sekretär soll aus dem aktuellen Stand den nächsten sinnvollen Schritt ableiten.</p>
         </div>
 
+        <div id="aiEmailDraftBlock" class="ai-block blue ai-draft-block hidden">
+          <div class="ai-kicker">E-Mail-Entwurf</div>
+          <h3>E-Mail vorbereitet<span id="aiEmailDraftNewBadge" class="ai-new-badge hidden">Neu</span></h3>
+          <div class="ai-draft-field"><span class="ai-draft-label">Betreff</span><div id="aiEmailSubject" class="ai-draft-value"></div></div>
+          <div class="ai-draft-field"><span class="ai-draft-label">E-Mail</span><div id="aiEmailBody" class="ai-draft-value"></div></div>
+          <div id="aiEmailEditBox" class="hidden" style="display:grid;gap:9px;margin-top:12px">
+            <label class="ai-draft-label" for="aiEmailSubjectEdit">Betreff bearbeiten</label>
+            <input id="aiEmailSubjectEdit" type="text" style="width:100%;padding:12px;border:1px solid #cfd8e8;border-radius:12px;font:inherit">
+            <label class="ai-draft-label" for="aiEmailBodyEdit">E-Mail bearbeiten</label>
+            <textarea id="aiEmailBodyEdit" class="ai-draft-edit"></textarea>
+            <button type="button" class="btn primary" onclick="saveEmailDraftEdits()">Änderungen speichern</button>
+          </div>
+          <div class="ai-draft-actions">
+            <button type="button" class="btn primary" onclick="acceptEmailDraft()">Entwurf übernehmen</button>
+            <button type="button" class="btn secondary" onclick="editEmailDraft()">Ändern</button>
+          </div>
+          <div id="aiEmailDraftStatus" class="success hidden" style="margin-top:10px"></div>
+        </div>
+
         <div class="ai-block yellow">
           <div class="ai-kicker">Frage an dich</div>
           <h3 id="aiQuestionTitle">Fehlen Informationen?</h3>
@@ -1248,6 +1275,9 @@ button{cursor:pointer}
               <button class="btn primary" onclick="saveAIControlDate()">Kontrolltermin speichern</button>
             </div>
 
+            <button type="button" id="aiTestOverdueBtn" class="btn secondary hidden" onclick="simulateControlDateOverdue(); return false;" style="margin-top:8px">
+              TEST: Kontrolltermin überschreiten
+            </button>
 
             <textarea id="aiUserNote" class="hidden" rows="3" placeholder="Fasse kurz zusammen, was passiert ist."></textarea>
             <button id="aiSaveNoteBtn" class="btn primary hidden" onclick="saveAIUserNote()">Zur Historie hinzufügen</button>
@@ -4523,6 +4553,18 @@ function renderAICenter(data){
   const defaultRow=document.getElementById('aiDefaultAnswerRow');
   const controlBox=document.getElementById('aiControlDateBox');
   const controlInput=document.getElementById('aiControlDateInput');
+  const testOverdueBtn=document.getElementById('aiTestOverdueBtn');
+  const emailDraftBlock=document.getElementById('aiEmailDraftBlock');
+  const emailSubject=document.getElementById('aiEmailSubject');
+  const emailBody=document.getElementById('aiEmailBody');
+  const emailDraftNewBadge=document.getElementById('aiEmailDraftNewBadge');
+  const emailDraftStatus=document.getElementById('aiEmailDraftStatus');
+
+  if(testOverdueBtn){
+    const canTest=data?.careType==='ai' && !!data?.controlDate && String(data?.aiActionType || '')==='wait' && !isControlDateOverdue(data);
+    testOverdueBtn.classList.toggle('hidden',!canTest);
+  }
+
   if(data?.careType==='ai'){
     const aiUnread=!!data?.aiUnread;
     if(situationNewBadge) situationNewBadge.classList.toggle('hidden',!aiUnread);
@@ -4555,7 +4597,7 @@ function renderAICenter(data){
     }
 
     if(nextTitle){
-      const titleText=data?.preparedNextStep ? 'Vorgeschlagener nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
+      const titleText=data?.preparedNextStep ? 'Vorbereiteter nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
       if(nextTitle.firstChild && nextTitle.firstChild.nodeType===Node.TEXT_NODE) nextTitle.firstChild.nodeValue=titleText;
       else nextTitle.insertBefore(document.createTextNode(titleText),nextTitle.firstChild);
     }
@@ -4565,6 +4607,20 @@ function renderAICenter(data){
       nextValue += ' Kontrolltermin: '+formatControlDate(data.controlDate)+'. Wenn bis dahin keine Antwort vorliegt, fragt der Sekretär am nächsten Tag automatisch nach.';
     }
     if(nextText) nextText.textContent=nextValue;
+
+    const hasEmailDraft=String(data?.aiActionType||'')==='email' && !!String(data?.aiEmailBody||'').trim();
+    if(emailDraftBlock) emailDraftBlock.classList.toggle('hidden',!hasEmailDraft);
+    if(emailSubject) emailSubject.textContent=data?.aiEmailSubject || '';
+    if(emailBody) emailBody.textContent=data?.aiEmailBody || '';
+    if(emailDraftNewBadge) emailDraftNewBadge.classList.toggle('hidden',!(hasEmailDraft && aiUnread));
+    if(emailDraftStatus){
+      if(data?.aiEmailDraftAccepted){
+        emailDraftStatus.textContent='Entwurf übernommen. Die E-Mail wurde noch nicht gesendet.';
+        emailDraftStatus.classList.remove('hidden');
+      }else emailDraftStatus.classList.add('hidden');
+    }
+    const editBox=document.getElementById('aiEmailEditBox');
+    if(editBox) editBox.classList.add('hidden');
 
     if(isControlDateOverdue(data)){
       if(questionTitle) questionTitle.textContent='Kontrolltermin erreicht';
@@ -4591,6 +4647,7 @@ function renderAICenter(data){
       if(controlBox) controlBox.classList.add('hidden');
     }
   }else{
+    if(emailDraftBlock) emailDraftBlock.classList.add('hidden');
     if(situation) situation.textContent='Dies ist eine einfache Erinnerung. Es ist keine laufende KI-Analyse erforderlich.';
     if(nextTitle) nextTitle.textContent='Erinnerung';
     if(nextText) nextText.textContent='Der Sekretär erinnert zur gespeicherten Zeit und verfolgt die Bestätigung.';
@@ -4630,12 +4687,6 @@ async function answerAIQuestion(hasInfo){
   if(btn) btn.classList.add('hidden');
 
   if(overdue && currentCaseData){
-    if(result){
-      result.textContent='Keine Antwort eingegangen. KI analysiert jetzt die gesamte Angelegenheit …';
-      result.classList.remove('hidden');
-    }
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
     const history=getCaseHistory(currentCaseData);
     history.push({
       type:'Kontrolltermin',
@@ -4649,6 +4700,10 @@ async function answerAIQuestion(hasInfo){
     currentCaseData.status='Zu erledigen';
     currentCaseData=upsertStoredCase(currentCaseData);
 
+    if(result){
+      result.textContent='Keine Antwort eingegangen. Die KI bewertet jetzt den nächsten Schritt neu …';
+      result.classList.remove('hidden');
+    }
     secretaryNotify(
       'Sekretarz – keine Antwort',
       (currentCaseData.title||'Angelegenheit')+': Zum Kontrolltermin ist keine Antwort eingegangen. KI bewertet neu.',
@@ -4662,6 +4717,26 @@ async function answerAIQuestion(hasInfo){
     result.textContent='Keine neuen Informationen. Du kannst jetzt den nächsten Schritt vorbereiten.';
     result.classList.remove('hidden');
   }
+}
+
+function simulateControlDateOverdue(){
+  if(!currentCaseData || !currentCaseData.controlDate) return;
+  currentCaseData.testControlOverdue=true;
+  currentCaseData=upsertStoredCase(currentCaseData);
+  renderAICenter(currentCaseData);
+  renderToday();
+  renderSecretaryStateCounts();
+
+  const result=document.getElementById('aiQuestionResult');
+  if(result){
+    result.textContent='TEST aktiv: Der Kontrolltermin wird jetzt als überschritten behandelt. Das echte Datum bleibt gespeichert.';
+    result.classList.remove('hidden');
+  }
+  secretaryNotify(
+    'Sekretarz – Kontrolltermin erreicht',
+    (currentCaseData.title||'Angelegenheit')+': Der Kontrolltermin ist erreicht. Ist die erwartete Antwort eingegangen?',
+    currentCaseData
+  );
 }
 
 async function saveAIControlDate(){
@@ -4757,6 +4832,9 @@ async function applyFreshAIAnalysis(showResult=true){
     currentCaseData.preparedNextStep=String(ai.nextStep || '').trim();
     currentCaseData.aiActionType=String(ai.actionType || 'other').trim();
     currentCaseData.aiReason=String(ai.reason || '').trim();
+    currentCaseData.aiEmailSubject=String(ai.emailSubject || '').trim();
+    currentCaseData.aiEmailBody=String(ai.emailBody || '').trim();
+    currentCaseData.aiEmailDraftAccepted=false;
     currentCaseData.aiUpdatedAt=new Date().toISOString();
     currentCaseData.aiUnread=true;
     currentCaseData.aiUnreadAt=currentCaseData.aiUpdatedAt;
@@ -4820,6 +4898,36 @@ async function saveAIUserNote(){
     currentCaseData
   );
   await applyFreshAIAnalysis(false);
+}
+
+function editEmailDraft(){
+  if(!currentCaseData) return;
+  const box=document.getElementById('aiEmailEditBox');
+  const subject=document.getElementById('aiEmailSubjectEdit');
+  const body=document.getElementById('aiEmailBodyEdit');
+  if(subject) subject.value=currentCaseData.aiEmailSubject || '';
+  if(body) body.value=currentCaseData.aiEmailBody || '';
+  if(box) box.classList.remove('hidden');
+}
+
+function saveEmailDraftEdits(){
+  if(!currentCaseData) return;
+  const subject=(document.getElementById('aiEmailSubjectEdit')?.value || '').trim();
+  const body=(document.getElementById('aiEmailBodyEdit')?.value || '').trim();
+  if(!subject || !body) return;
+  currentCaseData.aiEmailSubject=subject;
+  currentCaseData.aiEmailBody=body;
+  currentCaseData.aiEmailDraftAccepted=false;
+  currentCaseData=upsertStoredCase(currentCaseData);
+  renderAICenter(currentCaseData);
+}
+
+function acceptEmailDraft(){
+  if(!currentCaseData || !currentCaseData.aiEmailBody) return;
+  currentCaseData.aiEmailDraftAccepted=true;
+  currentCaseData=upsertStoredCase(currentCaseData);
+  renderAICenter(currentCaseData);
+  secretaryNotify('Sekretarz – E-Mail-Entwurf',(currentCaseData.title||'Angelegenheit')+': E-Mail-Entwurf wurde übernommen, aber noch nicht gesendet.',currentCaseData);
 }
 
 async function prepareNextStep(){
@@ -5388,6 +5496,9 @@ function saveCaseForm(){
     aiUnreadAt:currentCaseData?.aiUnreadAt || '',
     aiActionType:currentCaseData?.aiActionType || '',
     aiReason:currentCaseData?.aiReason || '',
+    aiEmailSubject:currentCaseData?.aiEmailSubject || '',
+    aiEmailBody:currentCaseData?.aiEmailBody || '',
+    aiEmailDraftAccepted:!!currentCaseData?.aiEmailDraftAccepted,
     aiUpdatedAt:currentCaseData?.aiUpdatedAt || '',
     controlDate:currentCaseData?.controlDate || '',
     controlDateSetAt:currentCaseData?.controlDateSetAt || '',

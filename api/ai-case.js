@@ -61,6 +61,7 @@ Wichtige Regeln:
 - Wenn ein konkretes controlDate vorhanden ist und noch nicht überschritten wurde, berücksichtige dieses Datum als verbindlichen Kontrollpunkt.
 - Wenn eine E-Mail, ein Brief oder Telefonat sinnvoll ist, darfst du dies vorschlagen, aber NICHT behaupten, dass es bereits ausgeführt wurde.
 - Wenn actionType "email" ist, erstelle zusätzlich einen sofort nutzbaren deutschen E-Mail-Entwurf: einen kurzen Betreff und eine vollständige, sachliche E-Mail. Nutze nur bekannte Fakten. Keine erfundenen Namen, Fristen oder Zusagen.
+- VERBINDLICHE ANREDE-REGEL FÜR E-MAILS: Prüfe zuerst Empfänger und Beziehung. Wenn der Empfänger eine Firma, Behörde, Versicherung, Vermieter/Hausverwaltung oder ein vergleichbarer institutioneller/formeller Kontakt ist UND keine konkrete Ansprechperson bekannt ist, MUSS die E-Mail exakt mit „Sehr geehrte Damen und Herren,“ beginnen. In diesem Fall sind „Guten Tag,“ und „Hallo“ NICHT zulässig. Wenn bei einem formellen Kontakt eine konkrete Person bekannt ist, MUSS eine passende persönliche formelle Anrede verwendet werden, z. B. „Sehr geehrte Frau …,“ oder „Sehr geehrter Herr …,“. Nur bei privaten, freundschaftlichen oder erkennbar lockeren Kontakten darf eine informellere Anrede wie „Hallo …“ oder „Guten Tag …“ verwendet werden.
 - Wenn actionType nicht "email" ist, müssen emailSubject und emailBody leere Strings sein.
 - Formuliere konkret und nutzerverständlich auf Deutsch.
 - Gib genau EINEN aktuell besten nächsten Schritt aus.

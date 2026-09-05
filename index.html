@@ -1248,9 +1248,6 @@ button{cursor:pointer}
               <button class="btn primary" onclick="saveAIControlDate()">Kontrolltermin speichern</button>
             </div>
 
-            <button type="button" id="aiTestOverdueBtn" class="btn secondary hidden" onclick="simulateControlDateOverdue(); return false;" style="margin-top:8px">
-              TEST: Kontrolltermin überschreiten
-            </button>
 
             <textarea id="aiUserNote" class="hidden" rows="3" placeholder="Fasse kurz zusammen, was passiert ist."></textarea>
             <button id="aiSaveNoteBtn" class="btn primary hidden" onclick="saveAIUserNote()">Zur Historie hinzufügen</button>
@@ -4526,13 +4523,6 @@ function renderAICenter(data){
   const defaultRow=document.getElementById('aiDefaultAnswerRow');
   const controlBox=document.getElementById('aiControlDateBox');
   const controlInput=document.getElementById('aiControlDateInput');
-  const testOverdueBtn=document.getElementById('aiTestOverdueBtn');
-
-  if(testOverdueBtn){
-    const canTest=data?.careType==='ai' && !!data?.controlDate && String(data?.aiActionType || '')==='wait' && !isControlDateOverdue(data);
-    testOverdueBtn.classList.toggle('hidden',!canTest);
-  }
-
   if(data?.careType==='ai'){
     const aiUnread=!!data?.aiUnread;
     if(situationNewBadge) situationNewBadge.classList.toggle('hidden',!aiUnread);
@@ -4565,7 +4555,7 @@ function renderAICenter(data){
     }
 
     if(nextTitle){
-      const titleText=data?.preparedNextStep ? 'Vorbereiteter nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
+      const titleText=data?.preparedNextStep ? 'Vorgeschlagener nächster Schritt' : (data?.nextStep ? 'Aktueller nächster Schritt' : 'Nächsten Schritt vorbereiten');
       if(nextTitle.firstChild && nextTitle.firstChild.nodeType===Node.TEXT_NODE) nextTitle.firstChild.nodeValue=titleText;
       else nextTitle.insertBefore(document.createTextNode(titleText),nextTitle.firstChild);
     }
@@ -4640,6 +4630,12 @@ async function answerAIQuestion(hasInfo){
   if(btn) btn.classList.add('hidden');
 
   if(overdue && currentCaseData){
+    if(result){
+      result.textContent='Keine Antwort eingegangen. KI analysiert jetzt die gesamte Angelegenheit …';
+      result.classList.remove('hidden');
+    }
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
     const history=getCaseHistory(currentCaseData);
     history.push({
       type:'Kontrolltermin',
@@ -4653,10 +4649,6 @@ async function answerAIQuestion(hasInfo){
     currentCaseData.status='Zu erledigen';
     currentCaseData=upsertStoredCase(currentCaseData);
 
-    if(result){
-      result.textContent='Keine Antwort eingegangen. Die KI bewertet jetzt den nächsten Schritt neu …';
-      result.classList.remove('hidden');
-    }
     secretaryNotify(
       'Sekretarz – keine Antwort',
       (currentCaseData.title||'Angelegenheit')+': Zum Kontrolltermin ist keine Antwort eingegangen. KI bewertet neu.',
@@ -4670,26 +4662,6 @@ async function answerAIQuestion(hasInfo){
     result.textContent='Keine neuen Informationen. Du kannst jetzt den nächsten Schritt vorbereiten.';
     result.classList.remove('hidden');
   }
-}
-
-function simulateControlDateOverdue(){
-  if(!currentCaseData || !currentCaseData.controlDate) return;
-  currentCaseData.testControlOverdue=true;
-  currentCaseData=upsertStoredCase(currentCaseData);
-  renderAICenter(currentCaseData);
-  renderToday();
-  renderSecretaryStateCounts();
-
-  const result=document.getElementById('aiQuestionResult');
-  if(result){
-    result.textContent='TEST aktiv: Der Kontrolltermin wird jetzt als überschritten behandelt. Das echte Datum bleibt gespeichert.';
-    result.classList.remove('hidden');
-  }
-  secretaryNotify(
-    'Sekretarz – Kontrolltermin erreicht',
-    (currentCaseData.title||'Angelegenheit')+': Der Kontrolltermin ist erreicht. Ist die erwartete Antwort eingegangen?',
-    currentCaseData
-  );
 }
 
 async function saveAIControlDate(){

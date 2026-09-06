@@ -4141,6 +4141,44 @@ async function assignOpenedGmxMessageToCase(){
     emailFolder:String(m.folderPath||''),
     emailUid:Number(m.uid||0)
   };
+
+  // Dieselbe GMX-Nachricht darf in derselben Angelegenheit nur einmal vorkommen.
+  // Primär identifizieren wir sie über Ordner + IMAP-UID; als Fallback dienen
+  // Betreff, Absender und Nachrichtenzeit für ältere bereits gespeicherte Einträge.
+  const normalizedFolder=String(incomingMailHistoryItem.emailFolder||'').trim();
+  const normalizedUid=Number(incomingMailHistoryItem.emailUid||0);
+  const normalizedSubject=String(incomingMailHistoryItem.emailSubject||'').trim();
+  const normalizedFrom=String(incomingMailHistoryItem.emailFrom||'').trim();
+  const normalizedDate=String(incomingMailHistoryItem.date||'').trim();
+  const matchesSameMail=(h)=>{
+    if(!h || String(h.type||'')!=='E-Mail') return false;
+    const hFolder=String(h.emailFolder||'').trim();
+    const hUid=Number(h.emailUid||0);
+    if(normalizedUid>0 && hUid>0 && normalizedFolder===hFolder && normalizedUid===hUid) return true;
+    return !!normalizedSubject &&
+      normalizedSubject===String(h.emailSubject||'').trim() &&
+      normalizedFrom===String(h.emailFrom||'').trim() &&
+      normalizedDate===String(h.date||'').trim();
+  };
+  const existingMatches=c.history.filter(matchesSameMail);
+  if(existingMatches.length){
+    // Bereits vorhandene doppelte Testeinträge derselben Nachricht gleich mitbereinigen.
+    let kept=false;
+    c.history=c.history.filter(h=>{
+      if(!matchesSameMail(h)) return true;
+      if(!kept){ kept=true; return true; }
+      return false;
+    });
+    saveCasesToStorage(cases);
+    if(result){
+      result.textContent=existingMatches.length>1
+        ? 'Diese E-Mail war bereits zugeordnet. Doppelte Einträge wurden entfernt.'
+        : 'Diese E-Mail ist bereits dieser Angelegenheit zugeordnet.';
+      result.classList.remove('hidden');
+    }
+    return;
+  }
+
   c.history.unshift(incomingMailHistoryItem);
 
   // Eine ausdrücklich in der gerade geöffneten E-Mail genannte Frist wird

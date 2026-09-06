@@ -4081,12 +4081,56 @@ async function loadGmxFolderMessages(folderPath){
       const from=String(m?.from||'Unbekannter Absender');
       const subject=String(m?.subject||'(Kein Betreff)');
       const date=String(m?.dateLabel||'');
-      return '<div style="padding:10px 0;border-bottom:1px solid rgba(15,39,76,.08)"><b>'+escapeHtml(subject)+'</b><br><span style="opacity:.75">'+escapeHtml(from)+(date?' · '+escapeHtml(date):'')+'</span></div>';
+      const uid=Number(m?.uid||0);
+      if(!uid){
+        return '<div style="padding:10px 0;border-bottom:1px solid rgba(15,39,76,.08)"><b>'+escapeHtml(subject)+'</b><br><span style="opacity:.75">'+escapeHtml(from)+(date?' · '+escapeHtml(date):'')+'</span></div>';
+      }
+      return '<button type="button" onclick="loadGmxMessageDetail(decodeURIComponent(\''+encodeURIComponent(folderPath)+'\'),'+uid+')" style="display:block;width:100%;text-align:left;padding:12px 4px;border:0;border-bottom:1px solid rgba(15,39,76,.08);background:transparent;color:inherit;font:inherit"><b>'+escapeHtml(subject)+'</b><br><span style="opacity:.75">'+escapeHtml(from)+(date?' · '+escapeHtml(date):'')+'</span><span style="float:right;opacity:.55">›</span></button>';
     }).join('');
     box.innerHTML='<b>'+escapeHtml(folderPath)+'</b><br><span style="opacity:.75">Letzte '+messages.length+' Nachricht(en)</span><div style="margin-top:8px">'+rows+'</div>';
     box.scrollIntoView({behavior:'smooth',block:'nearest'});
   }catch(err){
     box.textContent=err?.message||'Die Nachrichten konnten nicht geladen werden.';
+  }
+}
+
+
+async function loadGmxMessageDetail(folderPath,uid){
+  const box=document.getElementById('emailFolderMessagesResult');
+  const token=await getFreshEmailAccessToken();
+  if(!box) return;
+  if(!token){ box.textContent='Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.'; box.classList.remove('hidden'); return; }
+  box.innerHTML='<b>E-Mail wird geladen …</b>';
+  box.classList.remove('hidden');
+  try{
+    const res=await fetch('/api/email-connect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({action:'message',folder:folderPath,uid:Number(uid)})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok || !data.ok) throw new Error(data.message||('E-Mail konnte nicht geladen werden. HTTP '+res.status));
+    const m=data.message||{};
+    const subject=String(m.subject||'(Kein Betreff)');
+    const from=String(m.from||'');
+    const to=String(m.to||'');
+    const cc=String(m.cc||'');
+    const date=String(m.dateLabel||'');
+    const text=String(m.text||'').trim();
+    const attachments=Array.isArray(m.attachments)?m.attachments:[];
+    const attachmentHtml=attachments.length
+      ? '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(15,39,76,.08)"><b>Anhänge ('+attachments.length+')</b><br>'+attachments.map(a=>escapeHtml(String(a.filename||'Anhang'))+(a.size?' <span style="opacity:.65">('+Math.max(1,Math.round(Number(a.size)/1024))+' KB)</span>':'')).join('<br>')+'</div>'
+      : '';
+    box.innerHTML='<button type="button" onclick="loadGmxFolderMessages(decodeURIComponent(\''+encodeURIComponent(folderPath)+'\'))" style="border:0;background:transparent;padding:0 0 12px;color:inherit;font:inherit;font-weight:700">‹ Zurück zu '+escapeHtml(folderPath)+'</button>'+
+      '<div style="padding-bottom:12px;border-bottom:1px solid rgba(15,39,76,.08)"><b style="font-size:17px">'+escapeHtml(subject)+'</b><br>'+
+      (from?'<span style="opacity:.78"><b>Von:</b> '+escapeHtml(from)+'</span><br>':'')+
+      (to?'<span style="opacity:.78"><b>An:</b> '+escapeHtml(to)+'</span><br>':'')+
+      (cc?'<span style="opacity:.78"><b>CC:</b> '+escapeHtml(cc)+'</span><br>':'')+
+      (date?'<span style="opacity:.65">'+escapeHtml(date)+'</span>':'')+'</div>'+
+      '<div style="white-space:pre-wrap;line-height:1.5;padding-top:14px">'+escapeHtml(text||'(Keine lesbare Textversion vorhanden.)')+'</div>'+attachmentHtml;
+    box.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){
+    box.textContent=err?.message||'Die E-Mail konnte nicht geladen werden.';
   }
 }
 

@@ -5297,6 +5297,71 @@ async function requestAIAnalysis(caseData){
   return payload;
 }
 
+function parseHistoryDateForControl(value){
+  const text=String(value||'').trim();
+  let m=text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:,?\s+(\d{1,2}):(\d{2}))?/);
+  if(m){
+    const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),Number(m[4]||12),Number(m[5]||0),0,0);
+    return Number.isNaN(d.getTime())?null:d;
+  }
+  m=text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m){
+    const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),12,0,0,0);
+    return Number.isNaN(d.getTime())?null:d;
+  }
+  const d=new Date(text);
+  return Number.isNaN(d.getTime())?null:d;
+}
+
+function ymdFromLocalDate(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+
+function deriveExplicitControlDateFromHistory(caseData){
+  const history=getCaseHistory(caseData).map((item,index)=>({item,index,date:parseHistoryDateForControl(item?.date)}));
+  history.sort((a,b)=>{
+    const at=a.date?a.date.getTime():0;
+    const bt=b.date?b.date.getTime():0;
+    if(bt!==at) return bt-at;
+    return a.index-b.index;
+  });
+
+  for(const entry of history){
+    const item=entry.item||{};
+    const text=String(item.text||'');
+    if(!text.trim()) continue;
+
+    let m=text.match(/\b(?:bis(?:\s+zum)?|spätestens(?:\s+am)?)\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\b/i);
+    if(m){
+      const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]),12,0,0,0);
+      if(!Number.isNaN(d.getTime())) return {date:ymdFromLocalDate(d),basis:m[0]};
+    }
+
+    if(!entry.date) continue;
+    const patterns=[
+      {re:/\binnerhalb\s+(?:der\s+)?nächsten\s+(\d{1,3})\s+tage?n?\b/i,mult:1},
+      {re:/\binnerhalb\s+von\s+(\d{1,3})\s+tage?n?\b/i,mult:1},
+      {re:/\bin\s+(\d{1,3})\s+tage?n?\b/i,mult:1},
+      {re:/\binnerhalb\s+(?:der\s+)?nächsten\s+(\d{1,3})\s+wochen?\b/i,mult:7},
+      {re:/\binnerhalb\s+von\s+(\d{1,3})\s+wochen?\b/i,mult:7},
+      {re:/\bin\s+(\d{1,3})\s+wochen?\b/i,mult:7}
+    ];
+    for(const p of patterns){
+      m=text.match(p.re);
+      if(!m) continue;
+      const amount=Number(m[1]);
+      if(!Number.isFinite(amount) || amount<0 || amount>3650) continue;
+      const d=new Date(entry.date.getFullYear(),entry.date.getMonth(),entry.date.getDate(),12,0,0,0);
+      d.setDate(d.getDate()+amount*p.mult);
+      return {date:ymdFromLocalDate(d),basis:m[0]+' ab '+entry.date.toLocaleDateString('de-DE')};
+    }
+  }
+  return null;
+}
+
 async function applyFreshAIAnalysis(showResult=true){
   if(!currentCaseData || currentCaseData.careType!=='ai') return;
   const result=document.getElementById('aiActionResult');
@@ -5323,8 +5388,15 @@ async function applyFreshAIAnalysis(showResult=true){
     // Wenn die Quelle selbst eine eindeutige Frist nennt, übernimmt Sekretarz
     // den daraus berechneten Kontrolltermin automatisch. Ohne eindeutige Frist
     // bleibt die bestehende Rückfrage an den Nutzer erhalten.
-    const proposedControlDate=String(ai.proposedControlDate || '').trim();
-    const controlDateBasis=String(ai.controlDateBasis || '').trim();
+    let proposedControlDate=String(ai.proposedControlDate || '').trim();
+    let controlDateBasis=String(ai.controlDateBasis || '').trim();
+    if(currentCaseData.aiActionType==='wait' && !currentCaseData.controlDate && !/^\d{4}-\d{2}-\d{2}$/.test(proposedControlDate)){
+      const fallback=deriveExplicitControlDateFromHistory(currentCaseData);
+      if(fallback){
+        proposedControlDate=fallback.date;
+        controlDateBasis=fallback.basis;
+      }
+    }
     if(currentCaseData.aiActionType==='wait' && !currentCaseData.controlDate && /^\d{4}-\d{2}-\d{2}$/.test(proposedControlDate)){
       const proposed=new Date(proposedControlDate+'T12:00:00');
       const today=new Date(); today.setHours(0,0,0,0);

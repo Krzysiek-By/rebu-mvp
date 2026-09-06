@@ -4095,6 +4095,80 @@ async function loadGmxFolderMessages(folderPath){
 }
 
 
+let currentGmxOpenedMessage=null;
+
+function gmxCaseOptionsHtml(){
+  const cases=getStoredCases();
+  if(!cases.length) return '<option value="">Keine Angelegenheit vorhanden</option>';
+  return cases.map(c=>'<option value="'+escapeHtml(String(c.id||''))+'">'+escapeHtml(c.title||'Ohne Titel')+'</option>').join('');
+}
+
+function showGmxCaseAssignment(){
+  const box=document.getElementById('gmxMessageCaseAssignBox');
+  const select=document.getElementById('gmxMessageCaseSelect');
+  if(select) select.innerHTML=gmxCaseOptionsHtml();
+  if(box) box.classList.remove('hidden');
+}
+
+async function assignOpenedGmxMessageToCase(){
+  const select=document.getElementById('gmxMessageCaseSelect');
+  const result=document.getElementById('gmxMessageCaseAssignResult');
+  const caseId=String(select?.value||'');
+  const m=currentGmxOpenedMessage;
+  if(!m){ if(result){ result.textContent='Keine geöffnete E-Mail gefunden.'; result.classList.remove('hidden'); } return; }
+  if(!caseId){ if(result){ result.textContent='Bitte eine Angelegenheit auswählen.'; result.classList.remove('hidden'); } return; }
+
+  const cases=getStoredCases();
+  const c=cases.find(x=>String(x.id)===caseId);
+  if(!c){ if(result){ result.textContent='Die Angelegenheit wurde nicht gefunden.'; result.classList.remove('hidden'); } return; }
+
+  const mailText=[
+    'Betreff: '+String(m.subject||'(Kein Betreff)'),
+    m.from ? 'Von: '+String(m.from) : '',
+    m.to ? 'An: '+String(m.to) : '',
+    '',
+    String(m.text||'').trim()
+  ].filter((v,i)=>v!=='' || i===3).join('\n').trim();
+
+  if(!Array.isArray(c.history)) c.history=[];
+  c.history.unshift({
+    type:'E-Mail',
+    text:mailText,
+    date:String(m.dateLabel||new Date().toLocaleString('de-DE')),
+    emailSubject:String(m.subject||''),
+    emailFrom:String(m.from||''),
+    emailTo:String(m.to||''),
+    emailFolder:String(m.folderPath||''),
+    emailUid:Number(m.uid||0)
+  });
+
+  if(!saveCasesToStorage(cases)){
+    if(result){ result.textContent='Die E-Mail konnte nicht gespeichert werden.'; result.classList.remove('hidden'); }
+    return;
+  }
+  if(result){ result.textContent='E-Mail wurde zur Angelegenheit hinzugefügt.'; result.classList.remove('hidden'); }
+
+  openCase(
+    c.title||'Ohne Titel',
+    c.status||'Aktiv',
+    c.desc||c.description||'',
+    c.dateDisplay||c.date||'',
+    c.category||'Sonstiges',
+    c.nextStep||'',
+    c.careType||'',
+    c.reminderDateTime||'',
+    c.sourceSettings||null,
+    c.contact||null,
+    c.id||caseId
+  );
+
+  if(c.careType==='ai'){
+    const aiResult=document.getElementById('aiActionResult');
+    if(aiResult){ aiResult.textContent='Neue E-Mail gespeichert. KI analysiert die Angelegenheit …'; aiResult.classList.remove('hidden'); }
+    await applyFreshAIAnalysis(false);
+  }
+}
+
 async function loadGmxMessageDetail(folderPath,uid){
   const box=document.getElementById('emailFolderMessagesResult');
   const token=await getFreshEmailAccessToken();
@@ -4111,6 +4185,7 @@ async function loadGmxMessageDetail(folderPath,uid){
     const data=await res.json().catch(()=>({}));
     if(!res.ok || !data.ok) throw new Error(data.message||('E-Mail konnte nicht geladen werden. HTTP '+res.status));
     const m=data.message||{};
+    currentGmxOpenedMessage={...m,folderPath:String(folderPath||''),uid:Number(uid||0)};
     const subject=String(m.subject||'(Kein Betreff)');
     const from=String(m.from||'');
     const to=String(m.to||'');
@@ -4127,7 +4202,15 @@ async function loadGmxMessageDetail(folderPath,uid){
       (to?'<span style="opacity:.78"><b>An:</b> '+escapeHtml(to)+'</span><br>':'')+
       (cc?'<span style="opacity:.78"><b>CC:</b> '+escapeHtml(cc)+'</span><br>':'')+
       (date?'<span style="opacity:.65">'+escapeHtml(date)+'</span>':'')+'</div>'+ 
-      '<div style="white-space:pre-wrap;line-height:1.5;padding-top:14px">'+escapeHtml(text||'(Keine lesbare Textversion vorhanden.)')+'</div>'+attachmentHtml;
+      '<div style="white-space:pre-wrap;line-height:1.5;padding-top:14px">'+escapeHtml(text||'(Keine lesbare Textversion vorhanden.)')+'</div>'+attachmentHtml+
+      '<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(15,39,76,.08)">'+
+        '<button type="button" class="btn primary full" onclick="showGmxCaseAssignment()">Zu Angelegenheit hinzufügen</button>'+
+        '<div id="gmxMessageCaseAssignBox" class="hidden" style="margin-top:12px">'+
+          '<div class="field"><label>Angelegenheit</label><select id="gmxMessageCaseSelect">'+gmxCaseOptionsHtml()+'</select></div>'+
+          '<button type="button" class="btn primary full" onclick="assignOpenedGmxMessageToCase()">Hinzufügen</button>'+
+          '<div id="gmxMessageCaseAssignResult" class="hidden" style="margin-top:10px"></div>'+
+        '</div>'+
+      '</div>';
     box.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(err){
     box.textContent=err?.message||'Die E-Mail konnte nicht geladen werden.';

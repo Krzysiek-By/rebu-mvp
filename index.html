@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.45 TEST">
+<meta name="sekretarz-version" content="DE-v13.75 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -5452,6 +5452,31 @@ function ymdFromLocalDate(d){
   return y+'-'+m+'-'+day;
 }
 
+function ensureControlDateHistoryConsistency(caseData){
+  if(!caseData || !/^\d{4}-\d{2}-\d{2}$/.test(String(caseData.controlDate||''))) return false;
+  const currentFormatted=formatControlDate(caseData.controlDate);
+  const history=getCaseHistory(caseData);
+  const controlItems=history.filter(h=>String(h?.type||'')==='Kontrolltermin');
+  // Wenn die aktuell gespeicherte Frist bereits als Kontrolltermin dokumentiert ist,
+  // nichts verändern. Dadurch bleibt die Reparatur idempotent.
+  if(controlItems.some(h=>String(h?.text||'').includes(currentFormatted))) return false;
+
+  let previous='';
+  for(const h of controlItems){
+    const matches=String(h?.text||'').match(/\b\d{1,2}\.\d{1,2}\.\d{4}\b/g);
+    if(matches && matches.length){ previous=matches[matches.length-1]; break; }
+  }
+  history.unshift({
+    type:'Kontrolltermin',
+    text:previous
+      ? 'Kontrolltermin aufgrund neuer Informationen aktualisiert: '+previous+' → '+currentFormatted+'.'
+      : 'Aktueller Kontrolltermin dokumentiert: '+currentFormatted+'.',
+    date:new Date().toLocaleString('de-DE')
+  });
+  caseData.history=history;
+  return true;
+}
+
 function deriveExplicitControlDateFromHistory(caseData){
   const history=getCaseHistory(caseData).map((item,index)=>({item,index,date:parseHistoryDateForControl(item?.date)}));
   history.sort((a,b)=>{
@@ -5736,6 +5761,12 @@ function openCase(title,status,desc,date,category='Sonstiges',nextStep='',careTy
     ...(storedCase || {}),
     id,title,status,desc,date,category,nextStep,careType,reminderDateTime,sourceSettings,contact,dateDisplay:date
   };
+
+  // Historie automatisch nachziehen, falls ein bereits aktualisierter
+  // Kontrolltermin in älteren Testdaten noch nicht protokolliert wurde.
+  if(ensureControlDateHistoryConsistency(currentCaseData)){
+    currentCaseData=upsertStoredCase(currentCaseData);
+  }
 
   try{
     if(id){
@@ -6510,6 +6541,6 @@ function resetDemoCases(){
 }
 
 </script>
-<!-- Sekretarz v13.58 TEST -->
+<!-- Sekretarz v13.75 TEST -->
 </body>
 </html>

@@ -3885,8 +3885,13 @@ async function testGmxEmailConnection(){
   if(status){ status.textContent='Sekretarz prüft IMAP und SMTP …'; status.classList.remove('hidden'); }
   try{
     const res=await fetch('/api/email-connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,appPassword})});
-    const data=await res.json().catch(()=>({}));
-    if(!res.ok || !data.ok) throw new Error(data.message||'Verbindung konnte nicht hergestellt werden.');
+    const raw=await res.text();
+    let data={};
+    try{ data=raw?JSON.parse(raw):{}; }catch(_){ data={}; }
+    if(!res.ok || !data.ok){
+      const tech=[data.stage?('Stufe: '+data.stage):'',data.code?('Code: '+data.code):'',(!data.message&&res.status)?('HTTP '+res.status):''].filter(Boolean).join(' · ');
+      throw new Error((data.message||'Verbindung konnte nicht hergestellt werden.')+(tech?'\n'+tech:''));
+    }
     if(passwordEl) passwordEl.value='';
     const result=document.getElementById('emailConnectResult');
     if(result) result.innerHTML='<b>GMX ist erreichbar.</b><br>IMAP: erfolgreich geprüft.<br>SMTP: erfolgreich geprüft.<br><br>Das Anwendungspasswort wurde nicht im Browser gespeichert. Eine dauerhafte Verbindung und der echte Versand werden im nächsten Ausbauschritt eingerichtet.';

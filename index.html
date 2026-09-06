@@ -1833,7 +1833,7 @@ button{cursor:pointer}
             <small>Für dein neues Sekretarz-E-Mail-Konto.</small>
           </div>
           <div class="provider-actions">
-            <button type="button" onclick="startGmxEmailConnect()">Verbinden</button>
+            <button id="gmxConnectButton" type="button" onclick="startGmxEmailConnect()">Verbinden</button>
           </div>
         </div>
       </div>
@@ -1854,9 +1854,10 @@ button{cursor:pointer}
           <button type="button" style="margin-top:10px;width:100%" onclick="showEmailConnectStep(1)">Zurück</button>
         </div>
         <div id="emailConnectStep3" class="flow-body hidden">
-          <p><b>Verbindung geprüft</b></p>
+          <p><b id="emailConnectStep3Title">Verbindung geprüft</b></p>
           <div id="emailConnectResult" class="sync-note" style="margin-top:12px"></div>
-          <button type="button" style="margin-top:16px;width:100%" onclick="showEmailConnectStep(2)">Erneut prüfen</button>
+          <button id="emailConnectPersistButton" class="primary" type="button" style="margin-top:16px;width:100%" onclick="savePersistentGmxConnection()">Dauerhaft verbinden</button>
+          <button id="emailConnectRetestButton" type="button" style="margin-top:10px;width:100%" onclick="showEmailConnectStep(2)">Erneut prüfen</button>
         </div>
       </div>
       <div id="emailConnectStatus" class="connect-status hidden"></div>
@@ -3836,12 +3837,16 @@ function openMore(){
 function openEmailConnect(){
   historyStack=['de011','de016','de019'];
   showDirect('de019');
+  setTimeout(loadPersistentEmailStatus,0);
 }
+let volatileEmailConnectPassword='';
+
 function startGmxEmailConnect(){
   const flow=document.getElementById('emailConnectFlow');
   if(flow) flow.classList.remove('hidden');
   const input=document.getElementById('emailConnectAddress');
   if(input) input.value=localStorage.getItem('sekretarzEmailConnectAddress')||'';
+  volatileEmailConnectPassword='';
   const password=document.getElementById('emailConnectAppPassword');
   if(password) password.value='';
   const status=document.getElementById('emailConnectStatus');
@@ -3892,15 +3897,92 @@ async function testGmxEmailConnection(){
       const tech=[data.stage?('Stufe: '+data.stage):'',data.code?('Code: '+data.code):'',(!data.message&&res.status)?('HTTP '+res.status):''].filter(Boolean).join(' · ');
       throw new Error((data.message||'Verbindung konnte nicht hergestellt werden.')+(tech?'\n'+tech:''));
     }
+    volatileEmailConnectPassword=appPassword;
     if(passwordEl) passwordEl.value='';
+    const title=document.getElementById('emailConnectStep3Title');
+    if(title) title.textContent='Verbindung geprüft';
+    const persist=document.getElementById('emailConnectPersistButton');
+    const retest=document.getElementById('emailConnectRetestButton');
+    if(persist){ persist.classList.remove('hidden'); persist.disabled=false; persist.textContent='Dauerhaft verbinden'; }
+    if(retest) retest.classList.remove('hidden');
     const result=document.getElementById('emailConnectResult');
-    if(result) result.innerHTML='<b>GMX ist erreichbar.</b><br>IMAP: erfolgreich geprüft.<br>SMTP: erfolgreich geprüft.<br><br>Das Anwendungspasswort wurde nicht im Browser gespeichert. Eine dauerhafte Verbindung und der echte Versand werden im nächsten Ausbauschritt eingerichtet.';
+    if(result) result.innerHTML='<b>GMX ist erreichbar.</b><br>IMAP: erfolgreich geprüft.<br>SMTP: erfolgreich geprüft.<br><br>Das Anwendungspasswort ist nur vorübergehend im Arbeitsspeicher dieser Seite und wurde nicht im Browser gespeichert. Mit „Dauerhaft verbinden“ wird es verschlüsselt auf dem Sekretarz-Server gespeichert.';
     showEmailConnectStep(3);
   }catch(err){
     if(status){ status.textContent=err?.message||'Die GMX-Verbindung konnte nicht geprüft werden.'; status.classList.remove('hidden'); }
   }finally{
     if(button){ button.disabled=false; button.textContent='Verbindung prüfen'; }
   }
+}
+
+
+async function getFreshEmailAccessToken(){
+  let session=getSupabaseSession();
+  if(!session?.access_token) return '';
+  try{
+    const exp=Number(session?.expires_at||0);
+    const now=Math.floor(Date.now()/1000);
+    if(exp && exp-now<60) session=await refreshSupabaseSession();
+  }catch(_){ }
+  return session?.access_token||'';
+}
+
+async function savePersistentGmxConnection(){
+  const email=(localStorage.getItem('sekretarzEmailConnectAddress')||'').trim().toLowerCase();
+  const appPassword=volatileEmailConnectPassword;
+  const persist=document.getElementById('emailConnectPersistButton');
+  const status=document.getElementById('emailConnectStatus');
+  if(!email || !appPassword){
+    if(status){ status.textContent='Bitte prüfe die GMX-Verbindung erneut, bevor du sie dauerhaft speicherst.'; status.classList.remove('hidden'); }
+    showEmailConnectStep(2);
+    return;
+  }
+  const token=await getFreshEmailAccessToken();
+  if(!token){
+    if(status){ status.textContent='Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.'; status.classList.remove('hidden'); }
+    return;
+  }
+  if(persist){ persist.disabled=true; persist.textContent='Wird sicher gespeichert …'; }
+  if(status){ status.textContent='Sekretarz verschlüsselt die Zugangsdaten und speichert die Verbindung …'; status.classList.remove('hidden'); }
+  try{
+    const res=await fetch('/api/email-connect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({action:'connect',email,appPassword})
+    });
+    const raw=await res.text();
+    let data={}; try{ data=raw?JSON.parse(raw):{}; }catch(_){ }
+    if(!res.ok || !data.ok) throw new Error(data.message||('Verbindung konnte nicht gespeichert werden. HTTP '+res.status));
+    volatileEmailConnectPassword='';
+    const title=document.getElementById('emailConnectStep3Title');
+    if(title) title.textContent='GMX verbunden';
+    const result=document.getElementById('emailConnectResult');
+    if(result) result.innerHTML='<b>Verbunden.</b><br>'+escapeHtml(data.email||email)+'<br><br>IMAP und SMTP wurden erneut geprüft. Das Anwendungspasswort ist verschlüsselt auf dem Sekretarz-Server gespeichert und liegt nicht im Browser.';
+    if(persist) persist.classList.add('hidden');
+    document.getElementById('emailConnectRetestButton')?.classList.add('hidden');
+    if(status) status.classList.add('hidden');
+    const gmxButton=document.getElementById('gmxConnectButton');
+    if(gmxButton){ gmxButton.textContent='Verbunden'; gmxButton.disabled=true; }
+  }catch(err){
+    if(status){ status.textContent=err?.message||'Die dauerhafte GMX-Verbindung konnte nicht gespeichert werden.'; status.classList.remove('hidden'); }
+    if(persist){ persist.disabled=false; persist.textContent='Dauerhaft verbinden'; }
+  }
+}
+
+async function loadPersistentEmailStatus(){
+  const gmxButton=document.getElementById('gmxConnectButton');
+  const token=await getFreshEmailAccessToken();
+  if(!token) return;
+  try{
+    const res=await fetch('/api/email-connect',{headers:{'Authorization':'Bearer '+token}});
+    const data=await res.json().catch(()=>({}));
+    if(res.ok && data.ok && data.connected){
+      localStorage.setItem('sekretarzEmailConnectAddress',data.email||'');
+      if(gmxButton){ gmxButton.textContent='Verbunden'; gmxButton.disabled=true; }
+    }else if(gmxButton){
+      gmxButton.textContent='Verbinden'; gmxButton.disabled=false;
+    }
+  }catch(_){ }
 }
 
 function openProfile(){

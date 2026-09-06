@@ -101,13 +101,24 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
     });
     await imap.connect();
 
-    const listed=await imap.list();
+    // Wichtig für GMX: Status möglichst direkt zusammen mit LIST holen.
+    // Einige benutzerdefinierte, leere Ordner reagieren auf einen separaten
+    // STATUS/EXAMINE-Aufruf anders als auf LIST-STATUS. Dadurch konnte z.B.
+    // ein leerer Ordner als Fehler erscheinen, obwohl er korrekt existiert.
+    let listed;
+    try{
+      listed=await imap.list({statusQuery:{messages:true}});
+    }catch(_){
+      listed=await imap.list();
+    }
+
     const box=(Array.isArray(listed)?listed:[]).find(x=>String(x?.path||x?.name||'')===String(folderPath));
     if(!box){
       const err=new Error('MAILBOX_NOT_FOUND');
       err.code='MAILBOX_NOT_FOUND';
       throw err;
     }
+
     const flags=box?.flags;
     const noSelect = !!(flags && (
       (typeof flags.has==='function' && flags.has('\\Noselect')) ||
@@ -118,28 +129,34 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
       return [];
     }
 
-    // Zuerst nur den Status abfragen. Das ist für leere Ordner robuster als
-    // direkt SELECT/EXAMINE zu senden und reicht aus, um sicher festzustellen,
-    // dass wirklich keine Nachrichten vorhanden sind.
-    let total=0;
-    try{
-      const st=await imap.status(String(box.path||folderPath),{messages:true});
-      total=Number(st?.messages||0);
-    }catch(statusErr){
-      // Falls GMX STATUS für diesen Ordner nicht liefert, verwenden wir den
-      // normalen Read-only-Open als Fallback.
-      await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
-      total=Number(imap.mailbox?.exists||0);
+    // LIST-STATUS ist die bevorzugte Quelle für die Nachrichtenanzahl.
+    let total = Number(box?.status?.messages);
+    if(!Number.isFinite(total)) total = NaN;
+
+    // Nur wenn LIST-STATUS keine Zahl geliefert hat, versuchen wir STATUS.
+    if(!Number.isFinite(total)){
+      try{
+        const st=await imap.status(String(box.path||folderPath),{messages:true});
+        total=Number(st?.messages);
+      }catch(_){
+        total=NaN;
+      }
     }
 
-    if(!total){
+    // Wenn GMX eindeutig 0 meldet, NICHT öffnen. Das ist entscheidend für
+    // leere benutzerdefinierte Ordner wie „Isarwinkel“.
+    if(Number.isFinite(total) && total===0){
       await imap.logout();
       return [];
     }
 
-    // Nur nicht-leere Ordner müssen tatsächlich geöffnet werden.
-    if(!imap.mailbox || String(imap.mailbox.path||'') !== String(box.path||folderPath)) {
-      await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
+    // Für nicht-leere bzw. unbekannte Ordner read-only öffnen.
+    await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
+    if(!Number.isFinite(total)) total=Number(imap.mailbox?.exists||0);
+
+    if(!total){
+      await imap.logout();
+      return [];
     }
 
     const count=Math.max(1,Math.min(Number(limit)||10,50));
@@ -166,8 +183,6 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
       return { subject:get('Subject'), from:get('From'), date:get('Date') };
     }
 
-    // Einzelne Nachrichten laden: eine fehlerhafte/ungewöhnliche Mail darf nicht
-    // den kompletten Ordner unlesbar machen.
     for(let seq=total; seq>=first; seq--){
       try{
         let msg;
@@ -205,7 +220,6 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
           seen:!!(msg?.flags && typeof msg.flags.has==='function' && msg.flags.has('\\Seen'))
         });
       }catch(itemErr){
-        // Überspringen statt den ganzen Ordner scheitern zu lassen.
         rows.push({uid:0,subject:'(Nachricht konnte nicht vollständig gelesen werden)',from:'',date:'',dateLabel:'',seen:false,readError:safeCode(itemErr)});
       }
     }
@@ -299,7 +313,7 @@ module.exports = async function handler(req,res){
       if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
       const password=decryptPassword(account);
       const folders=await loadGmxFolders(account.email,password);
-      return res.status(200).json({ok:true,email:account.email,folders,version:'13.62'});
+      return res.status(200).json({ok:true,email:account.email,folders,version:'13.64'});
     }catch(err){
       return res.status(502).json({ok:false,message:'Die GMX-Ordner konnten nicht geladen werden.',code:safeCode(err)});
     }
@@ -316,7 +330,7 @@ module.exports = async function handler(req,res){
       if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
       const password=decryptPassword(account);
       const messages=await loadGmxMessages(account.email,password,folder,req.body?.limit||10);
-      return res.status(200).json({ok:true,email:account.email,folder,messages,version:'13.62'});
+      return res.status(200).json({ok:true,email:account.email,folder,messages,version:'13.64'});
     }catch(err){
       return res.status(502).json({ok:false,message:'Die Nachrichten aus diesem GMX-Ordner konnten nicht geladen werden.',code:safeCode(err)});
     }
@@ -332,7 +346,7 @@ module.exports = async function handler(req,res){
   if(!checked.ok) return res.status(checked.status||502).json(checked);
 
   if(action!=='connect'){
-    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.62'});
+    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.64'});
   }
 
   try{
@@ -356,7 +370,7 @@ module.exports = async function handler(req,res){
     if(!r.ok){
       return res.status(502).json({ok:false,message:'Die verschlüsselte E-Mail-Verbindung konnte nicht gespeichert werden.',code:'SUPABASE_'+r.status});
     }
-    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.62'});
+    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.64'});
   }catch(err){
     return res.status(500).json({ok:false,message:'Die sichere E-Mail-Verbindung konnte nicht gespeichert werden.',code:safeCode(err)});
   }

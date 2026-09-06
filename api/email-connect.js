@@ -1,6 +1,5 @@
 const { ImapFlow } = require('imapflow');
 const nodemailer = require('nodemailer');
-const { simpleParser } = require('mailparser');
 const dns = require('dns').promises;
 const crypto = require('crypto');
 
@@ -102,24 +101,13 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
     });
     await imap.connect();
 
-    // Wichtig für GMX: Status möglichst direkt zusammen mit LIST holen.
-    // Einige benutzerdefinierte, leere Ordner reagieren auf einen separaten
-    // STATUS/EXAMINE-Aufruf anders als auf LIST-STATUS. Dadurch konnte z.B.
-    // ein leerer Ordner als Fehler erscheinen, obwohl er korrekt existiert.
-    let listed;
-    try{
-      listed=await imap.list({statusQuery:{messages:true}});
-    }catch(_){
-      listed=await imap.list();
-    }
-
+    const listed=await imap.list();
     const box=(Array.isArray(listed)?listed:[]).find(x=>String(x?.path||x?.name||'')===String(folderPath));
     if(!box){
       const err=new Error('MAILBOX_NOT_FOUND');
       err.code='MAILBOX_NOT_FOUND';
       throw err;
     }
-
     const flags=box?.flags;
     const noSelect = !!(flags && (
       (typeof flags.has==='function' && flags.has('\\Noselect')) ||
@@ -130,34 +118,28 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
       return [];
     }
 
-    // LIST-STATUS ist die bevorzugte Quelle für die Nachrichtenanzahl.
-    let total = Number(box?.status?.messages);
-    if(!Number.isFinite(total)) total = NaN;
-
-    // Nur wenn LIST-STATUS keine Zahl geliefert hat, versuchen wir STATUS.
-    if(!Number.isFinite(total)){
-      try{
-        const st=await imap.status(String(box.path||folderPath),{messages:true});
-        total=Number(st?.messages);
-      }catch(_){
-        total=NaN;
-      }
+    // Zuerst nur den Status abfragen. Das ist für leere Ordner robuster als
+    // direkt SELECT/EXAMINE zu senden und reicht aus, um sicher festzustellen,
+    // dass wirklich keine Nachrichten vorhanden sind.
+    let total=0;
+    try{
+      const st=await imap.status(String(box.path||folderPath),{messages:true});
+      total=Number(st?.messages||0);
+    }catch(statusErr){
+      // Falls GMX STATUS für diesen Ordner nicht liefert, verwenden wir den
+      // normalen Read-only-Open als Fallback.
+      await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
+      total=Number(imap.mailbox?.exists||0);
     }
-
-    // Wenn GMX eindeutig 0 meldet, NICHT öffnen. Das ist entscheidend für
-    // leere benutzerdefinierte Ordner wie „Isarwinkel“.
-    if(Number.isFinite(total) && total===0){
-      await imap.logout();
-      return [];
-    }
-
-    // Für nicht-leere bzw. unbekannte Ordner read-only öffnen.
-    await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
-    if(!Number.isFinite(total)) total=Number(imap.mailbox?.exists||0);
 
     if(!total){
       await imap.logout();
       return [];
+    }
+
+    // Nur nicht-leere Ordner müssen tatsächlich geöffnet werden.
+    if(!imap.mailbox || String(imap.mailbox.path||'') !== String(box.path||folderPath)) {
+      await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
     }
 
     const count=Math.max(1,Math.min(Number(limit)||10,50));
@@ -184,6 +166,8 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
       return { subject:get('Subject'), from:get('From'), date:get('Date') };
     }
 
+    // Einzelne Nachrichten laden: eine fehlerhafte/ungewöhnliche Mail darf nicht
+    // den kompletten Ordner unlesbar machen.
     for(let seq=total; seq>=first; seq--){
       try{
         let msg;
@@ -221,6 +205,7 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
           seen:!!(msg?.flags && typeof msg.flags.has==='function' && msg.flags.has('\\Seen'))
         });
       }catch(itemErr){
+        // Überspringen statt den ganzen Ordner scheitern zu lassen.
         rows.push({uid:0,subject:'(Nachricht konnte nicht vollständig gelesen werden)',from:'',date:'',dateLabel:'',seen:false,readError:safeCode(itemErr)});
       }
     }
@@ -231,6 +216,118 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
     try{ if(imap?.usable) await imap.logout(); }catch(_){ }
     throw err;
   }
+}
+
+
+function decodeMimeHeader(value){
+  let v=String(value||'');
+  return v.replace(/=\?([^?]+)\?([bq])\?([^?]*)\?=/gi,(_,charset,enc,data)=>{
+    try{
+      if(String(enc).toLowerCase()==='b') return Buffer.from(data,'base64').toString('utf8');
+      const bytes=String(data).replace(/_/g,' ').replace(/=([0-9A-F]{2})/gi,(m,h)=>String.fromCharCode(parseInt(h,16)));
+      return Buffer.from(bytes,'binary').toString('utf8');
+    }catch{return _}
+  });
+}
+
+function parseHeaderBlock(raw){
+  const head=String(raw||'').replace(/\r?\n[ \t]+/g,' ');
+  const out={};
+  for(const line of head.split(/\r?\n/)){
+    const i=line.indexOf(':');
+    if(i<1) continue;
+    const k=line.slice(0,i).trim().toLowerCase();
+    const v=line.slice(i+1).trim();
+    out[k]=out[k] ? out[k]+', '+v : v;
+  }
+  return out;
+}
+
+function decodeQuotedPrintable(body){
+  const soft=String(body||'').replace(/=\r?\n/g,'');
+  const bin=soft.replace(/=([0-9A-F]{2})/gi,(m,h)=>String.fromCharCode(parseInt(h,16)));
+  try{return Buffer.from(bin,'binary').toString('utf8')}catch{return bin}
+}
+
+function stripHtml(html){
+  return String(html||'')
+    .replace(/<style[\s\S]*?<\/style>/gi,' ')
+    .replace(/<script[\s\S]*?<\/script>/gi,' ')
+    .replace(/<br\s*\/?\s*>/gi,'\n')
+    .replace(/<\/p>/gi,'\n\n')
+    .replace(/<[^>]+>/g,' ')
+    .replace(/&nbsp;/gi,' ')
+    .replace(/&amp;/gi,'&')
+    .replace(/&lt;/gi,'<')
+    .replace(/&gt;/gi,'>')
+    .replace(/&quot;/gi,'"')
+    .replace(/&#39;/gi,"'")
+    .replace(/[ \t]+\n/g,'\n')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+function decodePartBody(body, encoding){
+  const enc=String(encoding||'').toLowerCase();
+  try{
+    if(enc==='base64') return Buffer.from(String(body||'').replace(/\s+/g,''),'base64').toString('utf8');
+    if(enc==='quoted-printable') return decodeQuotedPrintable(body);
+  }catch(_){ }
+  return String(body||'');
+}
+
+function parseMimeMessage(source){
+  const raw=Buffer.isBuffer(source)?source.toString('utf8'):String(source||'');
+  const split=raw.search(/\r?\n\r?\n/);
+  const headRaw=split>=0?raw.slice(0,split):raw;
+  const bodyRaw=split>=0?raw.slice(split).replace(/^\r?\n\r?\n/,''):'';
+  const h=parseHeaderBlock(headRaw);
+  const ct=String(h['content-type']||'text/plain');
+  const boundaryMatch=ct.match(/boundary\s*=\s*(?:"([^"]+)"|([^;\s]+))/i);
+  const attachments=[];
+  let plain=''; let html='';
+
+  if(boundaryMatch){
+    const boundary=boundaryMatch[1]||boundaryMatch[2];
+    const marker='--'+boundary;
+    const parts=bodyRaw.split(marker).slice(1);
+    for(let part of parts){
+      if(/^--/.test(part.trim())) continue;
+      part=part.replace(/^\r?\n/,'');
+      const pi=part.search(/\r?\n\r?\n/);
+      if(pi<0) continue;
+      const ph=parseHeaderBlock(part.slice(0,pi));
+      const pb=part.slice(pi).replace(/^\r?\n\r?\n/,'').replace(/\r?\n$/,'');
+      const pct=String(ph['content-type']||'text/plain');
+      const disp=String(ph['content-disposition']||'');
+      const fnm=(disp.match(/filename\s*=\s*(?:"([^"]+)"|([^;\s]+))/i)||pct.match(/name\s*=\s*(?:"([^"]+)"|([^;\s]+))/i));
+      const filename=fnm?decodeMimeHeader(fnm[1]||fnm[2]||'Anhang'):'';
+      const enc=ph['content-transfer-encoding']||'';
+      if(/attachment/i.test(disp) || filename){
+        let size=0;
+        if(String(enc).toLowerCase()==='base64') size=Math.floor(String(pb).replace(/\s+/g,'').length*0.75);
+        else size=Buffer.byteLength(String(pb),'utf8');
+        attachments.push({filename:filename||'Anhang',contentType:pct.split(';')[0].trim(),size});
+        continue;
+      }
+      const decoded=decodePartBody(pb,enc);
+      if(/^text\/plain/i.test(pct) && !plain) plain=decoded.trim();
+      else if(/^text\/html/i.test(pct) && !html) html=decoded.trim();
+    }
+  }else{
+    const decoded=decodePartBody(bodyRaw,h['content-transfer-encoding']||'');
+    if(/^text\/html/i.test(ct)) html=decoded.trim(); else plain=decoded.trim();
+  }
+
+  return {
+    subject:decodeMimeHeader(h.subject||'(Kein Betreff)'),
+    from:decodeMimeHeader(h.from||''),
+    to:decodeMimeHeader(h.to||''),
+    cc:decodeMimeHeader(h.cc||''),
+    date:h.date||'',
+    text:(plain||stripHtml(html)||'').trim(),
+    attachments
+  };
 }
 
 async function loadGmxMessage(email, appPassword, folderPath, uid){
@@ -245,53 +342,19 @@ async function loadGmxMessage(email, appPassword, folderPath, uid){
     await imap.connect();
     await imap.mailboxOpen(String(folderPath),{readOnly:true});
     const messageUid=Number(uid||0);
-    if(!Number.isFinite(messageUid) || messageUid<=0){
-      const err=new Error('MESSAGE_UID_INVALID');
-      err.code='MESSAGE_UID_INVALID';
-      throw err;
-    }
+    if(!Number.isFinite(messageUid) || messageUid<=0){ const e=new Error('MESSAGE_UID_INVALID'); e.code='MESSAGE_UID_INVALID'; throw e; }
     const msg=await imap.fetchOne(messageUid,{uid:true,source:true,internalDate:true},{uid:true});
-    if(!msg?.source){
-      const err=new Error('MESSAGE_NOT_FOUND');
-      err.code='MESSAGE_NOT_FOUND';
-      throw err;
-    }
-    const parsed=await simpleParser(msg.source,{skipHtmlToText:false,skipTextToHtml:true});
-    const from=parsed?.from?.text||'';
-    const to=parsed?.to?.text||'';
-    const cc=parsed?.cc?.text||'';
-    const subject=String(parsed?.subject||'(Kein Betreff)');
-    const dt=parsed?.date||msg?.internalDate||null;
-    let text=String(parsed?.text||'').trim();
-    let html=typeof parsed?.html==='string'?parsed.html:'';
-    if(!text && html){
-      text=html
-        .replace(/<style[\s\S]*?<\/style>/gi,' ')
-        .replace(/<script[\s\S]*?<\/script>/gi,' ')
-        .replace(/<br\s*\/?\s*>/gi,'\n')
-        .replace(/<\/p>/gi,'\n\n')
-        .replace(/<[^>]+>/g,' ')
-        .replace(/&nbsp;/gi,' ')
-        .replace(/&amp;/gi,'&')
-        .replace(/&lt;/gi,'<')
-        .replace(/&gt;/gi,'>')
-        .replace(/&quot;/gi,'"')
-        .replace(/&#39;/gi,"'")
-        .replace(/[ \t]+\n/g,'\n')
-        .replace(/\n{3,}/g,'\n\n')
-        .trim();
-    }
-    const attachments=(Array.isArray(parsed?.attachments)?parsed.attachments:[]).map(a=>({
-      filename:String(a?.filename||'Anhang'),
-      contentType:String(a?.contentType||''),
-      size:Number(a?.size||a?.content?.length||0)
-    }));
+    if(!msg?.source){ const e=new Error('MESSAGE_NOT_FOUND'); e.code='MESSAGE_NOT_FOUND'; throw e; }
+    const parsed=parseMimeMessage(msg.source);
+    const dt=parsed.date ? new Date(parsed.date) : (msg.internalDate ? new Date(msg.internalDate) : null);
     await imap.logout();
     return {
-      uid:messageUid, subject, from, to, cc,
-      date:dt && !Number.isNaN(new Date(dt).getTime()) ? new Date(dt).toISOString() : '',
-      dateLabel:dt && !Number.isNaN(new Date(dt).getTime()) ? new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(new Date(dt)) : '',
-      text, attachments
+      uid:messageUid,
+      subject:String(parsed.subject||'(Kein Betreff)'),
+      from:String(parsed.from||''), to:String(parsed.to||''), cc:String(parsed.cc||''),
+      date:dt && !Number.isNaN(dt.getTime()) ? dt.toISOString() : '',
+      dateLabel:dt && !Number.isNaN(dt.getTime()) ? new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(dt) : '',
+      text:String(parsed.text||''), attachments:parsed.attachments||[]
     };
   }catch(err){
     try{ if(imap?.usable) await imap.logout(); }catch(_){ }
@@ -380,7 +443,7 @@ module.exports = async function handler(req,res){
       if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
       const password=decryptPassword(account);
       const folders=await loadGmxFolders(account.email,password);
-      return res.status(200).json({ok:true,email:account.email,folders,version:'13.65'});
+      return res.status(200).json({ok:true,email:account.email,folders,version:'13.66'});
     }catch(err){
       return res.status(502).json({ok:false,message:'Die GMX-Ordner konnten nicht geladen werden.',code:safeCode(err)});
     }
@@ -397,12 +460,11 @@ module.exports = async function handler(req,res){
       if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
       const password=decryptPassword(account);
       const messages=await loadGmxMessages(account.email,password,folder,req.body?.limit||10);
-      return res.status(200).json({ok:true,email:account.email,folder,messages,version:'13.65'});
+      return res.status(200).json({ok:true,email:account.email,folder,messages,version:'13.66'});
     }catch(err){
       return res.status(502).json({ok:false,message:'Die Nachrichten aus diesem GMX-Ordner konnten nicht geladen werden.',code:safeCode(err)});
     }
   }
-
 
   if(action==='message'){
     try{
@@ -415,7 +477,7 @@ module.exports = async function handler(req,res){
       if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
       const password=decryptPassword(account);
       const message=await loadGmxMessage(account.email,password,folder,uid);
-      return res.status(200).json({ok:true,email:account.email,folder,message,version:'13.65'});
+      return res.status(200).json({ok:true,email:account.email,folder,message,version:'13.66'});
     }catch(err){
       return res.status(502).json({ok:false,message:'Die E-Mail konnte nicht vollständig geladen werden.',code:safeCode(err)});
     }
@@ -431,7 +493,7 @@ module.exports = async function handler(req,res){
   if(!checked.ok) return res.status(checked.status||502).json(checked);
 
   if(action!=='connect'){
-    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.65'});
+    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.66'});
   }
 
   try{
@@ -455,7 +517,7 @@ module.exports = async function handler(req,res){
     if(!r.ok){
       return res.status(502).json({ok:false,message:'Die verschlüsselte E-Mail-Verbindung konnte nicht gespeichert werden.',code:'SUPABASE_'+r.status});
     }
-    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.65'});
+    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.66'});
   }catch(err){
     return res.status(500).json({ok:false,message:'Die sichere E-Mail-Verbindung konnte nicht gespeichert werden.',code:safeCode(err)});
   }

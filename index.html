@@ -1838,13 +1838,25 @@ button{cursor:pointer}
         </div>
       </div>
       <div id="emailConnectFlow" class="connect-flow hidden">
-        <div class="flow-top"><b>GMX verbinden</b><span class="flow-step">Schritt 1 von 3</span></div>
-        <div class="flow-progress"><span style="width:33%"></span></div>
-        <div class="flow-body">
+        <div class="flow-top"><b>GMX verbinden</b><span id="emailConnectStepLabel" class="flow-step">Schritt 1 von 3</span></div>
+        <div class="flow-progress"><span id="emailConnectProgress" style="width:33%"></span></div>
+        <div id="emailConnectStep1" class="flow-body">
           <p><b>E-Mail-Adresse des Sekretarz-Kontos</b></p>
           <div class="field" style="margin-top:12px"><label>E-Mail</label><input id="emailConnectAddress" type="email" autocomplete="email" placeholder="name@gmx.de"></div>
-          <div class="sync-note" style="margin-top:14px"><b>Noch kein Passwort eingeben.</b><br>Im nächsten Schritt richten wir die sichere Server-Verbindung ein. Zugangsdaten werden nicht im Browser gespeichert.</div>
+          <div class="sync-note" style="margin-top:14px"><b>Noch kein Passwort eingeben.</b><br>Im nächsten Schritt prüfen wir die echte Server-Verbindung zu GMX. Zugangsdaten werden nicht im Browser gespeichert.</div>
           <button class="primary" type="button" style="margin-top:16px;width:100%" onclick="saveEmailConnectAddress()">Weiter</button>
+        </div>
+        <div id="emailConnectStep2" class="flow-body hidden">
+          <p><b>Sichere Verbindung prüfen</b></p>
+          <div class="sync-note" style="margin-top:12px"><b>Verwende ein GMX-Anwendungspasswort.</b><br>Nicht dein normales GMX-Passwort. IMAP muss im GMX-Konto aktiviert sein. Das Anwendungspasswort wird nur für diesen Verbindungstest an den Sekretarz-Server übertragen und nicht im Browser gespeichert.</div>
+          <div class="field" style="margin-top:14px"><label>Anwendungspasswort</label><input id="emailConnectAppPassword" type="password" autocomplete="off" placeholder="GMX-Anwendungspasswort"></div>
+          <button id="emailConnectTestButton" class="primary" type="button" style="margin-top:16px;width:100%" onclick="testGmxEmailConnection()">Verbindung prüfen</button>
+          <button type="button" style="margin-top:10px;width:100%" onclick="showEmailConnectStep(1)">Zurück</button>
+        </div>
+        <div id="emailConnectStep3" class="flow-body hidden">
+          <p><b>Verbindung geprüft</b></p>
+          <div id="emailConnectResult" class="sync-note" style="margin-top:12px"></div>
+          <button type="button" style="margin-top:16px;width:100%" onclick="showEmailConnectStep(2)">Erneut prüfen</button>
         </div>
       </div>
       <div id="emailConnectStatus" class="connect-status hidden"></div>
@@ -3829,9 +3841,23 @@ function startGmxEmailConnect(){
   const flow=document.getElementById('emailConnectFlow');
   if(flow) flow.classList.remove('hidden');
   const input=document.getElementById('emailConnectAddress');
-  if(input){ input.value=localStorage.getItem('sekretarzEmailConnectAddress')||''; setTimeout(()=>input.focus(),50); }
+  if(input) input.value=localStorage.getItem('sekretarzEmailConnectAddress')||'';
+  const password=document.getElementById('emailConnectAppPassword');
+  if(password) password.value='';
   const status=document.getElementById('emailConnectStatus');
   if(status) status.classList.add('hidden');
+  showEmailConnectStep(1);
+  if(input) setTimeout(()=>input.focus(),50);
+}
+function showEmailConnectStep(step){
+  [1,2,3].forEach(n=>document.getElementById('emailConnectStep'+n)?.classList.toggle('hidden',n!==step));
+  const label=document.getElementById('emailConnectStepLabel');
+  const progress=document.getElementById('emailConnectProgress');
+  if(label) label.textContent='Schritt '+step+' von 3';
+  if(progress) progress.style.width=(step===1?'33%':step===2?'66%':'100%');
+  const status=document.getElementById('emailConnectStatus');
+  if(status) status.classList.add('hidden');
+  if(step===2) setTimeout(()=>document.getElementById('emailConnectAppPassword')?.focus(),50);
 }
 function saveEmailConnectAddress(){
   const input=document.getElementById('emailConnectAddress');
@@ -3842,7 +3868,34 @@ function saveEmailConnectAddress(){
     return;
   }
   localStorage.setItem('sekretarzEmailConnectAddress',email);
-  if(status){ status.innerHTML='<b>E-Mail-Adresse gespeichert.</b><br>Als Nächstes richten wir die sichere Server-Verbindung zu GMX ein. Noch wurde kein Passwort gespeichert und keine Verbindung hergestellt.'; status.classList.remove('hidden'); }
+  showEmailConnectStep(2);
+}
+async function testGmxEmailConnection(){
+  const email=(localStorage.getItem('sekretarzEmailConnectAddress')||'').trim().toLowerCase();
+  const passwordEl=document.getElementById('emailConnectAppPassword');
+  const appPassword=(passwordEl?.value||'').trim();
+  const status=document.getElementById('emailConnectStatus');
+  const button=document.getElementById('emailConnectTestButton');
+  if(!email){ showEmailConnectStep(1); return; }
+  if(!appPassword){
+    if(status){ status.textContent='Bitte gib das GMX-Anwendungspasswort ein.'; status.classList.remove('hidden'); }
+    return;
+  }
+  if(button){ button.disabled=true; button.textContent='Verbindung wird geprüft …'; }
+  if(status){ status.textContent='Sekretarz prüft IMAP und SMTP …'; status.classList.remove('hidden'); }
+  try{
+    const res=await fetch('/api/email-connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,appPassword})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok || !data.ok) throw new Error(data.message||'Verbindung konnte nicht hergestellt werden.');
+    if(passwordEl) passwordEl.value='';
+    const result=document.getElementById('emailConnectResult');
+    if(result) result.innerHTML='<b>GMX ist erreichbar.</b><br>IMAP: erfolgreich geprüft.<br>SMTP: erfolgreich geprüft.<br><br>Das Anwendungspasswort wurde nicht im Browser gespeichert. Eine dauerhafte Verbindung und der echte Versand werden im nächsten Ausbauschritt eingerichtet.';
+    showEmailConnectStep(3);
+  }catch(err){
+    if(status){ status.textContent=err?.message||'Die GMX-Verbindung konnte nicht geprüft werden.'; status.classList.remove('hidden'); }
+  }finally{
+    if(button){ button.disabled=false; button.textContent='Verbindung prüfen'; }
+  }
 }
 
 function openProfile(){

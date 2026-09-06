@@ -43,6 +43,52 @@ function encryptPassword(value){
   };
 }
 
+function decryptPassword(row){
+  const decipher=crypto.createDecipheriv(
+    'aes-256-gcm',
+    encryptionKey(),
+    Buffer.from(String(row.encryption_iv||''),'base64')
+  );
+  decipher.setAuthTag(Buffer.from(String(row.encryption_tag||''),'base64'));
+  const decrypted=Buffer.concat([
+    decipher.update(Buffer.from(String(row.encrypted_password||''),'base64')),
+    decipher.final()
+  ]);
+  return decrypted.toString('utf8');
+}
+
+async function getStoredGmxAccount(userId){
+  const fields='email,status,encrypted_password,encryption_iv,encryption_tag,updated_at';
+  const r=await supabaseService('/rest/v1/secretary_email_accounts?user_id=eq.'+encodeURIComponent(userId)+'&provider=eq.gmx&status=eq.connected&select='+fields+'&order=updated_at.desc&limit=1');
+  const rows=await r.json().catch(()=>[]);
+  if(!r.ok) throw new Error('SUPABASE_'+r.status);
+  return Array.isArray(rows)?rows[0]:null;
+}
+
+async function loadGmxFolders(email, appPassword){
+  let imap;
+  try{
+    imap=new ImapFlow({
+      host:'imap.gmx.net', port:993, secure:true,
+      auth:{user:email,pass:appPassword}, logger:false,
+      connectionTimeout:10000, greetingTimeout:10000, socketTimeout:15000,
+      tls:{minVersion:'TLSv1.2'}
+    });
+    await imap.connect();
+    const list=await imap.list();
+    await imap.logout();
+    return (Array.isArray(list)?list:[]).map(box=>({
+      path:String(box?.path||box?.name||''),
+      name:String(box?.name||box?.path||''),
+      delimiter:String(box?.delimiter||'/'),
+      specialUse:String(box?.specialUse||'')
+    })).filter(x=>x.path);
+  }catch(err){
+    try{ if(imap?.usable) await imap.logout(); }catch(_){ }
+    throw err;
+  }
+}
+
 async function supabaseService(path, options={}){
   const secret=process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if(!secret) throw new Error('SUPABASE_SECRET_KEY fehlt.');
@@ -99,7 +145,7 @@ module.exports = async function handler(req,res){
     try{
       const user=await verifyUser(req);
       if(!user?.id) return res.status(401).json({ok:false,message:'Sitzung ist nicht gültig.'});
-      const r=await supabaseService('/rest/v1/secretary_email_accounts?user_id=eq.'+encodeURIComponent(user.id)+'&provider=eq.gmx&status=eq.connected&select=email,status,updated_at&limit=1');
+      const r=await supabaseService('/rest/v1/secretary_email_accounts?user_id=eq.'+encodeURIComponent(user.id)+'&provider=eq.gmx&status=eq.connected&select=email,status,updated_at&order=updated_at.desc&limit=1');
       const rows=await r.json().catch(()=>[]);
       if(!r.ok) return res.status(502).json({ok:false,message:'E-Mail-Verbindungsstatus konnte nicht geladen werden.'});
       const row=Array.isArray(rows)?rows[0]:null;
@@ -115,6 +161,21 @@ module.exports = async function handler(req,res){
   }
 
   const action=String(req.body?.action||'test');
+
+  if(action==='folders'){
+    try{
+      const user=await verifyUser(req);
+      if(!user?.id) return res.status(401).json({ok:false,message:'Sitzung ist nicht gültig. Bitte melde dich erneut an.'});
+      const account=await getStoredGmxAccount(user.id);
+      if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
+      const password=decryptPassword(account);
+      const folders=await loadGmxFolders(account.email,password);
+      return res.status(200).json({ok:true,email:account.email,folders,version:'13.59'});
+    }catch(err){
+      return res.status(502).json({ok:false,message:'Die GMX-Ordner konnten nicht geladen werden.',code:safeCode(err)});
+    }
+  }
+
   const email=String(req.body?.email||'').trim().toLowerCase();
   const appPassword=String(req.body?.appPassword||'');
   if(!email || !/^[^\s@]+@gmx\.(de|net|com)$/i.test(email) || !appPassword){
@@ -125,7 +186,7 @@ module.exports = async function handler(req,res){
   if(!checked.ok) return res.status(checked.status||502).json(checked);
 
   if(action!=='connect'){
-    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.56'});
+    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.59'});
   }
 
   try{
@@ -149,7 +210,7 @@ module.exports = async function handler(req,res){
     if(!r.ok){
       return res.status(502).json({ok:false,message:'Die verschlüsselte E-Mail-Verbindung konnte nicht gespeichert werden.',code:'SUPABASE_'+r.status});
     }
-    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.56'});
+    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.59'});
   }catch(err){
     return res.status(500).json({ok:false,message:'Die sichere E-Mail-Verbindung konnte nicht gespeichert werden.',code:safeCode(err)});
   }

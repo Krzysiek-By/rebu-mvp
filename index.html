@@ -1815,6 +1815,46 @@ button{cursor:pointer}
 </section>
 
 
+<!-- DE-019 -->
+<section id="de019" class="page hidden">
+  <div class="connect-wrap">
+    <div class="backbar" style="justify-content:space-between;margin-bottom:12px">
+      <button class="backbtn" onclick="back()">← Zurück</button>
+      <button class="logo" aria-label="Heute" onclick="openToday()"></button>
+    </div>
+    <div class="connect-card">
+      <h1>E-Mail verbinden</h1>
+      <p class="connect-sub">Verbinde ein E-Mail-Konto mit Sekretarz. Wir richten zuerst dein Testkonto ein und prüfen die Verbindung Schritt für Schritt.</p>
+      <div class="provider-list">
+        <div class="provider">
+          <div class="provider-icon">✉</div>
+          <div class="provider-main">
+            <b>GMX</b>
+            <small>Für dein neues Sekretarz-E-Mail-Konto.</small>
+          </div>
+          <div class="provider-actions">
+            <button type="button" onclick="startGmxEmailConnect()">Verbinden</button>
+          </div>
+        </div>
+      </div>
+      <div id="emailConnectFlow" class="connect-flow hidden">
+        <div class="flow-top"><b>GMX verbinden</b><span class="flow-step">Schritt 1 von 3</span></div>
+        <div class="flow-progress"><span style="width:33%"></span></div>
+        <div class="flow-body">
+          <p><b>E-Mail-Adresse des Sekretarz-Kontos</b></p>
+          <div class="field" style="margin-top:12px"><label>E-Mail</label><input id="emailConnectAddress" type="email" autocomplete="email" placeholder="name@gmx.de"></div>
+          <div class="sync-note" style="margin-top:14px"><b>Noch kein Passwort eingeben.</b><br>Im nächsten Schritt richten wir die sichere Server-Verbindung ein. Zugangsdaten werden nicht im Browser gespeichert.</div>
+          <button class="primary" type="button" style="margin-top:16px;width:100%" onclick="saveEmailConnectAddress()">Weiter</button>
+        </div>
+      </div>
+      <div id="emailConnectStatus" class="connect-status hidden"></div>
+      <div class="sync-note"><b>Warum zuerst GMX?</b><br>Mit diesem Konto testen wir später Versand, Empfang sowie Ordner und Unterordner, bevor weitere Anbieter dazukommen.</div>
+    </div>
+  </div>
+  <div class="page-id">DE-019</div>
+</section>
+
+
 <!-- DE-016 -->
 <section id="de016" class="page hidden">
   <div class="more-wrap">
@@ -1862,13 +1902,13 @@ button{cursor:pointer}
             <span class="more-arrow">›</span>
           </button>
 
-          <button class="more-item" type="button" disabled>
+          <button class="more-item" type="button" onclick="openEmailConnect()">
             <span class="more-item-icon">✉</span>
             <span class="more-item-main">
               <b>E-Mail verbinden</b>
-              <small>Kommt als nächster Integrationsbereich.</small>
+              <small>E-Mail-Konto sicher mit Sekretarz verbinden.</small>
             </span>
-            <span class="more-badge">Später</span>
+            <span class="more-arrow">›</span>
           </button>
 
           <button class="more-item" type="button" disabled>
@@ -2278,7 +2318,7 @@ function supabaseErrorMessage(error, fallback){
 }
 
 function hideAll(){
-  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015','de016','de017','de018'].forEach(id=>{
+  ['de001','de002','de003','de004','de005','de006','de007','de008','de009','de010','de011','de012','de013','de014','de015','de016','de017','de018','de019'].forEach(id=>{
     const page=document.getElementById(id);
     if(page) page.classList.add('hidden');
   });
@@ -2342,6 +2382,13 @@ function back(){
     while(historyStack.length && historyStack[historyStack.length-1]==='de018') historyStack.pop();
     if(historyStack[historyStack.length-1]!=='de016') historyStack.push('de016');
     showDirect('de016');
+    return;
+  }
+
+  if(currentPage==='de019'){
+    historyStack=['de011','de016'];
+    showDirect('de016');
+    setTimeout(renderSecretaryNotificationSettings,0);
     return;
   }
 
@@ -3772,6 +3819,30 @@ function openMore(){
   else historyStack=[origin,'de016'];
   showDirect('de016');
   setTimeout(renderSecretaryNotificationSettings,0);
+}
+
+function openEmailConnect(){
+  historyStack=['de011','de016','de019'];
+  showDirect('de019');
+}
+function startGmxEmailConnect(){
+  const flow=document.getElementById('emailConnectFlow');
+  if(flow) flow.classList.remove('hidden');
+  const input=document.getElementById('emailConnectAddress');
+  if(input){ input.value=localStorage.getItem('sekretarzEmailConnectAddress')||''; setTimeout(()=>input.focus(),50); }
+  const status=document.getElementById('emailConnectStatus');
+  if(status) status.classList.add('hidden');
+}
+function saveEmailConnectAddress(){
+  const input=document.getElementById('emailConnectAddress');
+  const email=(input?.value||'').trim().toLowerCase();
+  const status=document.getElementById('emailConnectStatus');
+  if(!email || !/^[^\s@]+@gmx\.(de|net|com)$/i.test(email)){
+    if(status){ status.textContent='Bitte gib die vollständige GMX-E-Mail-Adresse ein.'; status.classList.remove('hidden'); }
+    return;
+  }
+  localStorage.setItem('sekretarzEmailConnectAddress',email);
+  if(status){ status.innerHTML='<b>E-Mail-Adresse gespeichert.</b><br>Als Nächstes richten wir die sichere Server-Verbindung zu GMX ein. Noch wurde kein Passwort gespeichert und keine Verbindung hergestellt.'; status.classList.remove('hidden'); }
 }
 
 function openProfile(){

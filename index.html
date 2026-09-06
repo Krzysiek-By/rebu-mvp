@@ -5319,10 +5319,35 @@ async function applyFreshAIAnalysis(showResult=true){
     currentCaseData.aiEmailSubject=String(ai.emailSubject || '').trim();
     currentCaseData.aiEmailBody=String(ai.emailBody || '').trim();
     currentCaseData.aiEmailDraftAccepted=false;
+
+    // Wenn die Quelle selbst eine eindeutige Frist nennt, übernimmt Sekretarz
+    // den daraus berechneten Kontrolltermin automatisch. Ohne eindeutige Frist
+    // bleibt die bestehende Rückfrage an den Nutzer erhalten.
+    const proposedControlDate=String(ai.proposedControlDate || '').trim();
+    const controlDateBasis=String(ai.controlDateBasis || '').trim();
+    if(currentCaseData.aiActionType==='wait' && !currentCaseData.controlDate && /^\d{4}-\d{2}-\d{2}$/.test(proposedControlDate)){
+      const proposed=new Date(proposedControlDate+'T12:00:00');
+      const today=new Date(); today.setHours(0,0,0,0);
+      if(!Number.isNaN(proposed.getTime()) && proposed>=today){
+        currentCaseData.controlDate=proposedControlDate;
+        currentCaseData.controlDateSetAt=new Date().toISOString();
+        currentCaseData.controlDateBasis=controlDateBasis;
+        const history=getCaseHistory(currentCaseData);
+        history.push({
+          type:'Kontrolltermin',
+          text:'Kontrolltermin automatisch aus der vorliegenden Frist gesetzt: '+formatControlDate(proposedControlDate)+(controlDateBasis ? ' ('+controlDateBasis+')' : '')+'.',
+          date:new Date().toLocaleString('de-DE')
+        });
+        currentCaseData.history=history;
+      }
+    }
     currentCaseData.aiUpdatedAt=new Date().toISOString();
     currentCaseData.aiUnread=true;
     currentCaseData.aiUnreadAt=currentCaseData.aiUpdatedAt;
     currentCaseData=upsertStoredCase(currentCaseData);
+    if(currentCaseData.aiActionType==='wait' && currentCaseData.controlDate){
+      try{ await syncControlPointToSupabase(currentCaseData); }catch(e){ console.error('Automatischer Kontrolltermin-Sync:',e); }
+    }
     renderAICenter(currentCaseData);
     if(result){
       result.textContent='KI-Analyse aktualisiert.';

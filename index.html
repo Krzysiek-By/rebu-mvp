@@ -4150,11 +4150,26 @@ async function assignOpenedGmxMessageToCase(){
   const normalizedSubject=String(incomingMailHistoryItem.emailSubject||'').trim();
   const normalizedFrom=String(incomingMailHistoryItem.emailFrom||'').trim();
   const normalizedDate=String(incomingMailHistoryItem.date||'').trim();
+  const normalizeMailText=(value)=>String(value||'')
+    .replace(/\r\n/g,'\n')
+    .replace(/[ \t]+/g,' ')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+  const normalizedMailText=normalizeMailText(mailText);
   const matchesSameMail=(h)=>{
     if(!h || String(h.type||'')!=='E-Mail') return false;
+
+    // Najpewniejszy identyfikator dla nowych wpisów: folder + IMAP UID.
     const hFolder=String(h.emailFolder||'').trim();
     const hUid=Number(h.emailUid||0);
     if(normalizedUid>0 && hUid>0 && normalizedFolder===hFolder && normalizedUid===hUid) return true;
+
+    // Starsze wpisy testowe nie miały emailUid/emailFolder/emailSubject.
+    // Porównujemy więc także zapisaną pełną treść wiadomości.
+    const hText=normalizeMailText(h.text||'');
+    if(normalizedMailText && hText && normalizedMailText===hText) return true;
+
+    // Fallback dla wpisów posiadających częściowe metadane.
     return !!normalizedSubject &&
       normalizedSubject===String(h.emailSubject||'').trim() &&
       normalizedFrom===String(h.emailFrom||'').trim() &&

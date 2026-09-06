@@ -4121,12 +4121,12 @@ async function loadGmxMessageDetail(folderPath,uid){
     const attachmentHtml=attachments.length
       ? '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(15,39,76,.08)"><b>Anhänge ('+attachments.length+')</b><br>'+attachments.map(a=>escapeHtml(String(a.filename||'Anhang'))+(a.size?' <span style="opacity:.65">('+Math.max(1,Math.round(Number(a.size)/1024))+' KB)</span>':'')).join('<br>')+'</div>'
       : '';
-    box.innerHTML='<button type="button" onclick="loadGmxFolderMessages(decodeURIComponent(\''+encodeURIComponent(folderPath)+'\'))" style="border:0;background:transparent;padding:0 0 12px;color:inherit;font:inherit;font-weight:700">‹ Zurück zu '+escapeHtml(folderPath)+'</button>'+
-      '<div style="padding-bottom:12px;border-bottom:1px solid rgba(15,39,76,.08)"><b style="font-size:17px">'+escapeHtml(subject)+'</b><br>'+
+    box.innerHTML='<button type="button" onclick="loadGmxFolderMessages(decodeURIComponent(\''+encodeURIComponent(folderPath)+'\'))" style="border:0;background:transparent;padding:0 0 12px;color:inherit;font:inherit;font-weight:700">‹ Zurück zu '+escapeHtml(folderPath)+'</button>'+ 
+      '<div style="padding-bottom:12px;border-bottom:1px solid rgba(15,39,76,.08)"><b style="font-size:17px">'+escapeHtml(subject)+'</b><br>'+ 
       (from?'<span style="opacity:.78"><b>Von:</b> '+escapeHtml(from)+'</span><br>':'')+
       (to?'<span style="opacity:.78"><b>An:</b> '+escapeHtml(to)+'</span><br>':'')+
       (cc?'<span style="opacity:.78"><b>CC:</b> '+escapeHtml(cc)+'</span><br>':'')+
-      (date?'<span style="opacity:.65">'+escapeHtml(date)+'</span>':'')+'</div>'+
+      (date?'<span style="opacity:.65">'+escapeHtml(date)+'</span>':'')+'</div>'+ 
       '<div style="white-space:pre-wrap;line-height:1.5;padding-top:14px">'+escapeHtml(text||'(Keine lesbare Textversion vorhanden.)')+'</div>'+attachmentHtml;
     box.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(err){

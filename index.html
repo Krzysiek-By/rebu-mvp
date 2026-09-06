@@ -4131,7 +4131,7 @@ async function assignOpenedGmxMessageToCase(){
   ].filter((v,i)=>v!=='' || i===3).join('\n').trim();
 
   if(!Array.isArray(c.history)) c.history=[];
-  c.history.unshift({
+  const incomingMailHistoryItem={
     type:'E-Mail',
     text:mailText,
     date:String(m.dateLabel||new Date().toLocaleString('de-DE')),
@@ -4140,7 +4140,29 @@ async function assignOpenedGmxMessageToCase(){
     emailTo:String(m.to||''),
     emailFolder:String(m.folderPath||''),
     emailUid:Number(m.uid||0)
-  });
+  };
+  c.history.unshift(incomingMailHistoryItem);
+
+  // Eine ausdrücklich in der gerade geöffneten E-Mail genannte Frist wird
+  // direkt aus genau dieser Nachricht berechnet. Dadurch hängt der Termin
+  // nicht davon ab, ob die spätere KI-Antwort das Datum ebenfalls zurückgibt.
+  if(c.careType==='ai' && !String(c.controlDate||'')){
+    const explicitDeadline=deriveExplicitControlDateFromHistory({history:[incomingMailHistoryItem]});
+    if(explicitDeadline && /^\d{4}-\d{2}-\d{2}$/.test(explicitDeadline.date||'')){
+      const proposed=new Date(explicitDeadline.date+'T12:00:00');
+      const today=new Date(); today.setHours(0,0,0,0);
+      if(!Number.isNaN(proposed.getTime()) && proposed>=today){
+        c.controlDate=explicitDeadline.date;
+        c.controlDateSetAt=new Date().toISOString();
+        c.controlDateBasis=explicitDeadline.basis||'';
+        c.history.unshift({
+          type:'Kontrolltermin',
+          text:'Kontrolltermin automatisch aus der E-Mail-Frist gesetzt: '+formatControlDate(explicitDeadline.date)+(explicitDeadline.basis?' ('+explicitDeadline.basis+')':'')+'.',
+          date:new Date().toLocaleString('de-DE')
+        });
+      }
+    }
+  }
 
   if(!saveCasesToStorage(cases)){
     if(result){ result.textContent='Die E-Mail konnte nicht gespeichert werden.'; result.classList.remove('hidden'); }

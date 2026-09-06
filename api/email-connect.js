@@ -101,7 +101,6 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
     });
     await imap.connect();
 
-    // Vor dem Öffnen prüfen wir den exakten IMAP-Pfad, den GMX selbst meldet.
     const listed=await imap.list();
     const box=(Array.isArray(listed)?listed:[]).find(x=>String(x?.path||x?.name||'')===String(folderPath));
     if(!box){
@@ -111,11 +110,11 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
     }
     const flags=box?.flags;
     if(flags && typeof flags.has==='function' && flags.has('\\Noselect')){
+      await imap.logout();
       return [];
     }
 
-    // Read-only öffnen. Das ist für das reine Anzeigen robuster als ein Mailbox-Lock.
-    await imap.mailboxOpen(folderPath,{readOnly:true});
+    await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
     const total=Number(imap.mailbox?.exists||0);
     if(!total){
       await imap.logout();
@@ -123,26 +122,73 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
     }
 
     const count=Math.max(1,Math.min(Number(limit)||10,50));
-    const start=Math.max(1,total-count+1);
+    const first=Math.max(1,total-count+1);
     const rows=[];
-    for await (const msg of imap.fetch(start+':'+total,{uid:true,envelope:true,internalDate:true,flags:true})){
-      const env=msg.envelope||{};
-      const fromArr=Array.isArray(env.from)?env.from:[];
-      const from=fromArr.map(x=>{
-        const name=String(x?.name||'').trim();
-        const addr=[x?.mailbox,x?.host].filter(Boolean).join('@');
-        return name && addr ? name+' <'+addr+'>' : (addr||name);
-      }).filter(Boolean).join(', ');
-      const dt=msg.internalDate||env.date||null;
-      rows.push({
-        uid:Number(msg.uid||0),
-        subject:String(env.subject||''),
-        from,
-        date:dt ? new Date(dt).toISOString() : '',
-        dateLabel:dt ? new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(new Date(dt)) : '',
-        seen:!!(msg.flags && typeof msg.flags.has==='function' && msg.flags.has('\\Seen'))
+
+    function decodeHeaderWord(v){
+      const value=String(v||'').trim();
+      return value.replace(/=\?UTF-8\?B\?([^?]+)\?=/gi,(_,b)=>{
+        try{return Buffer.from(b,'base64').toString('utf8')}catch{return _}
+      }).replace(/=\?UTF-8\?Q\?([^?]+)\?=/gi,(_,q)=>{
+        try{return q.replace(/_/g,' ').replace(/=([0-9A-F]{2})/gi,(m,h)=>String.fromCharCode(parseInt(h,16)))}catch{return _}
       });
     }
+
+    function headerFromSource(source){
+      const raw=Buffer.isBuffer(source)?source.toString('utf8'):String(source||'');
+      const head=raw.split(/\r?\n\r?\n/,1)[0]||'';
+      const unfolded=head.replace(/\r?\n[ \t]+/g,' ');
+      const get=(name)=>{
+        const m=unfolded.match(new RegExp('^'+name+':\\s*(.*)$','im'));
+        return m?decodeHeaderWord(m[1]):'';
+      };
+      return { subject:get('Subject'), from:get('From'), date:get('Date') };
+    }
+
+    // Einzelne Nachrichten laden: eine fehlerhafte/ungewöhnliche Mail darf nicht
+    // den kompletten Ordner unlesbar machen.
+    for(let seq=total; seq>=first; seq--){
+      try{
+        let msg;
+        try{
+          msg=await imap.fetchOne(seq,{uid:true,envelope:true,internalDate:true,flags:true});
+        }catch(primaryErr){
+          const fallback=await imap.fetchOne(seq,{uid:true,source:true,internalDate:true,flags:true});
+          const h=headerFromSource(fallback?.source);
+          const d=fallback?.internalDate || (h.date ? new Date(h.date) : null);
+          rows.push({
+            uid:Number(fallback?.uid||0),
+            subject:String(h.subject||'(Ohne Betreff)'),
+            from:String(h.from||''),
+            date:d && !Number.isNaN(new Date(d).getTime()) ? new Date(d).toISOString() : '',
+            dateLabel:d && !Number.isNaN(new Date(d).getTime()) ? new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(new Date(d)) : '',
+            seen:!!(fallback?.flags && typeof fallback.flags.has==='function' && fallback.flags.has('\\Seen'))
+          });
+          continue;
+        }
+
+        const env=msg?.envelope||{};
+        const fromArr=Array.isArray(env.from)?env.from:[];
+        const from=fromArr.map(x=>{
+          const name=String(x?.name||'').trim();
+          const addr=[x?.mailbox,x?.host].filter(Boolean).join('@');
+          return name && addr ? name+' <'+addr+'>' : (addr||name);
+        }).filter(Boolean).join(', ');
+        const dt=msg?.internalDate||env.date||null;
+        rows.push({
+          uid:Number(msg?.uid||0),
+          subject:String(env.subject||'(Ohne Betreff)'),
+          from,
+          date:dt ? new Date(dt).toISOString() : '',
+          dateLabel:dt ? new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(new Date(dt)) : '',
+          seen:!!(msg?.flags && typeof msg.flags.has==='function' && msg.flags.has('\\Seen'))
+        });
+      }catch(itemErr){
+        // Überspringen statt den ganzen Ordner scheitern zu lassen.
+        rows.push({uid:0,subject:'(Nachricht konnte nicht vollständig gelesen werden)',from:'',date:'',dateLabel:'',seen:false,readError:safeCode(itemErr)});
+      }
+    }
+
     await imap.logout();
     return rows.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   }catch(err){
@@ -232,7 +278,7 @@ module.exports = async function handler(req,res){
       if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
       const password=decryptPassword(account);
       const folders=await loadGmxFolders(account.email,password);
-      return res.status(200).json({ok:true,email:account.email,folders,version:'13.61'});
+      return res.status(200).json({ok:true,email:account.email,folders,version:'13.62'});
     }catch(err){
       return res.status(502).json({ok:false,message:'Die GMX-Ordner konnten nicht geladen werden.',code:safeCode(err)});
     }
@@ -249,7 +295,7 @@ module.exports = async function handler(req,res){
       if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
       const password=decryptPassword(account);
       const messages=await loadGmxMessages(account.email,password,folder,req.body?.limit||10);
-      return res.status(200).json({ok:true,email:account.email,folder,messages,version:'13.61'});
+      return res.status(200).json({ok:true,email:account.email,folder,messages,version:'13.62'});
     }catch(err){
       return res.status(502).json({ok:false,message:'Die Nachrichten aus diesem GMX-Ordner konnten nicht geladen werden.',code:safeCode(err)});
     }
@@ -265,7 +311,7 @@ module.exports = async function handler(req,res){
   if(!checked.ok) return res.status(checked.status||502).json(checked);
 
   if(action!=='connect'){
-    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.61'});
+    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.62'});
   }
 
   try{
@@ -289,7 +335,7 @@ module.exports = async function handler(req,res){
     if(!r.ok){
       return res.status(502).json({ok:false,message:'Die verschlüsselte E-Mail-Verbindung konnte nicht gespeichert werden.',code:'SUPABASE_'+r.status});
     }
-    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.61'});
+    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.62'});
   }catch(err){
     return res.status(500).json({ok:false,message:'Die sichere E-Mail-Verbindung konnte nicht gespeichert werden.',code:safeCode(err)});
   }

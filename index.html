@@ -4184,12 +4184,65 @@ async function assignOpenedGmxMessageToCase(){
       if(!kept){ kept=true; return true; }
       return false;
     });
+
+    // Wichtig: Auch wenn die E-Mail schon früher zugeordnet wurde, kann eine
+    // neuere App-Version aus genau dieser Nachricht erstmals eine präzisere
+    // Frist erkennen. Dann muss der bestehende Kontrolltermin trotzdem
+    // aktualisiert werden, statt wegen der Dubletten-Sperre vorher abzubrechen.
+    let controlDateChanged=false;
+    if(c.careType==='ai'){
+      const explicitDeadline=deriveExplicitControlDateFromHistory({history:[incomingMailHistoryItem]});
+      if(explicitDeadline && /^\d{4}-\d{2}-\d{2}$/.test(explicitDeadline.date||'')){
+        const proposed=new Date(explicitDeadline.date+'T12:00:00');
+        const today=new Date(); today.setHours(0,0,0,0);
+        if(!Number.isNaN(proposed.getTime()) && proposed>=today && String(c.controlDate||'')!==explicitDeadline.date){
+          const previousControlDate=String(c.controlDate||'');
+          c.controlDate=explicitDeadline.date;
+          c.controlDateSetAt=new Date().toISOString();
+          c.controlDateBasis=explicitDeadline.basis||'';
+          c.history.unshift({
+            type:'Kontrolltermin',
+            text:(previousControlDate
+              ? 'Kontrolltermin aufgrund der neuen E-Mail aktualisiert: '+formatControlDate(previousControlDate)+' → '+formatControlDate(explicitDeadline.date)
+              : 'Kontrolltermin automatisch aus der E-Mail-Frist gesetzt: '+formatControlDate(explicitDeadline.date))
+              +(explicitDeadline.basis?' ('+explicitDeadline.basis+')':'')+'.',
+            date:new Date().toLocaleString('de-DE')
+          });
+          controlDateChanged=true;
+        }
+      }
+    }
+
     saveCasesToStorage(cases);
     if(result){
-      result.textContent=existingMatches.length>1
-        ? 'Diese E-Mail war bereits zugeordnet. Doppelte Einträge wurden entfernt.'
-        : 'Diese E-Mail ist bereits dieser Angelegenheit zugeordnet.';
+      if(controlDateChanged){
+        result.textContent='Diese E-Mail war bereits zugeordnet. Der Kontrolltermin wurde aus der E-Mail aktualisiert.';
+      }else{
+        result.textContent=existingMatches.length>1
+          ? 'Diese E-Mail war bereits zugeordnet. Doppelte Einträge wurden entfernt.'
+          : 'Diese E-Mail ist bereits dieser Angelegenheit zugeordnet.';
+      }
       result.classList.remove('hidden');
+    }
+
+    if(controlDateChanged){
+      try{ await syncControlPointToSupabase(c); }catch(e){ console.error('Kontrolltermin-Sync nach bereits zugeordneter E-Mail:',e); }
+      openCase(
+        c.title||'Ohne Titel',
+        c.status||'Aktiv',
+        c.desc||c.description||'',
+        c.dateDisplay||c.date||'',
+        c.category||'Sonstiges',
+        c.nextStep||'',
+        c.careType||'',
+        c.reminderDateTime||'',
+        c.sourceSettings||null,
+        c.contact||null,
+        c.id||caseId
+      );
+      const aiResult=document.getElementById('aiActionResult');
+      if(aiResult){ aiResult.textContent='Kontrolltermin aktualisiert. KI analysiert die Angelegenheit neu …'; aiResult.classList.remove('hidden'); }
+      await applyFreshAIAnalysis(false);
     }
     return;
   }

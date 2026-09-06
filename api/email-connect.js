@@ -100,36 +100,51 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
       tls:{minVersion:'TLSv1.2'}
     });
     await imap.connect();
-    const lock=await imap.getMailboxLock(folderPath);
-    try{
-      const total=Number(imap.mailbox?.exists||0);
-      if(!total) return [];
-      const count=Math.max(1,Math.min(Number(limit)||10,20));
-      const start=Math.max(1,total-count+1);
-      const rows=[];
-      for await (const msg of imap.fetch(start+':'+total,{uid:true,envelope:true,internalDate:true,flags:true})){
-        const env=msg.envelope||{};
-        const fromArr=Array.isArray(env.from)?env.from:[];
-        const from=fromArr.map(x=>{
-          const name=String(x?.name||'').trim();
-          const addr=[x?.mailbox,x?.host].filter(Boolean).join('@');
-          return name && addr ? name+' <'+addr+'>' : (addr||name);
-        }).filter(Boolean).join(', ');
-        const dt=msg.internalDate||env.date||null;
-        rows.push({
-          uid:Number(msg.uid||0),
-          subject:String(env.subject||''),
-          from,
-          date:dt ? new Date(dt).toISOString() : '',
-          dateLabel:dt ? new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(new Date(dt)) : '',
-          seen:!!(msg.flags && typeof msg.flags.has==='function' && msg.flags.has('\\Seen'))
-        });
-      }
-      return rows.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-    }finally{
-      lock.release();
-      await imap.logout();
+
+    // Vor dem Öffnen prüfen wir den exakten IMAP-Pfad, den GMX selbst meldet.
+    const listed=await imap.list();
+    const box=(Array.isArray(listed)?listed:[]).find(x=>String(x?.path||x?.name||'')===String(folderPath));
+    if(!box){
+      const err=new Error('MAILBOX_NOT_FOUND');
+      err.code='MAILBOX_NOT_FOUND';
+      throw err;
     }
+    const flags=box?.flags;
+    if(flags && typeof flags.has==='function' && flags.has('\\Noselect')){
+      return [];
+    }
+
+    // Read-only öffnen. Das ist für das reine Anzeigen robuster als ein Mailbox-Lock.
+    await imap.mailboxOpen(folderPath,{readOnly:true});
+    const total=Number(imap.mailbox?.exists||0);
+    if(!total){
+      await imap.logout();
+      return [];
+    }
+
+    const count=Math.max(1,Math.min(Number(limit)||10,50));
+    const start=Math.max(1,total-count+1);
+    const rows=[];
+    for await (const msg of imap.fetch(start+':'+total,{uid:true,envelope:true,internalDate:true,flags:true})){
+      const env=msg.envelope||{};
+      const fromArr=Array.isArray(env.from)?env.from:[];
+      const from=fromArr.map(x=>{
+        const name=String(x?.name||'').trim();
+        const addr=[x?.mailbox,x?.host].filter(Boolean).join('@');
+        return name && addr ? name+' <'+addr+'>' : (addr||name);
+      }).filter(Boolean).join(', ');
+      const dt=msg.internalDate||env.date||null;
+      rows.push({
+        uid:Number(msg.uid||0),
+        subject:String(env.subject||''),
+        from,
+        date:dt ? new Date(dt).toISOString() : '',
+        dateLabel:dt ? new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'}).format(new Date(dt)) : '',
+        seen:!!(msg.flags && typeof msg.flags.has==='function' && msg.flags.has('\\Seen'))
+      });
+    }
+    await imap.logout();
+    return rows.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   }catch(err){
     try{ if(imap?.usable) await imap.logout(); }catch(_){ }
     throw err;
@@ -217,7 +232,7 @@ module.exports = async function handler(req,res){
       if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
       const password=decryptPassword(account);
       const folders=await loadGmxFolders(account.email,password);
-      return res.status(200).json({ok:true,email:account.email,folders,version:'13.60'});
+      return res.status(200).json({ok:true,email:account.email,folders,version:'13.61'});
     }catch(err){
       return res.status(502).json({ok:false,message:'Die GMX-Ordner konnten nicht geladen werden.',code:safeCode(err)});
     }
@@ -234,7 +249,7 @@ module.exports = async function handler(req,res){
       if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
       const password=decryptPassword(account);
       const messages=await loadGmxMessages(account.email,password,folder,req.body?.limit||10);
-      return res.status(200).json({ok:true,email:account.email,folder,messages,version:'13.60'});
+      return res.status(200).json({ok:true,email:account.email,folder,messages,version:'13.61'});
     }catch(err){
       return res.status(502).json({ok:false,message:'Die Nachrichten aus diesem GMX-Ordner konnten nicht geladen werden.',code:safeCode(err)});
     }
@@ -250,7 +265,7 @@ module.exports = async function handler(req,res){
   if(!checked.ok) return res.status(checked.status||502).json(checked);
 
   if(action!=='connect'){
-    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.60'});
+    return res.status(200).json({ok:true,imap:true,smtp:true,version:'13.61'});
   }
 
   try{
@@ -274,7 +289,7 @@ module.exports = async function handler(req,res){
     if(!r.ok){
       return res.status(502).json({ok:false,message:'Die verschlüsselte E-Mail-Verbindung konnte nicht gespeichert werden.',code:'SUPABASE_'+r.status});
     }
-    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.60'});
+    return res.status(200).json({ok:true,connected:true,email,imap:true,smtp:true,version:'13.61'});
   }catch(err){
     return res.status(500).json({ok:false,message:'Die sichere E-Mail-Verbindung konnte nicht gespeichert werden.',code:safeCode(err)});
   }

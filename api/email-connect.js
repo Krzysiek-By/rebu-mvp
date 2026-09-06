@@ -109,16 +109,37 @@ async function loadGmxMessages(email, appPassword, folderPath, limit=10){
       throw err;
     }
     const flags=box?.flags;
-    if(flags && typeof flags.has==='function' && flags.has('\\Noselect')){
+    const noSelect = !!(flags && (
+      (typeof flags.has==='function' && flags.has('\\Noselect')) ||
+      (Array.isArray(flags) && flags.includes('\\Noselect'))
+    ));
+    if(noSelect){
       await imap.logout();
       return [];
     }
 
-    await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
-    const total=Number(imap.mailbox?.exists||0);
+    // Zuerst nur den Status abfragen. Das ist für leere Ordner robuster als
+    // direkt SELECT/EXAMINE zu senden und reicht aus, um sicher festzustellen,
+    // dass wirklich keine Nachrichten vorhanden sind.
+    let total=0;
+    try{
+      const st=await imap.status(String(box.path||folderPath),{messages:true});
+      total=Number(st?.messages||0);
+    }catch(statusErr){
+      // Falls GMX STATUS für diesen Ordner nicht liefert, verwenden wir den
+      // normalen Read-only-Open als Fallback.
+      await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
+      total=Number(imap.mailbox?.exists||0);
+    }
+
     if(!total){
       await imap.logout();
       return [];
+    }
+
+    // Nur nicht-leere Ordner müssen tatsächlich geöffnet werden.
+    if(!imap.mailbox || String(imap.mailbox.path||'') !== String(box.path||folderPath)) {
+      await imap.mailboxOpen(String(box.path||folderPath),{readOnly:true});
     }
 
     const count=Math.max(1,Math.min(Number(limit)||10,50));

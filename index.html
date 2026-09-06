@@ -1251,9 +1251,17 @@ button{cursor:pointer}
             <textarea id="aiEmailBodyEdit" class="ai-draft-edit"></textarea>
             <button type="button" class="btn primary" onclick="saveEmailDraftEdits()">Änderungen speichern</button>
           </div>
-          <div class="ai-draft-actions">
+          <div id="aiEmailDraftActions" class="ai-draft-actions">
             <button type="button" class="btn primary" onclick="acceptEmailDraft()">Entwurf übernehmen</button>
             <button type="button" class="btn secondary" onclick="editEmailDraft()">Ändern</button>
+          </div>
+          <div id="aiEmailReadyBox" class="hidden" style="margin-top:12px">
+            <div class="success" style="margin:0 0 10px 0">
+              <strong>Zum Senden bereit</strong><br>
+              <span id="aiEmailReadyRecipient"></span>
+            </div>
+            <div class="helper">Die E-Mail wurde noch nicht gesendet. Der Versand wird erst verfügbar, wenn ein E-Mail-Konto mit Sekretarz verbunden ist.</div>
+            <button type="button" class="btn secondary" style="margin-top:10px" onclick="editEmailDraft()">Entwurf ändern</button>
           </div>
           <div id="aiEmailDraftStatus" class="success hidden" style="margin-top:10px"></div>
         </div>
@@ -4609,12 +4617,21 @@ function renderAICenter(data){
     if(emailSubject) emailSubject.textContent=data?.aiEmailSubject || '';
     if(emailBody) emailBody.textContent=data?.aiEmailBody || '';
     if(emailDraftNewBadge) emailDraftNewBadge.classList.toggle('hidden',!(hasEmailDraft && aiUnread));
-    if(emailDraftStatus){
-      if(data?.aiEmailDraftAccepted){
-        emailDraftStatus.textContent='Entwurf übernommen. Die E-Mail wurde noch nicht gesendet.';
-        emailDraftStatus.classList.remove('hidden');
-      }else emailDraftStatus.classList.add('hidden');
+    const emailDraftActions=document.getElementById('aiEmailDraftActions');
+    const emailReadyBox=document.getElementById('aiEmailReadyBox');
+    const emailReadyRecipient=document.getElementById('aiEmailReadyRecipient');
+    const draftAccepted=!!data?.aiEmailDraftAccepted;
+    if(emailDraftActions) emailDraftActions.classList.toggle('hidden',draftAccepted);
+    if(emailReadyBox) emailReadyBox.classList.toggle('hidden',!draftAccepted);
+    if(emailReadyRecipient){
+      const recipientName=String(data?.contact?.name||'').trim();
+      const recipientEmail=String(data?.contact?.email||'').trim();
+      if(recipientName && recipientEmail) emailReadyRecipient.textContent='Empfänger: '+recipientName+' · '+recipientEmail;
+      else if(recipientEmail) emailReadyRecipient.textContent='Empfänger: '+recipientEmail;
+      else if(recipientName) emailReadyRecipient.textContent='Empfänger: '+recipientName+' · E-Mail-Adresse fehlt';
+      else emailReadyRecipient.textContent='Empfänger noch nicht festgelegt';
     }
+    if(emailDraftStatus) emailDraftStatus.classList.add('hidden');
     const editBox=document.getElementById('aiEmailEditBox');
     if(editBox) editBox.classList.add('hidden');
 

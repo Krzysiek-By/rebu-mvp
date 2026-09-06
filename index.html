@@ -1860,6 +1860,7 @@ button{cursor:pointer}
           <button id="emailConnectRetestButton" type="button" style="margin-top:10px;width:100%" onclick="showEmailConnectStep(2)">Erneut prüfen</button>
           <button id="emailFoldersButton" class="primary hidden" type="button" style="margin-top:16px;width:100%" onclick="loadGmxFolders()">Ordner laden</button>
           <div id="emailFoldersResult" class="sync-note hidden" style="margin-top:12px"></div>
+          <div id="emailFolderMessagesResult" class="sync-note hidden" style="margin-top:12px"></div>
         </div>
       </div>
       <div id="emailConnectStatus" class="connect-status hidden"></div>
@@ -3839,15 +3840,34 @@ function openMore(){
 function openEmailConnect(){
   historyStack=['de011','de016','de019'];
   showDirect('de019');
+  const flow=document.getElementById('emailConnectFlow');
+  if(flow) flow.classList.add('hidden');
+  const gmxButton=document.getElementById('gmxConnectButton');
+  if(gmxButton){ gmxButton.disabled=true; gmxButton.textContent='Verbindung wird geprüft …'; }
   setTimeout(loadPersistentEmailStatus,0);
 }
 let volatileEmailConnectPassword='';
 
-function startGmxEmailConnect(){
-  if(localStorage.getItem('sekretarzEmailConnected')==='1'){
-    showConnectedGmxPanel(localStorage.getItem('sekretarzEmailConnectAddress')||'');
-    return;
-  }
+async function startGmxEmailConnect(){
+  const gmxButton=document.getElementById('gmxConnectButton');
+  if(gmxButton){ gmxButton.disabled=true; gmxButton.textContent='Verbindung wird geprüft …'; }
+  try{
+    const token=await getFreshEmailAccessToken();
+    if(token){
+      const res=await fetch('/api/email-connect',{headers:{'Authorization':'Bearer '+token}});
+      const data=await res.json().catch(()=>({}));
+      if(res.ok && data.ok && data.connected){
+        localStorage.setItem('sekretarzEmailConnectAddress',data.email||'');
+        localStorage.setItem('sekretarzEmailConnected','1');
+        if(gmxButton){ gmxButton.textContent='Verbunden'; gmxButton.disabled=false; }
+        await showConnectedGmxPanel(data.email||'');
+        return;
+      }
+    }
+  }catch(_){ }
+
+  localStorage.removeItem('sekretarzEmailConnected');
+  if(gmxButton){ gmxButton.textContent='Verbinden'; gmxButton.disabled=false; }
   const flow=document.getElementById('emailConnectFlow');
   if(flow) flow.classList.remove('hidden');
   const input=document.getElementById('emailConnectAddress');
@@ -4024,9 +4044,11 @@ async function loadGmxFolders(){
       const delimiter=String(f?.delimiter||'/');
       const level=delimiter ? Math.max(0,path.split(delimiter).length-1) : 0;
       const label=specialLabels[String(f?.specialUse||'')]||'';
-      return '<div style="padding:8px 0 8px '+(level*18)+'px;border-bottom:1px solid rgba(15,39,76,.08)"><b>'+escapeHtml(path)+'</b>'+(label && label!==path?'<br><span style="opacity:.7">'+escapeHtml(label)+'</span>':'')+'</div>';
+      const enc=encodeURIComponent(path);
+      return '<button type="button" onclick="loadGmxFolderMessages(decodeURIComponent(\''+enc+'\'))" style="display:block;width:100%;text-align:left;padding:10px 8px 10px '+(8+level*18)+'px;border:0;border-bottom:1px solid rgba(15,39,76,.08);background:transparent;color:inherit;font:inherit"><b>'+escapeHtml(path)+'</b>'+(label && label!==path?'<br><span style="opacity:.7">'+escapeHtml(label)+'</span>':'')+'<span style="float:right;opacity:.55">›</span></button>';
     }).join('');
     box.innerHTML='<b>Ordner gefunden: '+folders.length+'</b><br><span style="opacity:.75">'+escapeHtml(data.email||'')+'</span><div style="margin-top:10px">'+rows+'</div>';
+    const msgBox=document.getElementById('emailFolderMessagesResult'); if(msgBox){ msgBox.classList.add('hidden'); msgBox.innerHTML=''; }
   }catch(err){
     if(box) box.textContent=err?.message||'Die GMX-Ordner konnten nicht geladen werden.';
   }finally{
@@ -4034,23 +4056,66 @@ async function loadGmxFolders(){
   }
 }
 
+
+async function loadGmxFolderMessages(folderPath){
+  const box=document.getElementById('emailFolderMessagesResult');
+  const token=await getFreshEmailAccessToken();
+  if(!box) return;
+  if(!token){ box.textContent='Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.'; box.classList.remove('hidden'); return; }
+  box.innerHTML='<b>'+escapeHtml(folderPath)+'</b><br>Nachrichten werden geladen …';
+  box.classList.remove('hidden');
+  try{
+    const res=await fetch('/api/email-connect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({action:'messages',folder:folderPath,limit:10})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok || !data.ok) throw new Error(data.message||('Nachrichten konnten nicht geladen werden. HTTP '+res.status));
+    const messages=Array.isArray(data.messages)?data.messages:[];
+    if(!messages.length){
+      box.innerHTML='<b>'+escapeHtml(folderPath)+'</b><br>Keine Nachrichten in diesem Ordner gefunden.';
+      return;
+    }
+    const rows=messages.map(m=>{
+      const from=String(m?.from||'Unbekannter Absender');
+      const subject=String(m?.subject||'(Kein Betreff)');
+      const date=String(m?.dateLabel||'');
+      return '<div style="padding:10px 0;border-bottom:1px solid rgba(15,39,76,.08)"><b>'+escapeHtml(subject)+'</b><br><span style="opacity:.75">'+escapeHtml(from)+(date?' · '+escapeHtml(date):'')+'</span></div>';
+    }).join('');
+    box.innerHTML='<b>'+escapeHtml(folderPath)+'</b><br><span style="opacity:.75">Letzte '+messages.length+' Nachricht(en)</span><div style="margin-top:8px">'+rows+'</div>';
+    box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }catch(err){
+    box.textContent=err?.message||'Die Nachrichten konnten nicht geladen werden.';
+  }
+}
+
 async function loadPersistentEmailStatus(){
   const gmxButton=document.getElementById('gmxConnectButton');
+  const flow=document.getElementById('emailConnectFlow');
   const token=await getFreshEmailAccessToken();
-  if(!token) return;
+  if(!token){
+    if(gmxButton){ gmxButton.textContent='Verbinden'; gmxButton.disabled=false; }
+    return false;
+  }
   try{
     const res=await fetch('/api/email-connect',{headers:{'Authorization':'Bearer '+token}});
     const data=await res.json().catch(()=>({}));
     if(res.ok && data.ok && data.connected){
       localStorage.setItem('sekretarzEmailConnectAddress',data.email||'');
       localStorage.setItem('sekretarzEmailConnected','1');
-      if(gmxButton){ gmxButton.textContent='Verbindung anzeigen'; gmxButton.disabled=false; }
-      await showConnectedGmxPanel(data.email||'');
-    }else{
-      localStorage.removeItem('sekretarzEmailConnected');
-      if(gmxButton){ gmxButton.textContent='Verbinden'; gmxButton.disabled=false; }
+      if(flow) flow.classList.add('hidden');
+      if(gmxButton){ gmxButton.textContent='Verbunden'; gmxButton.disabled=false; }
+      return true;
     }
-  }catch(_){ }
+    localStorage.removeItem('sekretarzEmailConnected');
+    if(flow) flow.classList.add('hidden');
+    if(gmxButton){ gmxButton.textContent='Verbinden'; gmxButton.disabled=false; }
+    return false;
+  }catch(_){
+    if(gmxButton){ gmxButton.textContent=localStorage.getItem('sekretarzEmailConnected')==='1'?'Verbunden':'Verbinden'; gmxButton.disabled=false; }
+    return localStorage.getItem('sekretarzEmailConnected')==='1';
+  }
 }
 
 function openProfile(){
@@ -6079,5 +6144,6 @@ function resetDemoCases(){
 }
 
 </script>
+<!-- Sekretarz v13.58 TEST -->
 </body>
 </html>

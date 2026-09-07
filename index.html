@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.80 TEST">
+<meta name="sekretarz-version" content="DE-v13.81 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -2294,6 +2294,22 @@ async function syncControlPointToSupabase(caseData){
         notified_at:null,
         updated_at:new Date().toISOString()
       })
+    }
+  );
+  return true;
+}
+
+async function resolveControlPointInSupabase(caseData){
+  const session=getSupabaseSession();
+  const userId=session?.user?.id || localStorage.getItem(SUPABASE_USER_ID_KEY) || '';
+  if(!caseData?.id || !userId) return false;
+  const now=new Date().toISOString();
+  await supabaseAuthedFetch(
+    SUPABASE_URL+'/rest/v1/secretary_control_points?user_id=eq.'+encodeURIComponent(userId)+'&case_id=eq.'+encodeURIComponent(String(caseData.id)),
+    {
+      method:'PATCH',
+      headers:{'Prefer':'return=minimal'},
+      body:JSON.stringify({resolved_at:now,updated_at:now})
     }
   );
   return true;
@@ -5592,6 +5608,17 @@ function deriveExplicitControlDateFromHistory(caseData){
   return null;
 }
 
+function addDaysISOFromTimestamp(timestamp,days){
+  const d=new Date(timestamp || Date.now());
+  if(Number.isNaN(d.getTime())) return '';
+  d.setHours(12,0,0,0);
+  d.setDate(d.getDate()+Number(days||0));
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+
 async function applyFreshAIAnalysis(showResult=true){
   if(!currentCaseData || currentCaseData.careType!=='ai') return;
   const result=document.getElementById('aiActionResult');
@@ -5625,6 +5652,12 @@ async function applyFreshAIAnalysis(showResult=true){
       if(fallback){
         proposedControlDate=fallback.date;
         controlDateBasis=fallback.basis;
+      }else if(currentCaseData.postSendAwaitingSince){
+        // Nach einer tatsächlich gesendeten E-Mail darf eine Angelegenheit nicht ohne
+        // neuen Kontrollpunkt hängen bleiben. Ohne explizite Frist setzt die App
+        // standardmäßig eine Kontrolle 10 Tage nach dem Versand.
+        proposedControlDate=addDaysISOFromTimestamp(currentCaseData.postSendAwaitingSince,10);
+        controlDateBasis='Standardkontrolle 10 Tage nach der gesendeten E-Mail';
       }
     }
     if(currentCaseData.aiActionType==='wait' && !currentCaseData.controlDate && /^\d{4}-\d{2}-\d{2}$/.test(proposedControlDate)){
@@ -5637,7 +5670,9 @@ async function applyFreshAIAnalysis(showResult=true){
         const history=getCaseHistory(currentCaseData);
         history.push({
           type:'Kontrolltermin',
-          text:'Kontrolltermin automatisch aus der vorliegenden Frist gesetzt: '+formatControlDate(proposedControlDate)+(controlDateBasis ? ' ('+controlDateBasis+')' : '')+'.',
+          text:(controlDateBasis==='Standardkontrolle 10 Tage nach der gesendeten E-Mail'
+            ? 'Neuer Kontrolltermin nach dem E-Mail-Versand gesetzt: '+formatControlDate(proposedControlDate)+' (Standardkontrolle nach 10 Tagen).'
+            : 'Kontrolltermin automatisch aus der vorliegenden Frist gesetzt: '+formatControlDate(proposedControlDate)+(controlDateBasis ? ' ('+controlDateBasis+')' : '')+'.'),
           date:new Date().toLocaleString('de-DE')
         });
         currentCaseData.history=history;
@@ -5771,6 +5806,11 @@ async function sendAcceptedEmailDraft(){
     currentCaseData.aiEmailSentAt=now.toISOString();
     currentCaseData.aiEmailSentFrom=String(data.from||'');
     currentCaseData.aiEmailSentTo=recipient;
+    currentCaseData.lastSentEmailSubject=subject;
+    currentCaseData.lastSentEmailBody=body;
+    currentCaseData.lastSentEmailFrom=String(data.from||'');
+    currentCaseData.lastSentEmailTo=recipient;
+    currentCaseData.lastSentEmailAt=now.toISOString();
     const history=getCaseHistory(currentCaseData);
     history.unshift({
       type:'E-Mail gesendet',
@@ -5778,12 +5818,43 @@ async function sendAcceptedEmailDraft(){
       date:now.toLocaleString('de-DE')
     });
     currentCaseData.history=history;
+
+    // Der bisherige Kontrolltermin gehörte zum alten Schritt. Nach dem Versand
+    // beginnt ein neuer Abschnitt der Angelegenheit.
+    try{ await resolveControlPointInSupabase(currentCaseData); }catch(e){ console.error('Alter Kontrolltermin konnte nicht abgeschlossen werden:',e); }
+    currentCaseData.previousControlDate=currentCaseData.controlDate || '';
+    currentCaseData.controlDate='';
+    currentCaseData.controlDateSetAt='';
+    currentCaseData.controlDateBasis='';
+    currentCaseData.testControlOverdue=false;
+    currentCaseData.status='Warte auf Antwort';
+    currentCaseData.postSendAwaitingSince=now.toISOString();
+
+    // Der gesendete Entwurf ist abgeschlossen und bleibt in der Historie erhalten.
+    // Die aktiven Entwurfsfelder werden freigegeben, damit die neue KI-Analyse
+    // den nächsten Schritt sauber darstellen kann.
+    currentCaseData.aiEmailSubject='';
+    currentCaseData.aiEmailBody='';
+    currentCaseData.aiEmailDraftAccepted=false;
+    currentCaseData.aiEmailSentAt='';
+    currentCaseData.aiActionType='wait';
     currentCaseData=upsertStoredCase(currentCaseData);
+
     if(info) info.textContent='E-Mail wurde erfolgreich über '+String(data.from||'GMX')+' gesendet.';
     if(sendBtn) sendBtn.classList.add('hidden');
     if(status){ status.textContent='E-Mail erfolgreich gesendet.'; status.classList.remove('hidden'); }
     renderAICenter(currentCaseData);
     secretaryNotify('Sekretarz – E-Mail gesendet',(currentCaseData.title||'Angelegenheit')+': E-Mail wurde erfolgreich gesendet.',currentCaseData);
+
+    // Unmittelbar nach dem Versand bewertet die KI die Angelegenheit erneut.
+    // Wenn keine konkrete Frist aus der Historie hervorgeht, setzt die App als
+    // sicheren Kontrollpunkt 10 Tage nach dem Versand.
+    await applyFreshAIAnalysis(false);
+    secretaryNotify(
+      'Sekretarz – Angelegenheit wird weiter überwacht',
+      (currentCaseData.title||'Angelegenheit')+': Nach dem E-Mail-Versand wurde der nächste Kontrollpunkt vorbereitet.',
+      currentCaseData
+    );
   }catch(err){
     if(info) info.textContent=err?.message||'Die E-Mail konnte nicht gesendet werden.';
     if(sendBtn){ sendBtn.disabled=false; sendBtn.textContent='E-Mail senden'; sendBtn.classList.remove('hidden'); }

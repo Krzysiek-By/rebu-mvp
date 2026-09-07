@@ -5380,6 +5380,10 @@ async function answerAIQuestion(hasInfo){
       const d=new Date(expiredControlDate+'T12:00:00');
       d.setDate(d.getDate()+1);
       currentCaseData.testCurrentDate=ymdFromLocalDate(d);
+      // Dieses virtuelle Datum gehört auch zum daraus vorbereiteten Folgeschritt.
+      // Es bleibt bis zum tatsächlichen Versand erhalten, damit die Nachanalyse
+      // nicht wieder auf das reale heutige Datum zurückspringt.
+      currentCaseData.testActionReferenceDate=currentCaseData.testCurrentDate;
     }else{
       currentCaseData.controlDate='';
       currentCaseData.controlDateSetAt='';
@@ -5494,10 +5498,19 @@ async function saveAIControlDate(){
 }
 
 async function requestAIAnalysis(caseData){
+  const profile=getUserProfile();
+  const payloadCase={
+    ...caseData,
+    senderProfile:{
+      firstName:String(profile?.firstName || '').trim(),
+      lastName:String(profile?.lastName || '').trim(),
+      email:String(profile?.email || '').trim().toLowerCase()
+    }
+  };
   const response=await fetch('/api/ai-case',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({caseData})
+    body:JSON.stringify({caseData:payloadCase})
   });
   let payload={};
   try{ payload=await response.json(); }catch(e){}
@@ -5620,6 +5633,26 @@ function addDaysISOFromTimestamp(timestamp,days){
   return y+'-'+m+'-'+day;
 }
 
+function normalizeAIEmailSignature(body){
+  const text=String(body || '').trim();
+  if(!text) return '';
+  const profile=getUserProfile();
+  const first=String(profile?.firstName || '').trim();
+  const last=String(profile?.lastName || '').trim();
+  const full=[first,last].filter(Boolean).join(' ').trim();
+  if(!full) return text;
+
+  // Sekretarz unterschreibt ausgehende Entwürfe mit dem im Profil
+  // gespeicherten vollständigen Namen – niemals mit „Herr/Frau + Nachname“.
+  const closingRe=/(Mit freundlichen Grüßen|Freundliche Grüße|Viele Grüße|Mit besten Grüßen)\s*\n+[\s\S]*$/i;
+  const m=text.match(closingRe);
+  if(m){
+    const closing=m[1];
+    return text.slice(0,m.index).trimEnd()+'\n\n'+closing+'\n\n'+full;
+  }
+  return text+'\n\nMit freundlichen Grüßen\n\n'+full;
+}
+
 async function applyFreshAIAnalysis(showResult=true){
   if(!currentCaseData || currentCaseData.careType!=='ai') return;
   const draftStatusReset=document.getElementById('aiEmailDraftStatus');
@@ -5642,7 +5675,7 @@ async function applyFreshAIAnalysis(showResult=true){
     currentCaseData.aiActionType=String(ai.actionType || 'other').trim();
     currentCaseData.aiReason=String(ai.reason || '').trim();
     currentCaseData.aiEmailSubject=String(ai.emailSubject || '').trim();
-    currentCaseData.aiEmailBody=String(ai.emailBody || '').trim();
+    currentCaseData.aiEmailBody=normalizeAIEmailSignature(ai.emailBody);
     currentCaseData.aiEmailDraftAccepted=false;
 
     // Ein neu von der KI vorbereiteter Entwurf ist immer eine neue aktive Aktion.
@@ -5660,23 +5693,35 @@ async function applyFreshAIAnalysis(showResult=true){
     // bleibt die bestehende Rückfrage an den Nutzer erhalten.
     let proposedControlDate=String(ai.proposedControlDate || '').trim();
     let controlDateBasis=String(ai.controlDateBasis || '').trim();
-    if(currentCaseData.aiActionType==='wait' && !currentCaseData.controlDate && !/^\d{4}-\d{2}-\d{2}$/.test(proposedControlDate)){
-      const fallback=deriveExplicitControlDateFromHistory(currentCaseData);
-      if(fallback){
-        proposedControlDate=fallback.date;
-        controlDateBasis=fallback.basis;
-      }else if(currentCaseData.postSendAwaitingSince){
-        // Nach einer tatsächlich gesendeten E-Mail darf eine Angelegenheit nicht ohne
-        // neuen Kontrollpunkt hängen bleiben. Ohne explizite Frist setzt die App
-        // standardmäßig eine Kontrolle 10 Tage nach dem Versand.
-        proposedControlDate=addDaysISOFromTimestamp(currentCaseData.postSendAwaitingSince,10);
-        controlDateBasis='Standardkontrolle 10 Tage nach der gesendeten E-Mail';
+    if(currentCaseData.aiActionType==='wait' && !currentCaseData.controlDate){
+      const postSendReference=/^\d{4}-\d{2}-\d{2}$/.test(String(currentCaseData.postSendReferenceDate||''))
+        ? String(currentCaseData.postSendReferenceDate)
+        : '';
+
+      if(postSendReference){
+        // Nach einem tatsächlich gesendeten Follow-up ist die alte Frist abgeschlossen.
+        // Sie darf weder aus älteren Historieneinträgen erneut aktiviert noch als neuer
+        // Kontrolltermin verwendet werden. Nur eine neue, von der KI aus dem aktuellen
+        // Kontext eindeutig erkannte Frist NACH dem Versand darf übernommen werden.
+        const aiDateValid=/^\d{4}-\d{2}-\d{2}$/.test(proposedControlDate) && proposedControlDate>postSendReference;
+        if(!aiDateValid){
+          proposedControlDate=addDaysISOFromTimestamp(postSendReference+'T12:00:00',10);
+          controlDateBasis='Standardkontrolle 10 Tage nach der gesendeten E-Mail';
+        }
+      }else if(!/^\d{4}-\d{2}-\d{2}$/.test(proposedControlDate)){
+        const fallback=deriveExplicitControlDateFromHistory(currentCaseData);
+        if(fallback){
+          proposedControlDate=fallback.date;
+          controlDateBasis=fallback.basis;
+        }
       }
     }
     if(currentCaseData.aiActionType==='wait' && !currentCaseData.controlDate && /^\d{4}-\d{2}-\d{2}$/.test(proposedControlDate)){
       const proposed=new Date(proposedControlDate+'T12:00:00');
-      const today=new Date(); today.setHours(0,0,0,0);
-      if(!Number.isNaN(proposed.getTime()) && proposed>=today){
+      const minimumDate=/^\d{4}-\d{2}-\d{2}$/.test(String(currentCaseData.postSendReferenceDate||''))
+        ? new Date(String(currentCaseData.postSendReferenceDate)+'T12:00:00')
+        : (()=>{ const d=new Date(); d.setHours(0,0,0,0); return d; })();
+      if(!Number.isNaN(proposed.getTime()) && proposed>=minimumDate){
         currentCaseData.controlDate=proposedControlDate;
         currentCaseData.controlDateSetAt=new Date().toISOString();
         currentCaseData.controlDateBasis=controlDateBasis;
@@ -5842,6 +5887,12 @@ async function sendAcceptedEmailDraft(){
     currentCaseData.testControlOverdue=false;
     currentCaseData.status='Warte auf Antwort';
     currentCaseData.postSendAwaitingSince=now.toISOString();
+    // Bei einer TEST-Simulation gehört der Versand logisch zum virtuellen Tag nach
+    // dem alten Kontrolltermin. In einem echten Fall ist die Referenz das heutige Datum.
+    currentCaseData.postSendReferenceDate=/^\d{4}-\d{2}-\d{2}$/.test(String(currentCaseData.testActionReferenceDate||''))
+      ? String(currentCaseData.testActionReferenceDate)
+      : todayLocalISO();
+    currentCaseData.testCurrentDate=currentCaseData.postSendReferenceDate;
 
     // Der gesendete Entwurf ist abgeschlossen und bleibt in der Historie erhalten.
     // Die aktiven Entwurfsfelder werden freigegeben, damit die neue KI-Analyse
@@ -5863,6 +5914,11 @@ async function sendAcceptedEmailDraft(){
     // Wenn keine konkrete Frist aus der Historie hervorgeht, setzt die App als
     // sicheren Kontrollpunkt 10 Tage nach dem Versand.
     await applyFreshAIAnalysis(false);
+    // Das virtuelle Testdatum war nur für die Folgeschritt-/Nachversand-Analyse nötig.
+    currentCaseData.testCurrentDate='';
+    currentCaseData.testActionReferenceDate='';
+    currentCaseData=upsertStoredCase(currentCaseData);
+    renderAICenter(currentCaseData);
     secretaryNotify(
       'Sekretarz – Angelegenheit wird weiter überwacht',
       (currentCaseData.title||'Angelegenheit')+': Nach dem E-Mail-Versand wurde der nächste Kontrollpunkt vorbereitet.',

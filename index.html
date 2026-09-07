@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.75 TEST">
+<meta name="sekretarz-version" content="DE-v13.76 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -1275,6 +1275,8 @@ button{cursor:pointer}
               <button type="button" class="btn secondary" onclick="answerAIQuestion(false); return false;">Nein</button>
               <button type="button" class="btn primary" onclick="answerAIQuestion(true); return false;">Ja, ergänzen</button>
             </div>
+
+            <button id="aiTestOverdueBtn" type="button" class="btn secondary hidden" style="margin-top:10px" onclick="simulateControlDateOverdue(); return false;">TEST: Kontrolltermin jetzt überschreiten</button>
 
             <div id="aiControlDateBox" class="hidden" style="display:grid;gap:9px">
               <label for="aiControlDateInput" style="font-weight:800">Konkreter Kontrolltermin</label>
@@ -6541,6 +6543,6 @@ function resetDemoCases(){
 }
 
 </script>
-<!-- Sekretarz v13.75 TEST -->
+<!-- Sekretarz v13.76 TEST -->
 </body>
 </html>

@@ -44,7 +44,9 @@ module.exports = async function handler(req, res) {
     history,
     allowedSources: source.sourceSettings || {},
     controlDate: cleanText(source.controlDate, 40),
-    currentDate: new Date().toISOString().slice(0,10)
+    currentDate: /^\d{4}-\d{2}-\d{2}$/.test(String(source.testCurrentDate || ''))
+      ? String(source.testCurrentDate)
+      : new Date().toISOString().slice(0,10)
   };
 
   const systemPrompt = `Du bist der intelligente persönliche Sekretär in der App Sekretarz.
@@ -61,6 +63,7 @@ Wichtige Regeln:
 - proposedControlDate darf NUR gesetzt werden, wenn die Frist eindeutig aus den übergebenen Informationen hervorgeht. Wenn keine eindeutige Frist vorliegt, muss proposedControlDate ein leerer String sein; dann fragt die App den Nutzer nach einem Kontrolltermin.
 - Gib in controlDateBasis kurz an, welche konkrete Angabe aus der Quelle die Berechnung begründet, ohne etwas hinzuzuerfinden.
 - Wenn bereits ein konkretes controlDate vorhanden ist und noch nicht überschritten wurde, berücksichtige dieses Datum als verbindlichen Kontrollpunkt und setze proposedControlDate leer.
+- Wenn currentDate NACH controlDate liegt, ist dieser Kontrolltermin überschritten. Dann darfst du NICHT weiter allein auf die alte Zusage oder den alten Kontrolltermin warten. Bewerte anhand der Historie den jetzt sinnvollen Folgeschritt. Besonders wenn der neueste Historieneintrag ausdrücklich sagt, dass die erwartete Rückmeldung bzw. das angekündigte Ergebnis bis zum Kontrolltermin nicht eingetroffen ist, muss diese neue Tatsache Vorrang haben.
 - Wenn eine E-Mail, ein Brief oder Telefonat sinnvoll ist, darfst du dies vorschlagen, aber NICHT behaupten, dass es bereits ausgeführt wurde.
 - Wenn actionType "email" ist, erstelle zusätzlich einen sofort nutzbaren deutschen E-Mail-Entwurf: einen kurzen Betreff und eine vollständige, sachliche E-Mail. Nutze nur bekannte Fakten. Keine erfundenen Namen, Fristen oder Zusagen.
 - VERBINDLICHE ANREDE-REGEL FÜR E-MAILS: Prüfe zuerst Empfänger und Beziehung. Wenn der Empfänger eine Firma, Behörde, Versicherung, Vermieter/Hausverwaltung oder ein vergleichbarer institutioneller/formeller Kontakt ist UND keine konkrete Ansprechperson bekannt ist, MUSS die E-Mail exakt mit „Sehr geehrte Damen und Herren,“ beginnen. In diesem Fall sind „Guten Tag,“ und „Hallo“ NICHT zulässig. Wenn bei einem formellen Kontakt eine konkrete Person bekannt ist, MUSS eine passende persönliche formelle Anrede verwendet werden, z. B. „Sehr geehrte Frau …,“ oder „Sehr geehrter Herr …,“. Nur bei privaten, freundschaftlichen oder erkennbar lockeren Kontakten darf eine informellere Anrede wie „Hallo …“ oder „Guten Tag …“ verwendet werden.

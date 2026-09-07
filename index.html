@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.77 TEST">
+<meta name="sekretarz-version" content="DE-v13.80 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -265,6 +265,11 @@ button{cursor:pointer}
   .timeline-dot{width:10px;height:10px;border-radius:50%;background:#7c4dff;margin-top:6px}
   .timeline-item b{display:block;margin-bottom:3px}
   .timeline-item small{color:var(--muted)}
+  .timeline-mail-summary{margin:2px 0 4px;line-height:1.45}
+  .timeline-mail-details{margin-top:6px}
+  .timeline-mail-details summary{cursor:pointer;color:#2563eb;font-weight:750;list-style:none}
+  .timeline-mail-details summary::-webkit-details-marker{display:none}
+  .timeline-mail-full{white-space:pre-wrap;line-height:1.5;margin-top:8px;color:var(--text)}
   .ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .ai-actions .btn{margin:0}
   @media(max-width:640px){.ai-actions{grid-template-columns:1fr}}
@@ -1257,12 +1262,12 @@ button{cursor:pointer}
           </div>
           <div id="aiEmailReadyBox" class="hidden" style="margin-top:12px">
             <div class="success" style="margin:0 0 10px 0">
-              <strong>Zum Senden bereit</strong><br>
+              <strong id="aiEmailReadyTitle">Zum Senden bereit</strong><br>
               <span id="aiEmailReadyRecipient"></span>
             </div>
             <div id="aiEmailConnectionInfo" class="helper">E-Mail-Verbindung wird geprüft …</div>
             <button id="aiEmailSendBtn" type="button" class="btn primary hidden" style="margin-top:10px" onclick="sendAcceptedEmailDraft()">E-Mail senden</button>
-            <button type="button" class="btn secondary" style="margin-top:10px" onclick="editEmailDraft()">Entwurf ändern</button>
+            <button id="aiEmailReadyEditBtn" type="button" class="btn secondary" style="margin-top:10px" onclick="editEmailDraft()">Entwurf ändern</button>
           </div>
           <div id="aiEmailDraftStatus" class="success hidden" style="margin-top:10px"></div>
         </div>
@@ -4858,6 +4863,22 @@ function renderAIPlan(data){
   ).join('');
 }
 
+function timelineMailSummary(item){
+  const raw=String(item?.text||'').trim();
+  const subject=(raw.match(/Betreff:\s*(.*?)(?=\s+Von:|$)/i)||[])[1]||'';
+  const from=(raw.match(/Von:\s*(.*?)(?=\s+An:|$)/i)||[])[1]||'';
+  const to=(raw.match(/An:\s*(.*?)(?=\s+(?:Sehr|Hallo|Guten|Liebe|Lieber)\b|$)/i)||[])[1]||'';
+  const parts=[];
+  if(subject) parts.push('<div><strong>Betreff:</strong> '+escapeHtml(subject.trim())+'</div>');
+  if(from) parts.push('<div><strong>Von:</strong> '+escapeHtml(from.trim())+'</div>');
+  if(to) parts.push('<div><strong>An:</strong> '+escapeHtml(to.trim())+'</div>');
+  if(!parts.length){
+    const preview=raw.length>150 ? raw.slice(0,147)+'…' : raw;
+    parts.push('<div>'+escapeHtml(preview)+'</div>');
+  }
+  return parts.join('');
+}
+
 function renderTimeline(data){
   const box=document.getElementById('caseTimeline');
   if(!box) return;
@@ -4866,9 +4887,14 @@ function renderTimeline(data){
     box.innerHTML='<p style="color:var(--muted)">Noch keine Historie vorhanden.</p>';
     return;
   }
-  box.innerHTML=history.map(item=>
-    '<div class="timeline-item"><div class="timeline-dot"></div><div><b>'+escapeHtml(item.type || 'Eintrag')+'</b><div>'+escapeHtml(item.text || '')+'</div><small>'+escapeHtml(item.date || '')+'</small></div></div>'
-  ).join('');
+  box.innerHTML=history.map(item=>{
+    const type=String(item?.type||'Eintrag');
+    const isMail=/^E-Mail(?:\s|$)/i.test(type);
+    const content=isMail
+      ? '<div class="timeline-mail-summary">'+timelineMailSummary(item)+'</div><details class="timeline-mail-details"><summary>E-Mail anzeigen</summary><div class="timeline-mail-full">'+escapeHtml(item.text||'')+'</div></details>'
+      : '<div>'+escapeHtml(item.text||'')+'</div>';
+    return '<div class="timeline-item"><div class="timeline-dot"></div><div><b>'+escapeHtml(type)+'</b>'+content+'<small>'+escapeHtml(item.date||'')+'</small></div></div>';
+  }).join('');
 }
 
 
@@ -5169,6 +5195,8 @@ function renderAICenter(data){
   const emailBody=document.getElementById('aiEmailBody');
   const emailDraftNewBadge=document.getElementById('aiEmailDraftNewBadge');
   const emailDraftStatus=document.getElementById('aiEmailDraftStatus');
+  const emailReadyTitle=document.getElementById('aiEmailReadyTitle');
+  const emailReadyEditBtn=document.getElementById('aiEmailReadyEditBtn');
 
   if(testOverdueBtn){
     const canTest=data?.careType==='ai' && !!data?.controlDate && String(data?.aiActionType || '')==='wait' && !isControlDateOverdue(data);
@@ -5227,8 +5255,11 @@ function renderAICenter(data){
     const emailReadyBox=document.getElementById('aiEmailReadyBox');
     const emailReadyRecipient=document.getElementById('aiEmailReadyRecipient');
     const draftAccepted=!!data?.aiEmailDraftAccepted;
+    const emailSent=!!data?.aiEmailSentAt;
     if(emailDraftActions) emailDraftActions.classList.toggle('hidden',draftAccepted);
     if(emailReadyBox) emailReadyBox.classList.toggle('hidden',!draftAccepted);
+    if(emailReadyTitle) emailReadyTitle.textContent=emailSent ? 'E-Mail gesendet' : 'Zum Senden bereit';
+    if(emailReadyEditBtn) emailReadyEditBtn.classList.toggle('hidden',emailSent);
     if(emailReadyRecipient){
       const recipientName=String(data?.contact?.name||'').trim();
       const recipientEmail=String(data?.contact?.email||'').trim();
@@ -5237,7 +5268,14 @@ function renderAICenter(data){
       else if(recipientName) emailReadyRecipient.textContent='Empfänger: '+recipientName+' · E-Mail-Adresse fehlt';
       else emailReadyRecipient.textContent='Empfänger noch nicht festgelegt';
     }
-    if(emailDraftStatus) emailDraftStatus.classList.add('hidden');
+    if(emailDraftStatus){
+      if(emailSent){
+        emailDraftStatus.textContent='E-Mail erfolgreich gesendet.';
+        emailDraftStatus.classList.remove('hidden');
+      }else{
+        emailDraftStatus.classList.add('hidden');
+      }
+    }
     if(draftAccepted) setTimeout(()=>updateEmailReadyConnectionState(data),0);
     const editBox=document.getElementById('aiEmailEditBox');
     if(editBox) editBox.classList.add('hidden');
@@ -5744,7 +5782,7 @@ async function sendAcceptedEmailDraft(){
     if(info) info.textContent='E-Mail wurde erfolgreich über '+String(data.from||'GMX')+' gesendet.';
     if(sendBtn) sendBtn.classList.add('hidden');
     if(status){ status.textContent='E-Mail erfolgreich gesendet.'; status.classList.remove('hidden'); }
-    renderTimeline(currentCaseData);
+    renderAICenter(currentCaseData);
     secretaryNotify('Sekretarz – E-Mail gesendet',(currentCaseData.title||'Angelegenheit')+': E-Mail wurde erfolgreich gesendet.',currentCaseData);
   }catch(err){
     if(info) info.textContent=err?.message||'Die E-Mail konnte nicht gesendet werden.';

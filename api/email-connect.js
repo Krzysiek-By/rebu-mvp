@@ -466,6 +466,38 @@ module.exports = async function handler(req,res){
     }
   }
 
+
+  if(action==='send'){
+    try{
+      const user=await verifyUser(req);
+      if(!user?.id) return res.status(401).json({ok:false,message:'Sitzung ist nicht gültig. Bitte melde dich erneut an.'});
+      const to=String(req.body?.to||'').trim();
+      const subject=String(req.body?.subject||'').trim();
+      const body=String(req.body?.body||'').trim();
+      if(!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return res.status(400).json({ok:false,message:'Empfänger-E-Mail-Adresse ist ungültig.'});
+      if(!subject) return res.status(400).json({ok:false,message:'Betreff fehlt.'});
+      if(!body) return res.status(400).json({ok:false,message:'E-Mail-Text fehlt.'});
+      const account=await getStoredGmxAccount(user.id);
+      if(!account) return res.status(404).json({ok:false,message:'Es ist noch kein dauerhaft verbundenes GMX-Konto vorhanden.'});
+      const password=decryptPassword(account);
+      const smtp=nodemailer.createTransport({
+        host:'mail.gmx.net', port:587, secure:false, requireTLS:true,
+        auth:{user:account.email,pass:password},
+        connectionTimeout:10000, greetingTimeout:10000, socketTimeout:20000,
+        tls:{minVersion:'TLSv1.2'}
+      });
+      const sent=await smtp.sendMail({
+        from:account.email,
+        to,
+        subject,
+        text:body
+      });
+      return res.status(200).json({ok:true,sent:true,from:account.email,to,messageId:String(sent?.messageId||''),version:'13.79'});
+    }catch(err){
+      return res.status(502).json({ok:false,message:'Die E-Mail konnte über GMX nicht gesendet werden.',code:safeCode(err)});
+    }
+  }
+
   if(action==='message'){
     try{
       const user=await verifyUser(req);

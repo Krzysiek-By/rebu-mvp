@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.76 TEST">
+<meta name="sekretarz-version" content="DE-v13.77 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -5130,7 +5130,7 @@ async function surfaceDueControlCases(){
       const reg=await navigator.serviceWorker?.ready;
       if(reg){
         await reg.showNotification('Sekretarz – Kontrolltermin',{
-          body:(c.title || 'Angelegenheit')+': Ist die erwartete Antwort inzwischen eingegangen?',
+          body:(c.title || 'Angelegenheit')+': Ist die erwartete Rückmeldung bzw. das angekündigte Ergebnis inzwischen eingetroffen?',
           icon:'/icon-192.png',
           badge:'/icon-192.png',
           tag:'control-'+String(c.id),
@@ -5242,7 +5242,7 @@ function renderAICenter(data){
 
     if(isControlDateOverdue(data)){
       if(questionTitle) questionTitle.textContent='Kontrolltermin erreicht';
-      if(question) question.textContent='Ist die erwartete Antwort inzwischen eingegangen?';
+      if(question) question.textContent='Ist die erwartete Rückmeldung bzw. das angekündigte Ergebnis inzwischen eingetroffen?';
       if(defaultRow) defaultRow.classList.remove('hidden');
       if(controlBox) controlBox.classList.add('hidden');
     }else if(needsControlDate(data)){
@@ -5305,29 +5305,50 @@ async function answerAIQuestion(hasInfo){
   if(btn) btn.classList.add('hidden');
 
   if(overdue && currentCaseData){
+    const wasTestSimulation=currentCaseData.testControlOverdue===true;
+    const expiredControlDate=String(currentCaseData.controlDate||'');
     const history=getCaseHistory(currentCaseData);
     history.push({
       type:'Kontrolltermin',
-      text:'Bis zum festgelegten Kontrolltermin ist keine angekündigte Antwort eingegangen.',
+      text:(wasTestSimulation?'TEST-Simulation: ':'')+'Zum Kontrolltermin '+formatControlDate(expiredControlDate)+' ist die erwartete Rückmeldung bzw. das angekündigte Ergebnis nicht eingetroffen.',
       date:new Date().toLocaleString('de-DE')
     });
     currentCaseData.history=history;
-    currentCaseData.controlDate='';
-    currentCaseData.controlDateSetAt='';
     currentCaseData.testControlOverdue=false;
     currentCaseData.status='Zu erledigen';
+
+    // Bei der TEST-Simulation bleibt der echte Kontrolltermin unverändert gespeichert.
+    // Nur für die KI-Analyse wird ein virtueller Tag nach dem Kontrolltermin verwendet.
+    if(wasTestSimulation && /^\d{4}-\d{2}-\d{2}$/.test(expiredControlDate)){
+      const d=new Date(expiredControlDate+'T12:00:00');
+      d.setDate(d.getDate()+1);
+      currentCaseData.testCurrentDate=ymdFromLocalDate(d);
+    }else{
+      currentCaseData.controlDate='';
+      currentCaseData.controlDateSetAt='';
+    }
     currentCaseData=upsertStoredCase(currentCaseData);
 
     if(result){
-      result.textContent='Keine Antwort eingegangen. Die KI bewertet jetzt den nächsten Schritt neu …';
+      result.textContent='Erwartetes Ergebnis nicht eingetroffen. Die KI bewertet jetzt den nächsten Schritt neu …';
       result.classList.remove('hidden');
     }
     secretaryNotify(
-      'Sekretarz – keine Antwort',
-      (currentCaseData.title||'Angelegenheit')+': Zum Kontrolltermin ist keine Antwort eingegangen. KI bewertet neu.',
+      'Sekretarz – Ergebnis ausstehend',
+      (currentCaseData.title||'Angelegenheit')+': Zum Kontrolltermin ist das erwartete Ergebnis nicht eingetroffen. KI bewertet neu.',
       currentCaseData
     );
     await applyFreshAIAnalysis(false);
+
+    if(wasTestSimulation && currentCaseData){
+      currentCaseData.testCurrentDate='';
+      currentCaseData=upsertStoredCase(currentCaseData);
+      renderAICenter(currentCaseData);
+      if(result){
+        result.textContent='TEST abgeschlossen: Das erwartete Ergebnis ist ausgeblieben. Die KI hat den nächsten Schritt neu bewertet. Der echte Kontrolltermin '+formatControlDate(expiredControlDate)+' blieb unverändert gespeichert.';
+        result.classList.remove('hidden');
+      }
+    }
     return;
   }
 
@@ -5352,7 +5373,7 @@ function simulateControlDateOverdue(){
   }
   secretaryNotify(
     'Sekretarz – Kontrolltermin erreicht',
-    (currentCaseData.title||'Angelegenheit')+': Der Kontrolltermin ist erreicht. Ist die erwartete Antwort eingegangen?',
+    (currentCaseData.title||'Angelegenheit')+': Der Kontrolltermin ist erreicht. Ist die erwartete Rückmeldung bzw. das angekündigte Ergebnis inzwischen eingetroffen?',
     currentCaseData
   );
 }
@@ -6543,6 +6564,6 @@ function resetDemoCases(){
 }
 
 </script>
-<!-- Sekretarz v13.76 TEST -->
+<!-- Sekretarz v13.77 TEST -->
 </body>
 </html>

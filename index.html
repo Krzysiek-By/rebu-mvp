@@ -5289,6 +5289,7 @@ function renderAICenter(data){
         emailDraftStatus.textContent='E-Mail erfolgreich gesendet.';
         emailDraftStatus.classList.remove('hidden');
       }else{
+        emailDraftStatus.textContent='';
         emailDraftStatus.classList.add('hidden');
       }
     }
@@ -5621,6 +5622,8 @@ function addDaysISOFromTimestamp(timestamp,days){
 
 async function applyFreshAIAnalysis(showResult=true){
   if(!currentCaseData || currentCaseData.careType!=='ai') return;
+  const draftStatusReset=document.getElementById('aiEmailDraftStatus');
+  if(draftStatusReset){ draftStatusReset.textContent=''; draftStatusReset.classList.add('hidden'); }
   const result=document.getElementById('aiActionResult');
   const questionResult=document.getElementById('aiQuestionResult');
   if(showResult && result){
@@ -5895,6 +5898,8 @@ function saveEmailDraftEdits(){
 
 function acceptEmailDraft(){
   if(!currentCaseData || !currentCaseData.aiEmailBody) return;
+  const draftStatusReset=document.getElementById('aiEmailDraftStatus');
+  if(draftStatusReset){ draftStatusReset.textContent=''; draftStatusReset.classList.add('hidden'); }
   // Schutz gegen alte Versand-Metadaten aus einem vorherigen Entwurf.
   currentCaseData.aiEmailSentAt='';
   currentCaseData.aiEmailSentFrom='';

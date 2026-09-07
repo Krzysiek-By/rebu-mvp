@@ -1260,7 +1260,8 @@ button{cursor:pointer}
               <strong>Zum Senden bereit</strong><br>
               <span id="aiEmailReadyRecipient"></span>
             </div>
-            <div class="helper">Die E-Mail wurde noch nicht gesendet. Der Versand wird erst verfügbar, wenn ein E-Mail-Konto mit Sekretarz verbunden ist.</div>
+            <div id="aiEmailConnectionInfo" class="helper">E-Mail-Verbindung wird geprüft …</div>
+            <button id="aiEmailSendBtn" type="button" class="btn primary hidden" style="margin-top:10px" onclick="sendAcceptedEmailDraft()">E-Mail senden</button>
             <button type="button" class="btn secondary" style="margin-top:10px" onclick="editEmailDraft()">Entwurf ändern</button>
           </div>
           <div id="aiEmailDraftStatus" class="success hidden" style="margin-top:10px"></div>
@@ -5237,6 +5238,7 @@ function renderAICenter(data){
       else emailReadyRecipient.textContent='Empfänger noch nicht festgelegt';
     }
     if(emailDraftStatus) emailDraftStatus.classList.add('hidden');
+    if(draftAccepted) setTimeout(()=>updateEmailReadyConnectionState(data),0);
     const editBox=document.getElementById('aiEmailEditBox');
     if(editBox) editBox.classList.add('hidden');
 
@@ -5669,6 +5671,85 @@ async function saveAIUserNote(){
     currentCaseData
   );
   await applyFreshAIAnalysis(false);
+}
+
+
+async function updateEmailReadyConnectionState(caseData=currentCaseData){
+  const info=document.getElementById('aiEmailConnectionInfo');
+  const sendBtn=document.getElementById('aiEmailSendBtn');
+  if(!info || !sendBtn || !caseData?.aiEmailDraftAccepted) return;
+  sendBtn.classList.add('hidden');
+  sendBtn.disabled=false;
+  if(caseData?.aiEmailSentAt){
+    info.textContent='E-Mail wurde am '+new Date(caseData.aiEmailSentAt).toLocaleString('de-DE')+' gesendet.';
+    return;
+  }
+  const recipient=String(caseData?.contact?.email||'').trim();
+  if(!recipient){
+    info.textContent='Für diese Angelegenheit ist keine Empfänger-E-Mail-Adresse gespeichert.';
+    return;
+  }
+  info.textContent='E-Mail-Verbindung wird geprüft …';
+  try{
+    const token=await getFreshEmailAccessToken();
+    if(!token){ info.textContent='Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.'; return; }
+    const res=await fetch('/api/email-connect',{headers:{'Authorization':'Bearer '+token}});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok || !data.ok || !data.connected){
+      info.textContent='Kein verbundenes E-Mail-Konto gefunden. Öffne Mehr → E-Mail verbinden.';
+      return;
+    }
+    info.textContent='Versand über '+String(data.email||'das verbundene GMX-Konto')+'. Die E-Mail wird erst nach deiner Bestätigung gesendet.';
+    sendBtn.classList.remove('hidden');
+  }catch(err){
+    info.textContent='E-Mail-Verbindung konnte nicht geprüft werden. Bitte später erneut versuchen.';
+  }
+}
+
+async function sendAcceptedEmailDraft(){
+  if(!currentCaseData?.aiEmailDraftAccepted || !currentCaseData?.aiEmailBody) return;
+  const recipient=String(currentCaseData?.contact?.email||'').trim();
+  const subject=String(currentCaseData?.aiEmailSubject||'').trim();
+  const body=String(currentCaseData?.aiEmailBody||'').trim();
+  const info=document.getElementById('aiEmailConnectionInfo');
+  const sendBtn=document.getElementById('aiEmailSendBtn');
+  const status=document.getElementById('aiEmailDraftStatus');
+  if(!recipient){ if(info) info.textContent='Empfänger-E-Mail-Adresse fehlt.'; return; }
+  if(!subject || !body){ if(info) info.textContent='Betreff oder E-Mail-Text fehlt.'; return; }
+  if(!confirm('E-Mail jetzt wirklich an '+recipient+' senden?')) return;
+  if(sendBtn){ sendBtn.disabled=true; sendBtn.textContent='Wird gesendet …'; }
+  if(info) info.textContent='Sekretarz sendet die E-Mail über das verbundene GMX-Konto …';
+  try{
+    const token=await getFreshEmailAccessToken();
+    if(!token) throw new Error('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
+    const res=await fetch('/api/email-connect',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({action:'send',to:recipient,subject,body})
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok || !data.ok) throw new Error(data.message||'Die E-Mail konnte nicht gesendet werden.');
+    const now=new Date();
+    currentCaseData.aiEmailSentAt=now.toISOString();
+    currentCaseData.aiEmailSentFrom=String(data.from||'');
+    currentCaseData.aiEmailSentTo=recipient;
+    const history=getCaseHistory(currentCaseData);
+    history.unshift({
+      type:'E-Mail gesendet',
+      text:'Betreff: '+subject+' Von: '+String(data.from||'')+' An: '+recipient+' '+body,
+      date:now.toLocaleString('de-DE')
+    });
+    currentCaseData.history=history;
+    currentCaseData=upsertStoredCase(currentCaseData);
+    if(info) info.textContent='E-Mail wurde erfolgreich über '+String(data.from||'GMX')+' gesendet.';
+    if(sendBtn) sendBtn.classList.add('hidden');
+    if(status){ status.textContent='E-Mail erfolgreich gesendet.'; status.classList.remove('hidden'); }
+    renderTimeline(currentCaseData);
+    secretaryNotify('Sekretarz – E-Mail gesendet',(currentCaseData.title||'Angelegenheit')+': E-Mail wurde erfolgreich gesendet.',currentCaseData);
+  }catch(err){
+    if(info) info.textContent=err?.message||'Die E-Mail konnte nicht gesendet werden.';
+    if(sendBtn){ sendBtn.disabled=false; sendBtn.textContent='E-Mail senden'; sendBtn.classList.remove('hidden'); }
+  }
 }
 
 function editEmailDraft(){

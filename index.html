@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<meta name="sekretarz-version" content="DE-v13.81 TEST">
+<meta name="sekretarz-version" content="DE-v13.82 TEST">
 <title>Sekretarz — Dein persönlicher Sekretär</title>
 <style>
 :root{
@@ -5642,6 +5642,16 @@ async function applyFreshAIAnalysis(showResult=true){
     currentCaseData.aiEmailBody=String(ai.emailBody || '').trim();
     currentCaseData.aiEmailDraftAccepted=false;
 
+    // Ein neu von der KI vorbereiteter Entwurf ist immer eine neue aktive Aktion.
+    // Versanddaten eines früher gesendeten Entwurfs dürfen diesen neuen Entwurf
+    // nicht fälschlich als "E-Mail gesendet" markieren. Der alte Versand bleibt
+    // separat in lastSentEmail* und in der Historie erhalten.
+    if(currentCaseData.aiActionType==='email' && currentCaseData.aiEmailBody){
+      currentCaseData.aiEmailSentAt='';
+      currentCaseData.aiEmailSentFrom='';
+      currentCaseData.aiEmailSentTo='';
+    }
+
     // Wenn die Quelle selbst eine eindeutige Frist nennt, übernimmt Sekretarz
     // den daraus berechneten Kontrolltermin automatisch. Ohne eindeutige Frist
     // bleibt die bestehende Rückfrage an den Nutzer erhalten.
@@ -5885,6 +5895,10 @@ function saveEmailDraftEdits(){
 
 function acceptEmailDraft(){
   if(!currentCaseData || !currentCaseData.aiEmailBody) return;
+  // Schutz gegen alte Versand-Metadaten aus einem vorherigen Entwurf.
+  currentCaseData.aiEmailSentAt='';
+  currentCaseData.aiEmailSentFrom='';
+  currentCaseData.aiEmailSentTo='';
   currentCaseData.aiEmailDraftAccepted=true;
   currentCaseData=upsertStoredCase(currentCaseData);
   renderAICenter(currentCaseData);
@@ -6754,6 +6768,6 @@ function resetDemoCases(){
 }
 
 </script>
-<!-- Sekretarz v13.77 TEST -->
+<!-- Sekretarz v13.82 TEST -->
 </body>
 </html>

@@ -34,6 +34,12 @@ module.exports = async function handler(req, res) {
     website: cleanText(source.contact.website, 500)
   } : {};
 
+  const senderProfile = source.senderProfile && typeof source.senderProfile === 'object' ? {
+    firstName: cleanText(source.senderProfile.firstName, 120),
+    lastName: cleanText(source.senderProfile.lastName, 120),
+    email: cleanText(source.senderProfile.email, 300)
+  } : {};
+
   const caseData = {
     title: cleanText(source.title, 500),
     category: cleanText(source.category, 200),
@@ -41,9 +47,11 @@ module.exports = async function handler(req, res) {
     goalAndDescription: cleanText(source.desc, 6000),
     lastKnownStep: cleanText(source.nextStep, 6000),
     contact,
+    senderProfile,
     history,
     allowedSources: source.sourceSettings || {},
     controlDate: cleanText(source.controlDate, 40),
+    postSendReferenceDate: cleanText(source.postSendReferenceDate, 40),
     currentDate: /^\d{4}-\d{2}-\d{2}$/.test(String(source.testCurrentDate || ''))
       ? String(source.testCurrentDate)
       : new Date().toISOString().slice(0,10)
@@ -59,15 +67,18 @@ Wichtige Regeln:
 - Wenn Informationen fehlen, kann der beste nächste Schritt eine gezielte Rückfrage sein.
 - Wenn nachweislich auf eine angekündigte Antwort gewartet wird, darf actionType "wait" gewählt werden.
 - Wenn der neueste relevante Historieneintrag eine tatsächlich gesendete E-Mail dokumentiert und danach noch keine neue Antwort oder andere Reaktion vorliegt, ist normalerweise actionType "wait" der sinnvollste nächste Schritt. Schlage nur dann sofort eine weitere Aktion vor, wenn der übergebene Kontext dafür einen konkreten Grund enthält.
+- Wenn postSendReferenceDate gesetzt ist, hat mit der zuletzt gesendeten E-Mail ein NEUER Warteabschnitt begonnen. Frühere Fristen oder Kontrolltermine, die gerade zu dieser E-Mail geführt haben, sind abgeschlossen und dürfen NICHT erneut als zukünftiger Kontrolltermin vorgeschlagen werden. Beurteile die Lage ab postSendReferenceDate.
 - Bei actionType "wait" darfst du NIEMALS eine Frist oder ein Datum erfinden.
 - Prüfe aber, ob die übergebenen Informationen selbst eine eindeutige zeitliche Zusage enthalten, z. B. „innerhalb der nächsten 10 Tage“, „bis 20.09.2026“ oder „in zwei Wochen“. Wenn ja, berechne daraus einen konkreten proposedControlDate im Format YYYY-MM-DD. Verwende als Ausgangsdatum das Datum des betreffenden Historieneintrags bzw. der Nachricht, nicht pauschal das heutige Datum.
 - proposedControlDate darf NUR gesetzt werden, wenn die Frist eindeutig aus den übergebenen Informationen hervorgeht. Wenn keine eindeutige Frist vorliegt, muss proposedControlDate ein leerer String sein; dann fragt die App den Nutzer nach einem Kontrolltermin.
 - Gib in controlDateBasis kurz an, welche konkrete Angabe aus der Quelle die Berechnung begründet, ohne etwas hinzuzuerfinden.
 - Wenn bereits ein konkretes controlDate vorhanden ist und noch nicht überschritten wurde, berücksichtige dieses Datum als verbindlichen Kontrollpunkt und setze proposedControlDate leer.
+- Wenn postSendReferenceDate gesetzt ist, darf proposedControlDate nur eine NEUE Frist nach diesem Datum sein. Eine ältere Zusage/Frist aus der Historie darf nicht wiederverwendet werden.
 - Wenn currentDate NACH controlDate liegt, ist dieser Kontrolltermin überschritten. Dann darfst du NICHT weiter allein auf die alte Zusage oder den alten Kontrolltermin warten. Bewerte anhand der Historie den jetzt sinnvollen Folgeschritt. Besonders wenn der neueste Historieneintrag ausdrücklich sagt, dass die erwartete Rückmeldung bzw. das angekündigte Ergebnis bis zum Kontrolltermin nicht eingetroffen ist, muss diese neue Tatsache Vorrang haben.
 - Wenn eine E-Mail, ein Brief oder Telefonat sinnvoll ist, darfst du dies vorschlagen, aber NICHT behaupten, dass es bereits ausgeführt wurde.
 - Wenn actionType "email" ist, erstelle zusätzlich einen sofort nutzbaren deutschen E-Mail-Entwurf: einen kurzen Betreff und eine vollständige, sachliche E-Mail. Nutze nur bekannte Fakten. Keine erfundenen Namen, Fristen oder Zusagen.
 - VERBINDLICHE ANREDE-REGEL FÜR E-MAILS: Prüfe zuerst Empfänger und Beziehung. Wenn der Empfänger eine Firma, Behörde, Versicherung, Vermieter/Hausverwaltung oder ein vergleichbarer institutioneller/formeller Kontakt ist UND keine konkrete Ansprechperson bekannt ist, MUSS die E-Mail exakt mit „Sehr geehrte Damen und Herren,“ beginnen. In diesem Fall sind „Guten Tag,“ und „Hallo“ NICHT zulässig. Wenn bei einem formellen Kontakt eine konkrete Person bekannt ist, MUSS eine passende persönliche formelle Anrede verwendet werden, z. B. „Sehr geehrte Frau …,“ oder „Sehr geehrter Herr …,“. Nur bei privaten, freundschaftlichen oder erkennbar lockeren Kontakten darf eine informellere Anrede wie „Hallo …“ oder „Guten Tag …“ verwendet werden.
+- VERBINDLICHE UNTERSCHRIFTSREGEL FÜR E-MAILS: Wenn senderProfile.firstName und senderProfile.lastName vorhanden sind, MUSS jede E-Mail nach der Grußformel exakt mit dem vollständigen Namen „<Vorname> <Nachname>“ aus senderProfile enden. Niemals „Herr <Nachname>“, „Frau <Nachname>“ oder nur den Nachnamen als Unterschrift verwenden. Beispiel: bei firstName „Krzysztof“ und lastName „Klama“ lautet die Unterschrift exakt „Krzysztof Klama“. Keine erfundene Funktionsbezeichnung hinzufügen.
 - Wenn actionType nicht "email" ist, müssen emailSubject und emailBody leere Strings sein.
 - Formuliere konkret und nutzerverständlich auf Deutsch.
 - Gib genau EINEN aktuell besten nächsten Schritt aus.
